@@ -1,7 +1,7 @@
 {
     "output":{
-                "type":"disk",
-                "location":"D:\\"
+                "type":"server",
+                "location":"localhost:8888"
             },
     "flush_interval":120,
     "sort_on":"time",

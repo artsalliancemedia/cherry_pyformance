@@ -4,7 +4,6 @@ import json
 import database as db
 
 class Root(object):
-
     exposed = True
 
     def GET(self):
@@ -12,12 +11,10 @@ class Root(object):
 
     @cherrypy.tools.json_in()
     def POST(self):
-        print cherrypy.serving.request.json
+        db.push_stats_buffer(cherrypy.serving.request.json)
         return 'Hello, World.'
 
-
 def start_cherrypy():
-
     cherrypy.config.update({'server.socket_port': 8888})
     cherrypy.log('Mounting the app')
     cherrypy.tree.mount(Root(), '/',
@@ -37,9 +34,9 @@ def start_cherrypy():
     cherrypy.engine.block()
 
 
-
 if __name__ == '__main__':
     try:
+        db.setup_profile_database()
         start_cherrypy()
     except Exception, ex:
         print str(ex)
