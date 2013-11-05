@@ -13,7 +13,6 @@ class Profile(Base):
     request_method = Column(String)
     time = Column(Float)
     path = Column(String)
-    profile_id = Column(Integer, unique=True)
     
     call_stack = relationship("CallStackItem", cascade="all", backref='profiles')
     profile_metadata = relationship("ProfileMetadata", cascade="all", backref='profiles')
@@ -64,15 +63,13 @@ class ProfileMetadata(Base):
         return ""
 
 def create_db_and_connect():
-    database = sqlalchemy.create_engine('postgresql://postgres:my_password@localhost/profile_stats', echo=True)
+    database = sqlalchemy.create_engine('postgresql://postgres:my_password@localhost/profile_stats')
     database.connect()
     return database
 
-db = None
 session = None
 
 def setup_profile_database():
-    global db, session
     try:
         db = create_db_and_connect()
     except:
@@ -84,6 +81,7 @@ def setup_profile_database():
         db = create_db_and_connect()
     Base.metadata.create_all(db)
     Session = sessionmaker(bind=db)
+    global session
     session = Session()
 
 def push_stats_buffer(stats_buffer):
