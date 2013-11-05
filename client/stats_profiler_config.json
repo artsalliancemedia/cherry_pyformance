@@ -1,15 +1,15 @@
 {
     "output":{
-                "type":"disk",
-                "location":"D:\\"
+                "type":"server",
+                "location":"localhost:8888"
             },
-    "flush_interval":30,
+    "flush_interval":120,
     "sort_on":"time",
-    "num_results":50,
+    "num_results":20,
     "functions":[
                 "serv.cinema_services.config.read"
                 ],
     "handlers":{
-                "/core":["/complex"]
+                "/core":["/"]
                 }
 }

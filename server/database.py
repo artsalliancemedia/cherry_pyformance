@@ -9,20 +9,18 @@ from sqlalchemy.orm import sessionmaker, relationship
 class Profile(Base):
     __tablename__ = 'profiles'
     id = Column(Integer, primary_key=True)
-    module = Column(String)
-    request_method = Column(String)
-    time = Column(Float)
-    path = Column(String)
-    profile_id = Column(Integer, unique=True)
+    function = Column(String)
+    class_name = Column(String)
+    datetime = Column(Float)
     
     call_stack = relationship("CallStackItem", cascade="all", backref='profiles')
     profile_metadata = relationship("ProfileMetadata", cascade="all", backref='profiles')
   
     def __init__(self, profile_stats):
+        self.function = profile_stats['function']
+        self.class_name = profile_stats['class']
         self.module = profile_stats['module']
-        self.request_method = profile_stats['request_method']
-        self.time = profile_stats['time']
-        self.path = profile_stats['path']
+        self.datetime = profile_stats['datetime']
       
     def __repr__(self):
         return ""
@@ -64,15 +62,13 @@ class ProfileMetadata(Base):
         return ""
 
 def create_db_and_connect():
-    database = sqlalchemy.create_engine('postgresql://postgres:my_password@localhost/profile_stats', echo=True)
+    database = sqlalchemy.create_engine('postgresql://postgres:my_password@localhost/profile_stats')
     database.connect()
     return database
 
-db = None
 session = None
 
 def setup_profile_database():
-    global db, session
     try:
         db = create_db_and_connect()
     except:
@@ -84,6 +80,7 @@ def setup_profile_database():
         db = create_db_and_connect()
     Base.metadata.create_all(db)
     Session = sessionmaker(bind=db)
+    global session
     session = Session()
 
 def push_stats_buffer(stats_buffer):
