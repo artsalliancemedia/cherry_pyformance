@@ -326,7 +326,7 @@ stat_logger.addHandler(stats_log_handler)
 # read config
 cfg = None
 try:
-    with open('stats\\profile_stats_config.json') as cfg_file:
+    with open('stats\\stats_profiler_config.json') as cfg_file:
         cfg = json.load(cfg_file)
 except Exception:
     stat_logger.error('Failed to load stats profiling configuration. Check config exists.')
