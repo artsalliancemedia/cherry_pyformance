@@ -305,7 +305,7 @@ def create_output_fn():
                 urlopen(Request(address, output, headers={'Content-Type':'application/json'}))############# TODO MAKE THIS HTTPS
         else:
             # if no valid method found, raise a KeyError to be caught
-            stat_logger.warning('Invalid stats output param given, use "json" or "server"')
+            stat_logger.warning('Invalid stats output param given, use "disk" or "server"')
             raise KeyError
     except KeyError:
         # could not ascertain output method, do nothing with stats
@@ -326,7 +326,7 @@ stat_logger.addHandler(stats_log_handler)
 # read config
 cfg = None
 try:
-    with open('stats\\profile_stats_config.json') as cfg_file:
+    with open('client\\stats_profiler_config.json') as cfg_file:
         cfg = json.load(cfg_file)
 except Exception:
     stat_logger.error('Failed to load stats profiling configuration. Check config exists.')
