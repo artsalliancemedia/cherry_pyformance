@@ -347,7 +347,6 @@ stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
                           'product': cfg['product'],
                           'version': cfg['version'],
                           'stats': []}
-}
 
 
 def decorate_functions_and_handlers():
