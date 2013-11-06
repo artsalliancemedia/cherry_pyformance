@@ -40,7 +40,6 @@ class StatsTool(cherrypy.Tool):
         self._point = 'before_handler'
         self._priority = 80
         self._setargs()
-        self.profile = cProfile.Profile() # can use profile.Profile too
         self.sort = sort
         self.num_results = num_results
 
@@ -68,7 +67,7 @@ class StatsTool(cherrypy.Tool):
                                 'class': request.app.root.__class__.__name__,
                                 'module': inspect.getmodule(request.app.root.__class__).__name__,
                                 'datetime': time.time(),
-                                'total_time': self._profile.totall_tt,
+                                'total_time': 0,
                                 'profile': cProfile.Profile()}
         # At this point the profile key of the object on the stats buffer has no
         # profile stats in it. It needs to be put in the buffer now as multiple
@@ -91,6 +90,8 @@ class StatsTool(cherrypy.Tool):
         req_id = id(cherrypy.serving.request)
         try:
             stats_buffer[req_id]['profile'].snapshot_stats()
+            # add total time taken
+            stats_buffer[req_id]['total_time'] = stats_buffer[req_id]['profile'].totall_tt
             # sort the stats in decending order of the sorting stat, then trim
             # to num_results, there will be a lot of negligable stats we can ignore
             stats = sorted(stats_buffer[req_id]['profile'].stats.items(),
