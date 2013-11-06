@@ -68,6 +68,7 @@ class StatsTool(cherrypy.Tool):
                                 'class': request.app.root.__class__.__name__,
                                 'module': inspect.getmodule(request.app.root.__class__).__name__,
                                 'datetime': time.time(),
+                                'total_time': self._profile.totall_tt,
                                 'profile': cProfile.Profile()}
         # At this point the profile key of the object on the stats buffer has no
         # profile stats in it. It needs to be put in the buffer now as multiple
@@ -165,6 +166,7 @@ class StatWrapper(object):
                             'class': self._class_name,
                             'module': self._module_name,
                             'datetime': time.time(),
+                            'total_time': self._profile.totall_tt,
                             'pstats': stats}
         # reset the profiler for new function calls.
         ################### TODO TEST IF MULTIPLE FUNCTION CALLS OVERLAP. 
@@ -249,7 +251,7 @@ def flush_stats():
     """
     stat_logger.info('Flushing stats buffer.')
     global stats_buffer
-    # initialise a list of stats to push, not all stats may be ready to be pushed
+    # initialise a package of stats to push, not all stats may be ready to be pushed
     stats_to_push = []
     for _id in stats_buffer.keys():
         # test if there is a pstats key
@@ -272,7 +274,9 @@ def flush_stats():
             del stats_buffer[_id]
     length = len(stats_to_push)
     if length != 0:
-        push_stats(stats_to_push)
+        stats_package = copy.deepcopy(stats_package_template)
+        stats_package[stats] = stats_to_push
+        push_stats(stats_package)
         stat_logger.info('Flushed %d stats from the buffer' % length)
     else:
         stat_logger.info('No stats on the buffer to flush.')
@@ -337,6 +341,13 @@ push_stats = create_output_fn()
 
 # put tool in toolbox
 cherrypy.tools.stats = StatsTool( sort=cfg['sort_on'], num_results=cfg['num_results'] )
+
+stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
+                          'exhibitor_branch': cfg['exhibitor_branch'],
+                          'product': cfg['product'],
+                          'version': cfg['version'],
+                          'stats': []}
+}
 
 
 def decorate_functions_and_handlers():
