@@ -11,6 +11,7 @@ stats server where the data will be analysed and displayed.
 import cherrypy
 from cherrypy.process.plugins import Monitor
 import cProfile
+import pstats
 import inspect
 import json
 import copy
@@ -89,9 +90,9 @@ class StatsTool(cherrypy.Tool):
         global stats_buffer
         req_id = id(cherrypy.serving.request)
         try:
-            stats_buffer[req_id]['profile'].snapshot_stats()
+            stats_buffer[req_id]['profile'] = pstats.Stats(stats_buffer[req_id]['profile'])
             # add total time taken
-            stats_buffer[req_id]['total_time'] = stats_buffer[req_id]['profile'].totall_tt
+            stats_buffer[req_id]['total_time'] = stats_buffer[req_id]['profile'].total_tt
             # sort the stats in decending order of the sorting stat, then trim
             # to num_results, there will be a lot of negligable stats we can ignore
             stats = sorted(stats_buffer[req_id]['profile'].stats.items(),
@@ -157,7 +158,7 @@ class StatWrapper(object):
         Pushes the stats collected to the buffer.
         """
         global stats_buffer
-        self._profile.snapshot_stats()
+        self._profile = pstats.Stats(self._profile)
         stats = sorted(self._profile.stats.items(), key=lambda x: get_stat(x,self._sort), reverse=True)[:self._num_results]
         # Take the id of the current time as a unique identifier.
         # This is inkeeping with the request ids seen on the stat records seen on the tool.
@@ -167,7 +168,7 @@ class StatWrapper(object):
                             'class': self._class_name,
                             'module': self._module_name,
                             'datetime': time.time(),
-                            'total_time': self._profile.totall_tt,
+                            'total_time': self._profile.total_tt,
                             'pstats': stats}
         # reset the profiler for new function calls.
         ################### TODO TEST IF MULTIPLE FUNCTION CALLS OVERLAP. 
@@ -276,7 +277,7 @@ def flush_stats():
     length = len(stats_to_push)
     if length != 0:
         stats_package = copy.deepcopy(stats_package_template)
-        stats_package[stats] = stats_to_push
+        stats_package['stats'] = stats_to_push
         push_stats(stats_package)
         stat_logger.info('Flushed %d stats from the buffer' % length)
     else:
@@ -331,7 +332,7 @@ stat_logger.addHandler(stats_log_handler)
 # read config
 cfg = None
 try:
-    with open('client\\stats_profiler_config.json') as cfg_file:
+    with open('stats\\stats_profiler_config.json') as cfg_file:
         cfg = json.load(cfg_file)
 except Exception:
     stat_logger.error('Failed to load stats profiling configuration. Check config exists.')
