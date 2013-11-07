@@ -11,9 +11,7 @@ class Root(object):
 
     @cherrypy.tools.json_in()
     def POST(self):
-        # Will need to send a unique sender name and ip address in future
-        # For now just using a test sender
-        db.push_stats_buffer(cherrypy.serving.request.json, "some_unique_name", "0.0.0.0")
+        db.push_stats_buffer(cherrypy.serving.request.json, cherrypy.request.remote.ip)
         return 'Hello, World.'
 
 def start_cherrypy():
