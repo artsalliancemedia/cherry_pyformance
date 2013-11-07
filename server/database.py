@@ -9,14 +9,20 @@ from sqlalchemy.orm import sessionmaker, relationship
 class Sender(Base):
     __tablename__ = 'senders'
     id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
-    ip_address = Column(String)
+    ip_address = Column(String, unique=True)
+    exhibitor_chain = Column(String)
+    exhibitor_branch = Column(String)
+    product = Column(String)
+    version = Column(String)
     
     call_stacks = relationship("CallStack", cascade="all", backref='senders')
   
-    def __init__(self, name, ip_address):
-        self.name = name
+    def __init__(self, ip_address, stats_buffer):
         self.ip_address = ip_address
+        self.exhibitor_chain = stats_buffer['exhibitor_chain']
+        self.exhibitor_branch = stats_buffer['exhibitor_branch']
+        self.product = stats_buffer['product']
+        self.version = stats_buffer['version']
       
     def __repr__(self):
         return ""
@@ -44,6 +50,7 @@ class CallStack(Base):
     method_call_id = Column(None, ForeignKey('method_calls.id'))
     sender_id = Column(None, ForeignKey('senders.id'))
     datetime = Column(Float)
+    total_time = Column(Float)
     
     call_stack_items = relationship("CallStackItem", cascade="all", backref='call_stacks')
   
@@ -51,6 +58,7 @@ class CallStack(Base):
         self.method_call_id = method_call_id
         self.sender_id = sender_id
         self.datetime = profile_stats['datetime']
+        self.total_time = profile_stats['total_time']
       
     def __repr__(self):
         return ""
@@ -103,12 +111,12 @@ def setup_profile_database():
     global session
     session = Session()
         
-def get_sender_id(sender_name, ip_address):
-    sender_query = session.query(Sender).filter_by(name=sender_name)
+def get_sender_id(ip, stats_buffer):
+    sender_query = session.query(Sender).filter_by(ip_address=ip)
     sender = None
     if sender_query.count() == 0:
         # Add new sender if does not exist
-        sender = Sender(sender_name, ip_address)
+        sender = Sender(ip, stats_buffer)
         session.add(sender)
         session.commit()
     else:
@@ -129,10 +137,10 @@ def get_method_call_id(profile_stats):
         method_call = method_call_query.first()
     return method_call.id
 
-def push_stats_buffer(stats_buffer, sender_name, ip_address):
-    sender_id = get_sender_id(sender_name, ip_address)
+def push_stats_buffer(stats_buffer, ip_address):
+    sender_id = get_sender_id(ip_address, stats_buffer)
     
-    for profile_stats in stats_buffer:
+    for profile_stats in stats_buffer['stats']:
         method_call_id = get_method_call_id(profile_stats)
         call_stack = CallStack(method_call_id, sender_id, profile_stats)
         session.add(call_stack)
@@ -140,4 +148,5 @@ def push_stats_buffer(stats_buffer, sender_name, ip_address):
         pstats = profile_stats['pstats']
         for stats in pstats:
             session.add(CallStackItem(call_stack.id, stats))
+    
     session.commit()
