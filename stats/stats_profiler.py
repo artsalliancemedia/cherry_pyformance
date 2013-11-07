@@ -368,8 +368,12 @@ def decorate_functions_and_handlers():
         for root in cfg['handlers'].keys():
             for handler in cfg['handlers'][root]:
                 cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':True}})
+        for root in cfg['ignored_handlers'].keys():
+            for handler in cfg['ignored_handlers'][root]:
+                print handler
+                cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':False}})
     except KeyError:
-        stat_logger.warning('Stats configuation incorrect. Could not obtain handlers to wrap.')
+        stat_logger.warning('Stats configuration incorrect. Could not obtain handlers to wrap.')
     except Exception as e:
         stat_logger.warning('Failed to wrap cherrypy handler for stats profiling.')
         print e
