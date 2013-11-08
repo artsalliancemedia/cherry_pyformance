@@ -245,6 +245,8 @@ def decorate_function(path):
 
 #=====================================================#
 
+stats_package_template = None
+
 def flush_stats():
     """
     If there are items on the stats_buffer, their stats tuples are
@@ -253,6 +255,7 @@ def flush_stats():
     """
     stat_logger.info('Flushing stats buffer.')
     global stats_buffer
+    global stats_package_template
     # initialise a package of stats to push, not all stats may be ready to be pushed
     stats_to_push = []
     for _id in stats_buffer.keys():
@@ -285,27 +288,30 @@ def flush_stats():
  
 #=====================================================#
 
+push_stats = None
+cfg = None
+
 def create_output_fn():
     """
     Creates an output function for dealing with the stats_buffer on flush.
     Uses the configuration to determine the method (write or POST) and
     location to push the data to and constructs a function based on this.
     """
+    global push_stats
     try:
         if cfg['output']['type'] == 'disk':
             filename = str(cfg['output']['location'])
             stat_logger.info('Writing collected stats to %s' % filename)
-            def push_stats(stats, filename=filename):
+            def push_stats_fn(stats, filename=filename):
                 filename = os.path.join(filename, 'tms_stats_'+str(int(time.time()))+'.json')
                 """A function to write the json to disk"""
                 with open(filename,'w') as file:
                     json.dump(stats, file, indent=4, separators=(',', ': '))
-            return push_stats
         elif cfg['output']['type'] == 'server':
             address = str(cfg['output']['location'])
             address = address if address.startswith('http://') else 'http://'+address
             stat_logger.info('Sending collected stats to %s' % address)
-            def push_stats(stats, address=address):
+            def push_stats_fn(stats, address=address):
                 output = json.dumps(stats, indent=4, separators=(',', ': '))
                 """A function to push json to server"""
                 urlopen(Request(address, output, headers={'Content-Type':'application/json'}))############# TODO MAKE THIS HTTPS
@@ -316,10 +322,9 @@ def create_output_fn():
     except KeyError:
         # could not ascertain output method, do nothing with stats
         stat_logger.info('Could not ascertain output method, defaulting to "pass". Check the profile_stats_config.json is valid.')
-        def push_stats(stats):
+        def push_stats_fn(stats):
             pass
-    return push_stats
-
+    push_stats = push_stats_fn
 
 
 import logging
@@ -328,28 +333,6 @@ stats_log_handler = logging.Handler(level='INFO')
 log_format = '%(asctime)s::%(levelname)s::[%(module)s:%(lineno)d]::[%(threadName)s] %(message)s'
 stats_log_handler.setFormatter(log_format)
 stat_logger.addHandler(stats_log_handler)
-
-# read config
-cfg = None
-try:
-    with open('stats\\stats_profiler_config.json') as cfg_file:
-        cfg = json.load(cfg_file)
-except Exception:
-    stat_logger.error('Failed to load stats profiling configuration. Check config exists.')
-    sys.exit(1)
-
-# initialise what to do with stats on flush
-push_stats = create_output_fn()
-
-# put tool in toolbox
-cherrypy.tools.stats = StatsTool( sort=cfg['sort_on'], num_results=cfg['num_results'] )
-
-stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
-                          'exhibitor_branch': cfg['exhibitor_branch'],
-                          'product': cfg['product'],
-                          'version': cfg['version'],
-                          'stats': []}
-
 
 def decorate_functions_and_handlers():
     """
@@ -370,7 +353,6 @@ def decorate_functions_and_handlers():
                 cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':True}})
         for root in cfg['ignored_handlers'].keys():
             for handler in cfg['ignored_handlers'][root]:
-                print handler
                 cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':False}})
     except KeyError:
         stat_logger.warning('Stats configuration incorrect. Could not obtain handlers to wrap.')
@@ -378,16 +360,44 @@ def decorate_functions_and_handlers():
         stat_logger.warning('Failed to wrap cherrypy handler for stats profiling.')
         print e
 
-    # deorate all functions supplied in config
+    # decorate all functions supplied in config
     stat_logger.info('Wrapping functions for stats gathering')
     for function in cfg['functions']:
         decorate_function(function)
 
-# subscibe the function which decorates the handlers
-cherrypy.engine.subscribe('start', decorate_functions_and_handlers, 0)
-# create a monitor to periodically flush the stats_buffer at the flush_interval
-Monitor(cherrypy.engine, flush_stats,
-    frequency=cfg['flush_interval'],
-    name='Flush profile stats buffer').subscribe()
-# when the engine stops, flush any stats.
-cherrypy.engine.subscribe('stop', flush_stats)
+from shutil import copyfile
+def initialise(config_file_path):
+    global cfg
+    global stats_package_template
+    try:
+        with open(config_file_path) as cfg_file:
+            cfg = json.load(cfg_file)
+    except:
+        try:
+            stat_logger.info('Failed to load stats profiling configuration. Creating from default.')
+            default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "default_config.json")
+            copyfile(default_config_file, config_file_path)
+            with open(config_file_path) as cfg_file:
+                cfg = json.load(cfg_file)
+        except:
+            stat_logger.error('Failed to create config file from default')
+            sys.exit(1)
+            
+    # put tool in toolbox
+    cherrypy.tools.stats = StatsTool( sort=cfg['sort_on'], num_results=cfg['num_results'] )
+    
+    stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
+                              'exhibitor_branch': cfg['exhibitor_branch'],
+                              'product': cfg['product'],
+                              'version': cfg['version'],
+                              'stats': []}
+
+    # subscribe the function which decorates the handlers
+    cherrypy.engine.subscribe('start', create_output_fn, 0)
+    cherrypy.engine.subscribe('start', decorate_functions_and_handlers, 1)
+    # create a monitor to periodically flush the stats_buffer at the flush_interval
+    Monitor(cherrypy.engine, flush_stats,
+        frequency=cfg['flush_interval'],
+        name='Flush profile stats buffer').subscribe()
+    # when the engine stops, flush any stats.
+    cherrypy.engine.subscribe('stop', flush_stats)

@@ -1,8 +1,8 @@
 {
-    "exhibitor_chain":"cineworld",
-    "exhibitor_branch":"bexleyheath",
-    "product":"screenwriter",
-    "version":"2.3.1",
+    "exhibitor_chain":"default_chain",
+    "exhibitor_branch":"default_branch",
+    "product":"default_production",
+    "version":"0.0.1",
 
     "output":{
                 "type":"server",
