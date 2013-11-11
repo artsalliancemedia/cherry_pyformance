@@ -173,6 +173,6 @@ def push_fn_stats(stats_packet, ip_address):
 def push_sql_stats(stats_packet, ip_address):
     sender_id = get_sender_id(ip_address, stats_packet)
     for sql_stat in stats_packet['stats']:
-        sql_statement = SQLStatement(sender_id, profile_stats)
+        sql_statement = SQLStatement(sender_id, sql_stat)
         session.add(sql_statement)
     session.commit()
