@@ -106,23 +106,26 @@ class SQLStatement(Base):
     def __repr__(self):
         return ""
 
-def create_db_and_connect():
-    database = sqlalchemy.create_engine('postgresql://postgres:my_password@localhost/profile_stats')
+def create_db_and_connect(postgres_string):
+    database = sqlalchemy.create_engine(postgres_string + '/profile_stats')
     database.connect()
     return database
 
 session = None
 
-def setup_profile_database():
+def setup_profile_database(username, password, host, port):
+    postgres_string = 'postgresql://' + username + ':' + password + '@' + host
+    if port != None:
+        postgres_string += ':' + port
     try:
-        db = create_db_and_connect()
+        db = create_db_and_connect(postgres_string)
     except:
-        postgres = sqlalchemy.create_engine("postgresql://postgres:my_password@localhost/postgres")
+        postgres = sqlalchemy.create_engine(postgres_string + '/postgres')
         conn = postgres.connect()
-        conn.execute("commit")
-        conn.execute("create database profile_stats")
+        conn.execute('commit')
+        conn.execute('create database profile_stats')
         conn.close()
-        db = create_db_and_connect()
+        db = create_db_and_connect(postgres_string)
         
     Base.metadata.create_all(db)
     Session = sessionmaker(bind=db)
