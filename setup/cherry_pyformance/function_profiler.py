@@ -195,7 +195,6 @@ def decorate_function(path):
         setattr(parent, attribute, StatWrapper(outer_func, inner_func=inner_func, sort='time', num_results=10))
     except Exception as e:
         stat_logger.warning('Failed to wrap function %s for stats profiling. Check configuration and importation method. The function will not be profiled.' % path_string)
-        print e
 
 #=====================================================#
 
@@ -222,8 +221,6 @@ def initialise(config, logger, push_stats_fn):
     cfg = config
     stat_logger = logger
     push_stats = push_stats_fn
-    
-    print "functions"
     
     # subscribe the function which decorates the handlers
     cherrypy.engine.subscribe('start', decorate_functions, 0)

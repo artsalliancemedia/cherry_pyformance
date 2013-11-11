@@ -176,7 +176,6 @@ def decorate_handlers():
         stat_logger.warning('Stats configuration incorrect. Could not obtain handlers to wrap.')
     except Exception as e:
         stat_logger.warning('Failed to wrap cherrypy handler for stats profiling.')
-        print e
         
 def initialise(config, logger, push_stats_fn):
     global cfg
@@ -185,9 +184,7 @@ def initialise(config, logger, push_stats_fn):
     cfg = config
     stat_logger = logger
     push_stats = push_stats_fn
-    
-    print "handlers"
-    
+
     # put tool in toolbox
     cherrypy.tools.stats = StatsTool( sort=cfg['sort_on'], num_results=cfg['num_results'] )
 
