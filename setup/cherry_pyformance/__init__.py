@@ -17,10 +17,10 @@ handler_stats_buffer = {}
 sql_stats_buffer = {}
 
 
-stat_logger = None
-cfg = None
-push_stats = None
-stats_package_template = None
+# stat_logger = None
+# cfg = None
+# push_stats = None
+# stats_package_template = None
 
 def get_stat(item, stat):
     """
