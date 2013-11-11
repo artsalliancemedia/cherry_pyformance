@@ -10,8 +10,6 @@ def print_arg_error():
     print 'Arguments incorrect!'
     print_help_string()
 
-class Root(object):
-
 class Function_Stat_Handler(object):
     exposed = True
 
