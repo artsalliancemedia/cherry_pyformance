@@ -5,10 +5,10 @@
     "version":"0.0.1",
 
     "output":{
-                "type":"server",
-                "location":"localhost:8888"
+                "type":"disk",
+                "location":"D:\\"
              },
-    "flush_interval":120,
+    "flush_interval":20,
     "sort_on":"time",
     "num_results":20,
 
