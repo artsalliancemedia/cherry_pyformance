@@ -1,6 +1,8 @@
 import cherrypy
+from cherrypy._cpcompat import ntou
 import sys
 import database as db
+import zlib
 
 def print_help_string():
     print 'Use as follows:\n\n' \
@@ -10,50 +12,62 @@ def print_arg_error():
     print 'Arguments incorrect!'
     print_help_string()
 
-class Function_Stat_Handler(object):
+# add gzip to allowed content types for decompressing JSON if compressed.
+allowed_content_types = [ntou('application/json'),
+                         ntou('text/javascript'),
+                         ntou('application/gzip')]
+
+class StatHandler(object):
+    '''
+    A base stat handler for incoming stats. By initialising with a given push function
+    the various handlers can be created for different stat types.
+    '''
     exposed = True
+
+    def __init__(self, push_fn):
+        self.push_fn = push_fn
 
     def GET(self):
         return 'Hello, World.'
 
-    @cherrypy.tools.json_in()
+    @cherrypy.tools.json_in(content_type=allowed_content_types, processor=decompress_json)
     def POST(self):
-        db.push_fn_stats(cherrypy.serving.request.json, cherrypy.request.remote.ip)
+        self.push_fn(cherrypy.serving.request.json, cherrypy.request.remote.ip)
         return 'Hello, World.'
 
 
-class Handler_Stat_Handler(object):
-    exposed = True
+def decompress_json(entity):
+    """Try decompressing json before parsing, incase compressed
+    content was sent to the server"""
 
-    def GET(self):
-        return 'Hello, World.'
-
-    @cherrypy.tools.json_in()
-    def POST(self):
-        db.push_fn_stats(cherrypy.serving.request.json, cherrypy.request.remote.ip)
-        return 'Hello, World.'
-
-
-class SQL_Stat_Handler(object):
-    exposed = True
-
-    def GET(self):
-        return 'Hello, World.'
-
-    @cherrypy.tools.json_in()
-    def POST(self):
-        db.push_sql_stats(cherrypy.serving.request.json, cherrypy.request.remote.ip)
-        return 'Hello, World.'
-
+    if not entity.headers.get(ntou("Content-Length"), ntou("")):
+        raise cherrypy.HTTPError(411)
+    
+    body = entity.fp.read()
+    # decompress if gzip content type
+    if entity.headers.get(ntou("Content-Type")) == ntou("application/gzip"):
+        try:
+            body = zlib.decompress(body)
+        except:
+            raise cherrypy.HTTPError(500, 'Invalid gzip data')
+    try:
+        cherrypy.serving.request.json = json_decode(body.decode('utf-8'))
+    except ValueError:
+        raise cherrypy.HTTPError(400, 'Invalid JSON document')
 
 
 def start_cherrypy():
     cherrypy.config.update({'server.socket_port': 8888})
     cherrypy.log('Mounting the handlers')
     method_dispatch_cfg = {'/': {'request.dispatch': cherrypy.dispatch.MethodDispatcher()} }
-    cherrypy.tree.mount( Function_Stat_Handler(), '/function', method_dispatch_cfg )
-    cherrypy.tree.mount( Handler_Stat_Handler(),  '/handler',  method_dispatch_cfg )
-    cherrypy.tree.mount( SQL_Stat_Handler(),      '/database', method_dispatch_cfg )
+
+    function_stat_handler = StatHandler(push_fn_stats)
+    handler_stat_handler = StatHandler(push_fn_stats)
+    sql_stat_handler = StatHandler(push_sql_stats)
+
+    cherrypy.tree.mount( function_stat_handler(), '/function', method_dispatch_cfg )
+    cherrypy.tree.mount( handler_stat_handler(),  '/handler',  method_dispatch_cfg )
+    cherrypy.tree.mount( sql_stat_handler(),      '/database', method_dispatch_cfg )
     cherrypy.log('Starting CherryPy')
     try:
         cherrypy.engine.start()
