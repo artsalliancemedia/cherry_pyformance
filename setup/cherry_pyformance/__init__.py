@@ -3,6 +3,7 @@ import os.path
 import sys
 import time
 import logging
+import copy
 from urllib2 import urlopen, Request
 from shutil import copyfile
 import cherrypy
@@ -14,15 +15,11 @@ from cherrypy.process.plugins import Monitor
 function_stats_buffer = {}
 sql_stats_buffer = {}
 
-stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
-                          'exhibitor_branch': cfg['exhibitor_branch'],
-                          'product': cfg['product'],
-                          'version': cfg['version'],
-                          'stats': []}
 
 stat_logger = None
 cfg = None
 push_stats = None
+stats_package_template = None
 
 def get_stat(item, stat):
     """
@@ -44,23 +41,23 @@ def create_output_fn():
     Uses the configuration to determine the method (write or POST) and
     location to push the data to and constructs a function based on this.
     """
-    global push_stats
     try:
         if cfg['output']['type'] == 'disk':
             filename = str(cfg['output']['location'])
             stat_logger.info('Writing collected stats to %s' % filename)
             def push_stats_fn(stats, filename=filename):
-                filename = os.path.join(filename, 'tms_stats_'+str(int(time.time()))+'.json')
                 """A function to write the json to disk"""
-                with open(filename,'w') as json_file:
+                filename = os.path.join(filename, 'tms_stats_'+str(int(time.time()))+'.json')
+                with open(filename,'a') as json_file:
+                    json_file.write('/n')
                     json.dump(stats, json_file, indent=4, separators=(',', ': '))
         elif cfg['output']['type'] == 'server':
             address = str(cfg['output']['location'])
             address = address if address.startswith('http://') else 'http://'+address
             stat_logger.info('Sending collected stats to %s' % address)
             def push_stats_fn(stats, address=address):
-                output = json.dumps(stats, indent=4, separators=(',', ': '))
                 """A function to push json to server"""
+                output = json.dumps(stats, indent=4, separators=(',', ': '))
                 urlopen(Request(address, output, headers={'Content-Type':'application/json'}))############# TODO MAKE THIS HTTPS
         else:
             # if no valid method found, raise a KeyError to be caught
@@ -71,7 +68,7 @@ def create_output_fn():
         stat_logger.info('Could not ascertain output method, defaulting to "pass". Check the profile_stats_config.json is valid.')
         def push_stats_fn(stats):
             pass
-    push_stats = push_stats_fn
+    return push_stats_fn
 
 
 def load_config(config_file_path):
@@ -94,8 +91,6 @@ def load_config(config_file_path):
 def setup_logging():
     '''
     Sets up the stats logger.
-    TODO fix! it does not output.
-    Consider using cherrypy logging.
     '''
     stat_logger = logging.getLogger('stats')
     stats_log_handler = logging.Handler(level='INFO')
@@ -167,7 +162,7 @@ def flush_sql_stats():
 def flush_stats():
     if cfg['handlers'] or cfg['functions']:
         flush_function_stats()
-    if cfg['profile_sql']:
+    if cfg['database']:
         flush_sql_stats()
 
 
@@ -181,6 +176,12 @@ def initialise(config_file_path):
     global push_stats
     push_stats = create_output_fn()
     
+    global stats_package_template
+    stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
+                              'exhibitor_branch': cfg['exhibitor_branch'],
+                              'product': cfg['product'],
+                              'version': cfg['version'],
+                              'stats': []}
 
     if cfg['functions']:
         from function_profiler import decorate_functions

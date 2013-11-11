@@ -34,8 +34,8 @@ from cherry_pyformance import cfg, stat_logger, sql_stats_buffer
 #         start_time = time.time()
 #         output = self._cursor.execute(sql, *args, **kwargs)
 #         end_time = time.time()
-#         global stats_buffer
-#         stats_buffer.append({'sql':sql,
+#         global sql_stats_buffer
+#         sql_stats_buffer.append({'sql':sql,
 #                              'datetime':start_time,
 #                              'duration':end_time-start_time
 #                             })
@@ -45,8 +45,8 @@ from cherry_pyformance import cfg, stat_logger, sql_stats_buffer
 #         start_time = time.time()
 #         output = self._cursor.executemany(sql, *args, **kwargs)
 #         end_time = time.time()
-#         global stats_buffer
-#         stats_buffer.append({'sql':sql,
+#         global sql_stats_buffer
+#         sql_stats_buffer.append({'sql':sql,
 #                              'datetime':start_time,
 #                              'duration':end_time-start_time
 #                             })
@@ -152,12 +152,13 @@ def profile_sql(action, sql, *args, **kwargs):
     output = action(sql, *args, **kwargs)
     end_time = time.time()
     time_diff = end_time-start_time
-    if time_diff < 0:
-        global stats_buffer
-        stats_buffer.append({'sql':sql.replace('\n','\\n'),
-                             'datetime':start_time,
-                             'duration':time_diff
-                            })
+    if time_diff > 0:
+        _id = id(sql+str(end_time))
+        global sql_stats_buffer
+        sql_stats_buffer[_id] = {'sql':sql.replace('\n','\\n'),
+                              'datetime':start_time,
+                              'duration':time_diff
+                             }
     return output
 
 def decorate_connections():

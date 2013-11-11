@@ -55,13 +55,13 @@ class StatWrapper(object):
         """
         Pushes the stats collected to the buffer.
         """
-        global stats_buffer
+        global function_stats_buffer
         self._profile = pstats.Stats(self._profile)
         stats = sorted(self._profile.stats.items(), key=lambda x: get_stat(x,self._sort), reverse=True)[:self._num_results]
         # Take the id of the current time as a unique identifier.
         # This is inkeeping with the request ids seen on the stat records seen on the tool.
         _id = id(time.time())
-        stats_buffer[_id] = {'id': _id,
+        function_stats_buffer[_id] = {'id': _id,
                             'function': self._name,
                             'class': self._class_name,
                             'module': self._module_name,
