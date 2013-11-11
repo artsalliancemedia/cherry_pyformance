@@ -9,13 +9,10 @@ from shutil import copyfile
 import cherrypy
 from cherrypy.process.plugins import Monitor
 
-
-
 # initialise 3 buffers
 function_stats_buffer = {}
 handler_stats_buffer = {}
 sql_stats_buffer = {}
-
 
 # stat_logger = None
 # cfg = None

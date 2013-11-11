@@ -16,6 +16,7 @@ class Sender(Base):
     version = Column(String)
     
     call_stacks = relationship("CallStack", cascade="all", backref='senders')
+    sql_statements = relationship("SQLStatement", cascade="all", backref='senders')
   
     def __init__(self, ip_address, stats_buffer):
         self.ip_address = ip_address
@@ -88,6 +89,23 @@ class CallStackItem(Base):
     def __repr__(self):
         return ""
 
+class SQLStatement(Base):
+    __tablename__ = 'sql_statements'
+    id = Column(Integer, primary_key=True)
+    sender_id = Column(None, ForeignKey('senders.id'))
+    sql_string = Column(String)
+    datetime = Column(Float)
+    duration = Column(Float)
+  
+    def __init__(self, sender_id, profile_stats):
+        self.sender_id = sender_id
+        self.sql_string = profile_stats['sql']
+        self.datetime = profile_stats['datetime']
+        self.duration = profile_stats['duration']
+      
+    def __repr__(self):
+        return ""
+
 def create_db_and_connect():
     database = sqlalchemy.create_engine('postgresql://postgres:my_password@localhost/profile_stats')
     database.connect()
@@ -140,13 +158,18 @@ def get_method_call_id(profile_stats):
 def push_stats_buffer(stats_buffer, ip_address):
     sender_id = get_sender_id(ip_address, stats_buffer)
     
-    for profile_stats in stats_buffer['stats']:
-        method_call_id = get_method_call_id(profile_stats)
-        call_stack = CallStack(method_call_id, sender_id, profile_stats)
-        session.add(call_stack)
-        session.commit()
-        pstats = profile_stats['pstats']
-        for stats in pstats:
-            session.add(CallStackItem(call_stack.id, stats))
+    if stats_buffer['type'] == 'handler' or stats_buffer['type'] == 'function':
+        for profile_stats in stats_buffer['stats']:
+            method_call_id = get_method_call_id(profile_stats)
+            call_stack = CallStack(method_call_id, sender_id, profile_stats)
+            session.add(call_stack)
+            session.commit()
+            pstats = profile_stats['pstats']
+            for stats in pstats:
+                session.add(CallStackItem(call_stack.id, stats))
+    elif stats_buffer['type'] == 'database':
+        for profile_stats in stats_buffer['stats']:
+            sql_statement = SQLStatement(sender_id, profile_stats)
+            session.add(sql_statement)
     
     session.commit()

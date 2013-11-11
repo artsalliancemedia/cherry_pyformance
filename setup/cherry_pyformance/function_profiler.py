@@ -11,10 +11,8 @@ stats server where the data will be analysed and displayed.
 import cProfile
 import pstats
 import inspect
-import copy
 import time
 import sys
-import logging
 
 from cherry_pyformance import cfg, get_stat, stat_logger, function_stats_buffer
 
@@ -141,7 +139,6 @@ def decorate_function(path):
         setattr(parent, attribute, StatWrapper(outer_func, inner_func=inner_func, sort='time', num_results=10))
     except Exception as e:
         stat_logger.warning('Failed to wrap function %s for stats profiling. Check configuration and importation method. The function will not be profiled.' % path_string)
-        print e
 
 #=====================================================#
 
@@ -160,4 +157,3 @@ def decorate_functions():
     stat_logger.info('Wrapping functions for stats gathering')
     for function in cfg['functions']:
         decorate_function(function)
-        
