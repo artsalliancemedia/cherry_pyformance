@@ -1,5 +1,3 @@
-import cherrypy
-import sys
 import time
 
 from cherry_pyformance import cfg, stat_logger, sql_stats_buffer

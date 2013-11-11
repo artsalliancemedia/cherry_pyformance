@@ -9,7 +9,6 @@ flushed out to json on the filesystem or pushed to the
 stats server where the data will be analysed and displayed.
 """
 import cherrypy
-from cherrypy.process.plugins import Monitor
 import cProfile
 import pstats
 import inspect

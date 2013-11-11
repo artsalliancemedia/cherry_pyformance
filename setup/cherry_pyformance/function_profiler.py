@@ -11,10 +11,8 @@ stats server where the data will be analysed and displayed.
 import cProfile
 import pstats
 import inspect
-import copy
 import time
 import sys
-import logging
 
 from cherry_pyformance import cfg, get_stat, stat_logger, function_stats_buffer
 
