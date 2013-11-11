@@ -8,26 +8,15 @@ to json and put on a buffer. This is periodically
 flushed out to json on the filesystem or pushed to the 
 stats server where the data will be analysed and displayed.
 """
-import cherrypy
-from cherrypy.process.plugins import Monitor
 import cProfile
 import pstats
 import inspect
 import copy
 import time
 import sys
+import logging
 
-from cherry_pyformance import get_stat, push_stats
-
-stat_logger = None
-cfg = None
-
-#=====================================================#
-
-# A global stats buffer, all profile data is pushed to
-# this and periodically flushed by via a Monitor hooked
-# onto the cherrypy bus
-stats_buffer = {}
+from cherry_pyformance import cfg, get_stat, stat_logger, function_stats_buffer
 
 #=====================================================#
 
@@ -66,13 +55,13 @@ class StatWrapper(object):
         """
         Pushes the stats collected to the buffer.
         """
-        global stats_buffer
+        global function_stats_buffer
         self._profile = pstats.Stats(self._profile)
         stats = sorted(self._profile.stats.items(), key=lambda x: get_stat(x,self._sort), reverse=True)[:self._num_results]
         # Take the id of the current time as a unique identifier.
         # This is inkeeping with the request ids seen on the stat records seen on the tool.
         _id = id(time.time())
-        stats_buffer[_id] = {'id': _id,
+        function_stats_buffer[_id] = {'id': _id,
                             'function': self._name,
                             'class': self._class_name,
                             'module': self._module_name,
@@ -88,49 +77,6 @@ class StatWrapper(object):
         ###### on the buffer before the stats are recorded.
         self._profile = cProfile.Profile()
 
-def flush_stats():
-    """
-    If there are items on the stats_buffer, their stats tuples are
-    parsed to a dictionary and the records are pushed to whichever output
-    is configured in the config file. (Currently json dump or push to server)
-    """
-    stat_logger.info('Flushing stats buffer.')
-    global stats_buffer
-    # initialise a package of stats to push, not all stats may be ready to be pushed
-    stats_to_push = []
-    for _id in stats_buffer.keys():
-        # test if there is a pstats key
-        if 'pstats' in stats_buffer[_id]:
-            pstats_buffer = stats_buffer[_id]['pstats']
-            parsed_stats = []
-            # convert all stats tuples to dictionaries
-            for stat in pstats_buffer:
-                parsed_stats.append({'function':{'module':stat[0][0],
-                                                 'line':stat[0][1],
-                                                 'name':stat[0][2]},
-                                     'native_calls':stat[1][0],
-                                     'total_calls':stat[1][1],
-                                     'time':stat[1][2],
-                                     'cumulative':stat[1][3] })
-            stats_buffer[_id]['pstats'] = parsed_stats
-            # put a deep copy on the stats_to_push list
-            stats_to_push.append(copy.deepcopy(stats_buffer[_id]))
-            # remove parsed stats, keeping transient stats
-            del stats_buffer[_id]
-    length = len(stats_to_push)
-    if length != 0:
-        stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
-                                  'exhibitor_branch': cfg['exhibitor_branch'],
-                                  'product': cfg['product'],
-                                  'version': cfg['version'],
-                                  'stats': []}
-        stats_package = copy.deepcopy(stats_package_template)
-        stats_package['stats'] = stats_to_push
-        push_stats(stats_package)
-        stat_logger.info('Flushed %d stats from the buffer' % length)
-    else:
-        stat_logger.info('No stats on the buffer to flush.')
- 
 #=====================================================#
 
 def decorate_function(path):
@@ -215,23 +161,3 @@ def decorate_functions():
     for function in cfg['functions']:
         decorate_function(function)
         
-def initialise(config, logger, push_stats_fn):
-    global cfg
-    global stat_logger
-    global push_stats
-    cfg = config
-    stat_logger = logger
-    push_stats = push_stats_fn
-    
-    print "functions"
-    
-    # subscribe the function which decorates the handlers
-    cherrypy.engine.subscribe('start', decorate_functions, 0)
-    
-    # create a monitor to periodically flush the stats_buffer at the flush_interval
-    Monitor(cherrypy.engine, flush_stats,
-        frequency=cfg['flush_interval'],
-        name='Flush profile stats buffer').subscribe()
-        
-    # when the engine stops, flush any stats.
-    cherrypy.engine.subscribe('stop', flush_stats)
