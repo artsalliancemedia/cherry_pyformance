@@ -20,5 +20,6 @@
                },
     "ignored_handlers":{
                         "/core":["/device_infos"]
-                       }
+                       },
+    "database":"sqlite"
 }

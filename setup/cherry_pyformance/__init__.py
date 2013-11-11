@@ -5,6 +5,24 @@ import time
 import logging
 from urllib2 import urlopen, Request
 from shutil import copyfile
+import cherrypy
+from cherrypy.process.plugins import Monitor
+
+
+
+# initialise 3 buffers
+function_stats_buffer = {}
+sql_stats_buffer = {}
+
+stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
+                          'exhibitor_branch': cfg['exhibitor_branch'],
+                          'product': cfg['product'],
+                          'version': cfg['version'],
+                          'stats': []}
+
+stat_logger = None
+cfg = None
+push_stats = None
 
 def get_stat(item, stat):
     """
@@ -19,9 +37,6 @@ def get_stat(item, stat):
     else:
         return 0
 
-stat_logger = None
-cfg = None
-push_stats = None
 
 def create_output_fn():
     """
@@ -58,22 +73,12 @@ def create_output_fn():
             pass
     push_stats = push_stats_fn
 
-from handler_profiler import initialise as handler_profiler_init
-from function_profiler import initialise as function_profiler_init
 
-def initialise(config_file_path):
-    global cfg
-    global stat_logger
-
-    stat_logger = logging.getLogger('stats')
-    stats_log_handler = logging.Handler(level='INFO')
-    log_format = '%(asctime)s::%(levelname)s::[%(module)s:%(lineno)d]::[%(threadName)s] %(message)s'
-    stats_log_handler.setFormatter(log_format)
-    stat_logger.addHandler(stats_log_handler)
-    
+def load_config(config_file_path):
     try:
         with open(config_file_path) as cfg_file:
             cfg = json.load(cfg_file)
+            return cfg
     except:
         try:
             stat_logger.info('Failed to load stats profiling configuration. Creating from default.')
@@ -81,14 +86,117 @@ def initialise(config_file_path):
             copyfile(default_config_file, config_file_path)
             with open(config_file_path) as cfg_file:
                 cfg = json.load(cfg_file)
+            return cfg
         except:
             stat_logger.error('Failed to create config file from default')
             sys.exit(1)
+
+def setup_logging():
+    '''
+    Sets up the stats logger.
+    TODO fix! it does not output.
+    Consider using cherrypy logging.
+    '''
+    stat_logger = logging.getLogger('stats')
+    stats_log_handler = logging.Handler(level='INFO')
+    log_format = '%(asctime)s::%(levelname)s::[%(module)s:%(lineno)d]::[%(threadName)s] %(message)s'
+    stats_log_handler.setFormatter(log_format)
+    stat_logger.addHandler(stats_log_handler)
+    return stat_logger
+
+
+def flush_function_stats():
+    """
+    If there are items on the function_stats_buffer, their stats tuples are
+    parsed to a dictionary and the records are pushed to whichever output
+    is configured in the config file. (Currently json dump or push to server)
+    """
+    global function_stats_buffer
+    stat_logger.info('Flushing function stats buffer.')
+    # initialise a package of stats to push, not all stats may be ready to be pushed
+    stats_to_push = []
+    for _id in function_stats_buffer.keys():
+        # test if there is a pstats key
+        if 'pstats' in function_stats_buffer[_id]:
+            pstats_buffer = function_stats_buffer[_id]['pstats']
+            parsed_stats = []
+            # convert all stats tuples to dictionaries
+            for stat in pstats_buffer:
+                parsed_stats.append({'function':{'module':stat[0][0],
+                                                 'line':stat[0][1],
+                                                 'name':stat[0][2]},
+                                     'native_calls':stat[1][0],
+                                     'total_calls':stat[1][1],
+                                     'time':stat[1][2],
+                                     'cumulative':stat[1][3] })
+            function_stats_buffer[_id]['pstats'] = parsed_stats
+            # put a deep copy on the stats_to_push list
+            stats_to_push.append(copy.deepcopy(function_stats_buffer[_id]))
+            # remove parsed stats, keeping transient stats
+            del function_stats_buffer[_id]
+    length = len(stats_to_push)
+    if length != 0:
+        stats_package = copy.deepcopy(stats_package_template)
+        stats_package['stats'] = stats_to_push
+        push_stats(stats_package)
+        stat_logger.info('Flushed %d stats from the function buffer' % length)
+    else:
+        stat_logger.info('No stats on the function buffer to flush.')
+
+def flush_sql_stats():
+    """
+    If there are items on the sql_stats_buffer, they are pushed to whichever output
+    is configured in the config file. (Currently json dump or push to server)
+    """
+    global sql_stats_buffer
+    stat_logger.info('Flushing SQL stats buffer.')
+    # initialise a package of stats to push, not all stats may be ready to be pushed
+    stats_to_push = []
+    for _id in sql_stats_buffer.keys():
+        stats_to_push.append(copy.deepcopy(sql_stats_buffer[_id]))
+        del sql_stats_buffer[_id]
+    length = len(stats_to_push)
+    if length != 0:
+        stats_package = copy.deepcopy(stats_package_template)
+        stats_package['stats'] = stats_to_push
+        push_stats(stats_package)
+        stat_logger.info('Flushed %d stats from the SQL buffer' % length)
+    else:
+        stat_logger.info('No stats on the SQL buffer to flush.')
+
+def flush_stats():
+    if cfg['handlers'] or cfg['functions']:
+        flush_function_stats()
+    if cfg['profile_sql']:
+        flush_sql_stats()
+
+
+def initialise(config_file_path):
+    global cfg
+    cfg = load_config(config_file_path)
+
+    global stat_logger
+    stat_logger = setup_logging()
     
-    create_output_fn()
+    global push_stats
+    push_stats = create_output_fn()
     
-    if cfg['handlers']:
-        handler_profiler_init(cfg, stat_logger, push_stats)
-        
+
     if cfg['functions']:
-        function_profiler_init(cfg, stat_logger, push_stats)
+        from function_profiler import decorate_functions
+        cherrypy.engine.subscribe('start', decorate_functions, 0)
+    if cfg['handlers']:
+        from handler_profiler import decorate_handlers
+        cherrypy.engine.subscribe('start', decorate_handlers, 0)
+    if cfg['database']:
+        from sql_profiler import decorate_connections
+        cherrypy.engine.subscribe('start', decorate_connections, 0)
+
+
+    # create a monitor to periodically flush the stats buffers at the flush_interval
+    Monitor(cherrypy.engine, flush_stats,
+        frequency=cfg['flush_interval'],
+        name='Flush stats buffers').subscribe()
+
+    # when the engine stops, flush any stats.
+    cherrypy.engine.subscribe('stop', flush_stats)

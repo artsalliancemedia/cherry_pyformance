@@ -16,18 +16,7 @@ import inspect
 import copy
 import time
 
-from cherry_pyformance import get_stat
-
-stat_logger = None
-cfg = None
-push_stats = None
-
-#=====================================================#
-
-# A global stats buffer, all profile data is pushed to
-# this and periodically flushed by via a Monitor hooked
-# onto the cherrypy bus
-stats_buffer = {}
+from cherry_pyformance import cfg, get_stat, stat_logger, function_stats_buffer
 
 #=====================================================#
 
@@ -108,49 +97,6 @@ class StatsTool(cherrypy.Tool):
             # a non-exsistent item from the buffer. 
             stat_logger.warning('The request id %d is not in the stats_buffer.' % req_id)
 
-def flush_stats():
-    """
-    If there are items on the stats_buffer, their stats tuples are
-    parsed to a dictionary and the records are pushed to whichever output
-    is configured in the config file. (Currently json dump or push to server)
-    """
-    stat_logger.info('Flushing stats buffer.')
-    global stats_buffer
-    # initialise a package of stats to push, not all stats may be ready to be pushed
-    stats_to_push = []
-    for _id in stats_buffer.keys():
-        # test if there is a pstats key
-        if 'pstats' in stats_buffer[_id]:
-            pstats_buffer = stats_buffer[_id]['pstats']
-            parsed_stats = []
-            # convert all stats tuples to dictionaries
-            for stat in pstats_buffer:
-                parsed_stats.append({'function':{'module':stat[0][0],
-                                                 'line':stat[0][1],
-                                                 'name':stat[0][2]},
-                                     'native_calls':stat[1][0],
-                                     'total_calls':stat[1][1],
-                                     'time':stat[1][2],
-                                     'cumulative':stat[1][3] })
-            stats_buffer[_id]['pstats'] = parsed_stats
-            # put a deep copy on the stats_to_push list
-            stats_to_push.append(copy.deepcopy(stats_buffer[_id]))
-            # remove parsed stats, keeping transient stats
-            del stats_buffer[_id]
-    length = len(stats_to_push)
-    if length != 0:
-        stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
-                                  'exhibitor_branch': cfg['exhibitor_branch'],
-                                  'product': cfg['product'],
-                                  'version': cfg['version'],
-                                  'stats': []}
-        stats_package = copy.deepcopy(stats_package_template)
-        stats_package['stats'] = stats_to_push
-        push_stats(stats_package)
-        stat_logger.info('Flushed %d stats from the buffer' % length)
-    else:
-        stat_logger.info('No stats on the buffer to flush.')
- 
 #=====================================================#
 
 def decorate_handlers():
@@ -163,6 +109,9 @@ def decorate_handlers():
     functions can be profiled. Therefore this function is hooked to the
     'start' call on the cherrypy bus with a high priority.
     """
+
+    cherrypy.tools.stats = StatsTool( sort=cfg['sort_on'], num_results=cfg['num_results'] )
+
     # decorate all handlers supplied in config
     stat_logger.info('Wrapping cherrypy handers for stats gathering.')
     try:
@@ -178,26 +127,3 @@ def decorate_handlers():
         stat_logger.warning('Failed to wrap cherrypy handler for stats profiling.')
         print e
         
-def initialise(config, logger, push_stats_fn):
-    global cfg
-    global stat_logger
-    global push_stats
-    cfg = config
-    stat_logger = logger
-    push_stats = push_stats_fn
-    
-    print "handlers"
-    
-    # put tool in toolbox
-    cherrypy.tools.stats = StatsTool( sort=cfg['sort_on'], num_results=cfg['num_results'] )
-
-    # subscribe the function which decorates the handlers
-    cherrypy.engine.subscribe('start', decorate_handlers, 0)
-    
-    # create a monitor to periodically flush the stats_buffer at the flush_interval
-    Monitor(cherrypy.engine, flush_stats,
-        frequency=cfg['flush_interval'],
-        name='Flush profile stats buffer').subscribe()
-        
-    # when the engine stops, flush any stats.
-    cherrypy.engine.subscribe('stop', flush_stats)
