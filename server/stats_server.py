@@ -3,6 +3,14 @@ import sys
 import json
 import database as db
 
+def print_help_string():
+    print 'Use as follows:\n\n' \
+          'python stats_server.py username password host [port]\n'
+    
+def print_arg_error():
+    print 'Arguments incorrect!'
+    print_help_string()
+
 class Root(object):
     exposed = True
 
@@ -35,8 +43,22 @@ def start_cherrypy():
 
 
 if __name__ == '__main__':
+    if '--help' in sys.argv:
+        print_help_string()
+        sys.exit(1)
+    if not (len(sys.argv) == 4 or len(sys.argv) == 5):
+        print_arg_error()
+        sys.exit(1)
+        
+    username = sys.argv[1]
+    password = sys.argv[2]
+    host = sys.argv[3]
+    port = None
+    if len(sys.argv) == 5:
+        port = sys.argv[4]
+    
     try:
-        db.setup_profile_database()
+        db.setup_profile_database(username, password, host, port)
         start_cherrypy()
     except Exception, ex:
         print str(ex)
