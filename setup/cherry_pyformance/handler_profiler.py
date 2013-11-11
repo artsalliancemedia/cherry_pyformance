@@ -16,7 +16,7 @@ import inspect
 import copy
 import time
 
-from cherry_pyformance import cfg, get_stat, stat_logger, function_stats_buffer
+from cherry_pyformance import cfg, get_stat, stat_logger, handler_stats_buffer
 
 #=====================================================#
 
@@ -44,17 +44,17 @@ class StatsTool(cherrypy.Tool):
     def callable(self):
         """
         This is the handler wrapper. It initialises a stat record
-        on the function_stats_buffer based on request metadata, then fires the handler
+        on the handler_stats_buffer based on request metadata, then fires the handler
         while collecting its profile infomation.
         """
-        global function_stats_buffer
+        global handler_stats_buffer
         request = cherrypy.serving.request
         # Take the id of the request, this guarantees no cross-contamination
         # of stats as each record is tied to the id of an instance of a request.
         # These are guaranteed to be unique, even if two of the same request are
         # fired at the same time.
         req_id = id(request)
-        function_stats_buffer[req_id] = {'id': req_id,
+        handler_stats_buffer[req_id] = {'id': req_id,
                                 'function': request.path_info,
                                 'class': request.app.root.__class__.__name__,
                                 'module': inspect.getmodule(request.app.root.__class__).__name__,
@@ -68,7 +68,7 @@ class StatsTool(cherrypy.Tool):
         handler = cherrypy.serving.request.handler
         def wrapper(*args, **kwargs):
             # profile the handler
-            return function_stats_buffer[req_id]['profile'].runcall(handler, *args, **kwargs)
+            return handler_stats_buffer[req_id]['profile'].runcall(handler, *args, **kwargs)
         cherrypy.serving.request.handler = wrapper
 
     def record_stop(self):
@@ -78,24 +78,24 @@ class StatsTool(cherrypy.Tool):
         on the buffer in dict form, removing the profile data. The result should
         be json serialisable.
         """
-        global function_stats_buffer
+        global handler_stats_buffer
         req_id = id(cherrypy.serving.request)
         try:
-            function_stats_buffer[req_id]['profile'] = pstats.Stats(function_stats_buffer[req_id]['profile'])
+            handler_stats_buffer[req_id]['profile'] = pstats.Stats(handler_stats_buffer[req_id]['profile'])
             # add total time taken
-            function_stats_buffer[req_id]['total_time'] = function_stats_buffer[req_id]['profile'].total_tt
+            handler_stats_buffer[req_id]['total_time'] = handler_stats_buffer[req_id]['profile'].total_tt
             # sort the stats in decending order of the sorting stat, then trim
             # to num_results, there will be a lot of negligable stats we can ignore
-            stats = sorted(function_stats_buffer[req_id]['profile'].stats.items(),
+            stats = sorted(handler_stats_buffer[req_id]['profile'].stats.items(),
                            key=lambda x: get_stat(x,self.sort),
                            reverse=True )[:self.num_results]
-            function_stats_buffer[req_id]['pstats'] = copy.deepcopy(stats)
+            handler_stats_buffer[req_id]['pstats'] = copy.deepcopy(stats)
             # remove the profile data
-            del function_stats_buffer[req_id]['profile']
+            del handler_stats_buffer[req_id]['profile']
         except KeyError:
             # If TMS UI is open when TMS is starting started it tries to recall
             # a non-exsistent item from the buffer. 
-            stat_logger.warning('The request id %d is not in the function_stats_buffer.' % req_id)
+            stat_logger.warning('The request id %d is not in the handler_stats_buffer.' % req_id)
 
 #=====================================================#
 

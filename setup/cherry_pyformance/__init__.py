@@ -13,6 +13,7 @@ from cherrypy.process.plugins import Monitor
 
 # initialise 3 buffers
 function_stats_buffer = {}
+handler_stats_buffer = {}
 sql_stats_buffer = {}
 
 
@@ -51,7 +52,6 @@ def create_output_fn():
                 import gzip
                 def push_stats_fn(stats, location=location):
                     """A function to write the compressed json to disk"""
-                    print stats['type']
                     filename = os.path.join(location, 'tms_%s_stats_%s.json.gz'%( stats['type'], str(int(time.time())) ) )
                     f = gzip.open(filename,'wb')
                     f.write(json.dumps(stats, indent=4, separators=(',', ': ')))
@@ -119,20 +119,19 @@ def setup_logging():
     return stat_logger
 
 
-def flush_function_stats():
+def flush_function_handler_stats(stats_buffer, stat_type):
     """
-    If there are items on the function_stats_buffer, their stats tuples are
+    If there are items on the stats_buffer, their stats tuples are
     parsed to a dictionary and the records are pushed to whichever output
     is configured in the config file. (Currently json dump or push to server)
     """
-    global function_stats_buffer
-    stat_logger.info('Flushing function stats buffer.')
+    stat_logger.info('Flushing %s stats buffer.'%stat_type)
     # initialise a package of stats to push, not all stats may be ready to be pushed
     stats_to_push = []
-    for _id in function_stats_buffer.keys():
+    for _id in stats_buffer.keys():
         # test if there is a pstats key
-        if 'pstats' in function_stats_buffer[_id]:
-            pstats_buffer = function_stats_buffer[_id]['pstats']
+        if 'pstats' in stats_buffer[_id]:
+            pstats_buffer = stats_buffer[_id]['pstats']
             parsed_stats = []
             # convert all stats tuples to dictionaries
             for stat in pstats_buffer:
@@ -143,28 +142,26 @@ def flush_function_stats():
                                      'total_calls':stat[1][1],
                                      'time':stat[1][2],
                                      'cumulative':stat[1][3] })
-            function_stats_buffer[_id]['pstats'] = parsed_stats
+            stats_buffer[_id]['pstats'] = parsed_stats
             # put a deep copy on the stats_to_push list
-            stats_to_push.append(copy.deepcopy(function_stats_buffer[_id]))
+            stats_to_push.append(copy.deepcopy(stats_buffer[_id]))
             # remove parsed stats, keeping transient stats
-            del function_stats_buffer[_id]
+            del stats_buffer[_id]
     length = len(stats_to_push)
     if length != 0:
         stats_package = copy.deepcopy(stats_package_template)
         stats_package['stats'] = stats_to_push
-        print 'func'
-        stats_package['type'] = 'func'
+        stats_package['type'] = stat_type
         push_stats(stats_package)
         stat_logger.info('Flushed %d stats from the function buffer' % length)
     else:
         stat_logger.info('No stats on the function buffer to flush.')
 
-def flush_sql_stats():
+def flush_sql_stats(sql_stats_buffer, stat_type):
     """
     If there are items on the sql_stats_buffer, they are pushed to whichever output
     is configured in the config file. (Currently json dump or push to server)
     """
-    global sql_stats_buffer
     stat_logger.info('Flushing SQL stats buffer.')
     # initialise a package of stats to push, not all stats may be ready to be pushed
     stats_to_push = []
@@ -175,18 +172,19 @@ def flush_sql_stats():
     if length != 0:
         stats_package = copy.deepcopy(stats_package_template)
         stats_package['stats'] = stats_to_push
-        stats_package['type'] = 'sql'
-        print 'sql'
+        stats_package['type'] = stat_type
         push_stats(stats_package)
         stat_logger.info('Flushed %d stats from the SQL buffer' % length)
     else:
         stat_logger.info('No stats on the SQL buffer to flush.')
 
 def flush_stats():
-    if cfg['handlers'] or cfg['functions']:
-        flush_function_stats()
+    if cfg['handlers']:
+        flush_function_handler_stats(handler_stats_buffer, stat_type='handler')
+    if cfg['functions']:
+        flush_function_handler_stats(function_stats_buffer, stat_type='function')
     if cfg['database']:
-        flush_sql_stats()
+        flush_sql_stats(sql_stats_buffer, stat_type='database')
 
 
 def initialise(config_file_path):
