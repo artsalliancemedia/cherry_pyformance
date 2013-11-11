@@ -4,19 +4,21 @@ A two part tool for monitoring callstack statistics of CherryPy appliations and 
 
 ## Client
 
-The client is a small-footprint package to be imported into your application, the JSON configuration you supply will dictate which CherryPy handlers and which functions will be wrapped for callstack profiling. The configuration also controls how often these collected stats are flushed and where they are pushed to. Currently stats are either written to disk as JSON or sent to a stats server.
+The client is a small-footprint package to be imported into your application, the configuration you supply will dictate which CherryPy handlers, which functions and which application database will be wrapped for callstack and SQL profiling. The configuration also controls how often these collected stats are flushed and where they are pushed to.
 
-It works by subscribing to the CherryPy engine at startup, wrapping functions and activating custom CherryPy tools which wrap handlers and collecting cProfile callstack data from them. These stats are written to a temporary buffer and flushed periodically.
+It works by subscribing to the CherryPy engine at startup, wrapping listed functions, wrapping database connection objects and activating custom CherryPy tools which wrap cherrypy handlers. It then collects cProfile callstack data and SQL call durations from them. These stats are written to temporary buffers and flushed periodically.
 
 ### Client Installation
 
-Place the stats directory in the root of your application, alter the configuration JSON supplied and insert
+Run the setup of the client by running the following in the shell/cmd terminal:
+```setup.py install```
+Then configure the configuration JSON file to suit your application and insert the following lines into your application:
 ```
-import stats.stats_profiler
+import cherry_pyformance
+cherry_pyformance.initialise('path/to/config.json')
 ```
-into your application.
 
 ## Server
 
-The server is a CherryPy application which accepts stats pushed by the CherryPyformance client storing them for analysis and browsing.
+The server is a CherryPy application which accepts stats pushed by the cherry_pyformance client storing them for analysis and browsing.
 

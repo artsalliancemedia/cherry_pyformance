@@ -5,10 +5,11 @@
     "version":"0.0.1",
 
     "output":{
-                "type":"server",
-                "location":"localhost:8888"
+                "type":"disk",
+                "location":"D:\\",
+                "compress":true
              },
-    "flush_interval":120,
+    "flush_interval":20,
     "sort_on":"time",
     "num_results":20,
 
@@ -20,5 +21,6 @@
                },
     "ignored_handlers":{
                         "/core":["/device_infos"]
-                       }
+                       },
+    "database":"sqlite"
 }
