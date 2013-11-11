@@ -159,25 +159,3 @@ def decorate_functions():
     stat_logger.info('Wrapping functions for stats gathering')
     for function in cfg['functions']:
         decorate_function(function)
-        
-<<<<<<< HEAD
-def initialise(config, logger, push_stats_fn):
-    global cfg
-    global stat_logger
-    global push_stats
-    cfg = config
-    stat_logger = logger
-    push_stats = push_stats_fn
-    
-    # subscribe the function which decorates the handlers
-    cherrypy.engine.subscribe('start', decorate_functions, 0)
-    
-    # create a monitor to periodically flush the stats_buffer at the flush_interval
-    Monitor(cherrypy.engine, flush_stats,
-        frequency=cfg['flush_interval'],
-        name='Flush profile stats buffer').subscribe()
-        
-    # when the engine stops, flush any stats.
-    cherrypy.engine.subscribe('stop', flush_stats)
-=======
->>>>>>> upstream/master

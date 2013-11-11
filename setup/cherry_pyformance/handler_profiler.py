@@ -125,30 +125,3 @@ def decorate_handlers():
         stat_logger.warning('Stats configuration incorrect. Could not obtain handlers to wrap.')
     except Exception as e:
         stat_logger.warning('Failed to wrap cherrypy handler for stats profiling.')
-<<<<<<< HEAD
-        
-def initialise(config, logger, push_stats_fn):
-    global cfg
-    global stat_logger
-    global push_stats
-    cfg = config
-    stat_logger = logger
-    push_stats = push_stats_fn
-
-    # put tool in toolbox
-    cherrypy.tools.stats = StatsTool( sort=cfg['sort_on'], num_results=cfg['num_results'] )
-
-    # subscribe the function which decorates the handlers
-    cherrypy.engine.subscribe('start', decorate_handlers, 0)
-    
-    # create a monitor to periodically flush the stats_buffer at the flush_interval
-    Monitor(cherrypy.engine, flush_stats,
-        frequency=cfg['flush_interval'],
-        name='Flush profile stats buffer').subscribe()
-        
-    # when the engine stops, flush any stats.
-    cherrypy.engine.subscribe('stop', flush_stats)
-=======
-        print e
-        
->>>>>>> upstream/master
