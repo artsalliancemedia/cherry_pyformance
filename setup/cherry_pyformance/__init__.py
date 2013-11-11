@@ -42,24 +42,42 @@ def create_output_fn():
     location to push the data to and constructs a function based on this.
     """
     try:
-        if cfg['output']['type'] == 'disk':
-            filename = str(cfg['output']['location'])
-            stat_logger.info('Writing collected stats to %s' % filename)
-            def push_stats_fn(stats, filename=filename):
-                """A function to write the json to disk"""
-                filename = os.path.join(filename, 'tms_stats_'+str(int(time.time()))+'.json')
-                with open(filename,'a') as json_file:
-                    json_file.write('/n')
-                    json.dump(stats, json_file, indent=4, separators=(',', ': '))
-        elif cfg['output']['type'] == 'server':
-            address = str(cfg['output']['location'])
-            address = address if address.startswith('http://') else 'http://'+address
+        output_type = cfg['output']['type']
+        location = str(cfg['output']['location'])
+        compress = cfg['output']['compress']
+        if output_type == 'disk':
+            stat_logger.info('Writing collected stats to %s' % location)
+            if compress:
+                import gzip
+                def push_stats_fn(stats, location=location):
+                    """A function to write the compressed json to disk"""
+                    print stats['type']
+                    filename = os.path.join(location, 'tms_%s_stats_%s.json.gz'%( stats['type'], str(int(time.time())) ) )
+                    f = gzip.open(filename,'wb')
+                    f.write(json.dumps(stats, indent=4, separators=(',', ': ')))
+                    f.close()
+
+            else:
+                def push_stats_fn(stats, location=location):
+                    """A function to write the json to disk"""
+                    filename = os.path.join(location, 'tms_%s_stats_%s.json'%( stats['type'], str(int(time.time())) ) )
+                    with open(filename,'w') as json_file:
+                        json.dump(stats, json_file, indent=4, separators=(',', ': '))
+
+        elif output_type == 'server':
+            if compress:
+                import zlib
+            address = location if location.startswith('http://') else 'http://'+location
             stat_logger.info('Sending collected stats to %s' % address)
-            def push_stats_fn(stats, address=address):
+
+            def push_stats_fn(stats, location=location):
                 """A function to push json to server"""
                 output = json.dumps(stats, indent=4, separators=(',', ': '))
+                if compress:
+                    output = zlib.compress(output)
                 ############# TODO MAKE THIS HTTPS
                 urlopen(Request('%s/%s'%(address,stats['type']), output, headers={'Content-Type':'application/json'}))
+
         else:
             # if no valid method found, raise a KeyError to be caught
             stat_logger.warning('Invalid stats output param given, use "disk" or "server"')
@@ -134,6 +152,8 @@ def flush_function_stats():
     if length != 0:
         stats_package = copy.deepcopy(stats_package_template)
         stats_package['stats'] = stats_to_push
+        print 'func'
+        stats_package['type'] = 'func'
         push_stats(stats_package)
         stat_logger.info('Flushed %d stats from the function buffer' % length)
     else:
@@ -155,6 +175,8 @@ def flush_sql_stats():
     if length != 0:
         stats_package = copy.deepcopy(stats_package_template)
         stats_package['stats'] = stats_to_push
+        stats_package['type'] = 'sql'
+        print 'sql'
         push_stats(stats_package)
         stat_logger.info('Flushed %d stats from the SQL buffer' % length)
     else:

@@ -6,7 +6,8 @@
 
     "output":{
                 "type":"disk",
-                "location":"D:\\"
+                "location":"D:\\",
+                "compress":true
              },
     "flush_interval":20,
     "sort_on":"time",
