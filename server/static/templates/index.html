@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hello, world.</title>
+  <script type="text/javascript" src="/js/jquery.js"></script>
+  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
+<!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $('#main').dataTable( {"sAjaxSource": "${url}"} );
+    });
+  </script>
+  
+
+  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
+
+
+</head>
+<body>
+
+  <table id="main">
+    <thead>
+      <tr>
+        <th>id</th>
+        <th>module</th>
+        <th>class_name</th>
+        <th>function</th>
+      </tr>
+    </thead>
+  </table>
+
+</body>
+</html>
