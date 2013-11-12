@@ -70,10 +70,13 @@ def create_output_fn():
             def push_stats_fn(stats, location=location):
                 """A function to push json to server"""
                 output = json.dumps(stats, indent=4, separators=(',', ': '))
+                headers = {'Content-Type':'application/json'}
                 if compress:
                     output = zlib.compress(output)
+                    headers = {'Content-Type':'application/gzip'}
+
                 ############# TODO MAKE THIS HTTPS
-                urlopen(Request('%s/%s'%(address,stats['type']), output, headers={'Content-Type':'application/json'}))
+                urlopen(Request('%s/%s'%(address,stats['type']), output, headers=headers))
 
         else:
             # if no valid method found, raise a KeyError to be caught
