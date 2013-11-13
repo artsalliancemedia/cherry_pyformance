@@ -26,7 +26,7 @@ class Sender(Base):
         self.version = stats_packet['version']
       
     def __repr__(self):
-        return ""
+        return self.ip_address
 
 class MethodCall(Base):
     __tablename__ = 'method_calls'
@@ -43,7 +43,7 @@ class MethodCall(Base):
         self.module = profile_stats['module']
       
     def __repr__(self):
-        return ""
+        return self.function
 
 class CallStack(Base):
     __tablename__ = 'call_stacks'
@@ -62,7 +62,7 @@ class CallStack(Base):
         self.total_time = profile_stats['total_time']
       
     def __repr__(self):
-        return ""
+        return str(self.id)
 
 class CallStackItem(Base):
     __tablename__ = 'call_stack_items'
@@ -104,7 +104,7 @@ class SQLStatement(Base):
         self.duration = profile_stats['duration']
       
     def __repr__(self):
-        return ""
+        return self.sql_string
 
 def create_db_and_connect(postgres_string):
     database = sqlalchemy.create_engine(postgres_string + '/profile_stats')

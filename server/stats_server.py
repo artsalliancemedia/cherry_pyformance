@@ -3,6 +3,7 @@ from cherrypy._cpcompat import ntou, json_decode
 import sys
 import database as db
 import zlib
+import os
 
 def print_help_string():
     print 'Use as follows:\n\n' \
@@ -47,9 +48,6 @@ class StatHandler(object):
     def __init__(self, push_fn):
         self.push_fn = push_fn
 
-    def GET(self):
-        return 'Hello, World.'
-
     @cherrypy.tools.json_in(content_type=allowed_content_types, processor=decompress_json)
     def POST(self):
         self.push_fn(cherrypy.serving.request.json, cherrypy.request.remote.ip)
@@ -60,14 +58,27 @@ def start_cherrypy():
     cherrypy.config.update({'server.socket_port': 8888})
     cherrypy.log('Mounting the handlers')
     method_dispatch_cfg = {'/': {'request.dispatch': cherrypy.dispatch.MethodDispatcher()} }
+    front_end_config = {'/': {'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+                              'tools.staticdir.on': True,
+                              'tools.staticdir.dir': os.path.join(os.getcwd(), 'static'),
+                              'tools.staticdir.content_types': {'js': 'application/javascript',
+                                                                'css': 'text/css',
+                                                                'images': 'image/png'}
+                              }
+                        }
+
 
     function_stat_handler = StatHandler(db.push_fn_stats)
     handler_stat_handler = StatHandler(db.push_fn_stats)
     sql_stat_handler = StatHandler(db.push_sql_stats)
 
+    from rest_ui import Root
+
     cherrypy.tree.mount( function_stat_handler, '/function', method_dispatch_cfg )
     cherrypy.tree.mount( handler_stat_handler,  '/handler',  method_dispatch_cfg )
     cherrypy.tree.mount( sql_stat_handler,      '/database', method_dispatch_cfg )
+    cherrypy.tree.mount( Root(),                '/',         front_end_config )
+    
     cherrypy.log('Starting CherryPy')
     try:
         cherrypy.engine.start()

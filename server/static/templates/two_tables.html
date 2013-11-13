@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hello, world.</title>
+  <script type="text/javascript" src="/js/jquery.js"></script>
+  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
+<!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $('#table1').dataTable( {"sAjaxSource": "/_${url1}?${encoded_kwargs1}"} );
+      $('#table2').dataTable( {"sAjaxSource": "/_${url2}?${encoded_kwargs2}"} );
+    });
+  </script>
+  
+
+  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
+
+
+</head>
+<body>
+
+  <table id="table1">
+    <thead>
+      <tr>
+         % for column in column_list1:
+          <th>${column}</th>
+         % endfor
+      </tr>
+    </thead>
+  </table>
+
+  <table id="table2">
+    <thead>
+      <tr>
+         % for column in column_list2:
+          <th>${column}</th>
+         % endfor
+      </tr>
+    </thead>
+  </table>
+
+</body>
+</html>
