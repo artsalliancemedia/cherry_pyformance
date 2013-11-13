@@ -98,8 +98,8 @@ class Senders(object):
                                      url2=url2, column_list2=column_order["SQLStatement"][1], encoded_kwargs2='sender_id=' + str(sender.id))
         else:
             url = cherrypy.serving.request.path_info.split('/')[1]
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
-            return mytemplate.render(url=url, column_list=column_order["Sender"][1], encoded_kwargs=urlencode(kwargs))
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','senders.html'))
+            return mytemplate.render(url=url, encoded_kwargs=urlencode(kwargs))
 
 
 
@@ -114,8 +114,8 @@ class MethodCalls(object):
             return mytemplate.render(url=url1, column_list=column_order["CallStack"][1], encoded_kwargs='method_call_id=' + str(method_call.id))
         else:
             url = cherrypy.serving.request.path_info.split('/')[1]
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
-            return mytemplate.render(url=url, column_list=column_order["MethodCall"][1], encoded_kwargs=urlencode(kwargs))
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','methodcalls.html'))
+            return mytemplate.render(url=url, encoded_kwargs=urlencode(kwargs))
 
 
 
@@ -130,8 +130,8 @@ class CallStacks(object):
             return mytemplate.render(url=url1, column_list=column_order["CallStackItem"][1], encoded_kwargs='call_stack_id=' + str(call_stack.id))
         else:
             url = cherrypy.serving.request.path_info.split('/')[1]
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
-            return mytemplate.render(url=url, column_list=column_order["CallStack"][1], encoded_kwargs=urlencode(kwargs))
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstacks.html'))
+            return mytemplate.render(url=url, encoded_kwargs=urlencode(kwargs))
 
 
 
@@ -140,8 +140,8 @@ class SQLStatements(object):
 
     def GET(self, **kwargs):
         url = cherrypy.serving.request.path_info.split('/')[1]
-        mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
-        return mytemplate.render(url=url, column_list=column_order["SQLStatement"][1], encoded_kwargs=urlencode(kwargs))
+        mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatements.html'))
+        return mytemplate.render(url=url, encoded_kwargs=urlencode(kwargs))
 
 
 
