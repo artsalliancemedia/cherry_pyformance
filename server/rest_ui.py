@@ -2,18 +2,31 @@ import database as db
 import cherrypy
 import mako.template
 import os
+from urllib import urlencode
+from cgi import escape as html_escape
+
+
+column_order = {'Sender':[['id','ip_address','exhibitor_chain','exhibitor_branch','product','version'],
+                          ['ID','IP Address','Exhibitor Chain','Exhibitor Branch','Product','Version']],
+                'MethodCall':[['id','module','class_name','function'],
+                              ['ID','Module','Class Name','Function']],
+                'CallStack':[['id','method_call_id','sender_id','total_time','datetime'],
+                             ['ID','Method Call','Sender','Total Time','Datetime']],
+                'CallStackItem':[['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
+                                 ['ID','Call Stack','Function','Line Number','Module','Total Calls','Native Calls','Cumulative Time','Total Time']],
+                'SQLStatement':[['id','sender_id','sql_string','duration','datetime'],
+                                ['ID','Sender','SQL','Duration','Datetime']]}
 
 
 def json_get(table_class, id=None, **kwargs):
     if id:
         kwargs['id'] = id
-    if '_' in kwargs:
-        del(kwargs['_'])
+    kwargs.pop('_', None)
     items = db.session.query(table_class).filter_by(**kwargs).all()
     data = []
     for item in items:
-        del(item.__dict__['_sa_instance_state'])
-        data.append(item.__dict__)
+        item.__dict__.pop('_sa_instance_state', None)
+        data.append([html_escape(str(item.__dict__[x])) for x in column_order[table_class.__name__][0]])
     return {'aaData':data}
 
 
@@ -34,13 +47,26 @@ class JSONCallStacks(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.CallStack, id, **kwargs)
+        callstacks = json_get(db.CallStack, id, **kwargs)
+        for item in callstacks['aaData']:
+            item[2] = json_get(db.Sender, item[2])['aaData'][0]
+            item[1] = json_get(db.MethodCall, item[1])['aaData'][0]
+        return callstacks
+
+class JSONCallStackItems(object):
+    exposed = True
+    @cherrypy.tools.json_out()
+    def GET(self, id=None, **kwargs):
+        return json_get(db.CallStackItem, id, **kwargs)
 
 class JSONSQLStatements(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.SQLStatement, id, **kwargs)
+        statements = json_get(db.SQLStatement, id, **kwargs)
+        for item in statements['aaData']:
+            item[1] = json_get(db.Sender, item[1])['aaData'][0]
+        return statements
 
 
 
@@ -52,77 +78,68 @@ class JSONSQLStatements(object):
 class Senders(object):
     exposed = True
 
-    @cherrypy.tools.json_out()
-    def GET(self, sender_id=None, **kwargs):
-        if sender_id:
-            kwargs['id'] = sender_id
-        senders = db.session.query(db.Sender).filter_by(**kwargs).all()
+    def GET(self, id=None, **kwargs):
+        if id:
+            sender = db.session.query(db.Sender).get(id)
+            url1 = 'callstacks'
+            url2 = 'sqlstatements'
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','two_tables.html'))
+            return mytemplate.render(url1=url1, column_list1=column_order["CallStack"][1], encoded_kwargs1='sender_id=' + str(sender.id),
+                                     url2=url2, column_list2=column_order["SQLStatement"][1], encoded_kwargs2='sender_id=' + str(sender.id))
+        else:
+            url = cherrypy.serving.request.path_info.split('/')[1]
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
+            return mytemplate.render(url=url, column_list=column_order["Sender"][1], encoded_kwargs=urlencode(kwargs))
 
-        data = []
-        for sender in senders:
-            del(sender.__dict__['_sa_instance_state'])
-            data.append(sender.__dict__)
 
-        return data
 
 class MethodCalls(object):
     exposed = True
 
-    def GET(self, method_id=None, **kwargs):
-        if method_id:
-            callstacks = db.session.query(db.CallStack).filter_by(method_call_id=method_id, **kwargs).all()
-            data = []
-            for callstack in callstacks:
-                del(callstack.__dict__['_sa_instance_state'])
-                data.append(callstack.__dict__)
-
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html'))
-            return mytemplate.render(data=data)
-        
+    def GET(self, id=None, **kwargs):
+        if id:
+            method_call = db.session.query(db.MethodCall).get(id)
+            url1 = 'callstacks'
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
+            return mytemplate.render(url=url1, column_list=column_order["CallStack"][1], encoded_kwargs='method_call_id=' + str(method_call.id))
         else:
-            """
-            methods = db.session.query(db.MethodCall).filter_by(**kwargs).all()
+            url = cherrypy.serving.request.path_info.split('/')[1]
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
+            return mytemplate.render(url=url, column_list=column_order["MethodCall"][1], encoded_kwargs=urlencode(kwargs))
 
-            data = []
-            for method in methods:
-                del(method.__dict__['_sa_instance_state'])
-                data.append(method.__dict__)
-            """
 
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html'))
-            return mytemplate.render(url='/_methodcalls')# , column_list=[{'sName':''},{'sName':''},{'sName':''},{'sName':''}]
 
 class CallStacks(object):
     exposed = True
 
-    def GET(self, callstack_id=None, **kwargs):
-        if callstack_id:
-            kwargs['id'] = callstack_id
-        callstacks = db.session.query(db.CallStack).filter_by(**kwargs).all()
+    def GET(self, id=None, **kwargs):
+        if id:
+            call_stack = db.session.query(db.CallStack).get(id)
+            url1 = 'callstackitems'
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
+            return mytemplate.render(url=url1, column_list=column_order["CallStackItem"][1], encoded_kwargs='call_stack_id=' + str(call_stack.id))
+        else:
+            url = cherrypy.serving.request.path_info.split('/')[1]
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
+            return mytemplate.render(url=url, column_list=column_order["CallStack"][1], encoded_kwargs=urlencode(kwargs))
 
-        data = []
-        for callstack in callstacks:
-            del(callstack.__dict__['_sa_instance_state'])
-            data.append(callstack.__dict__)
 
-        mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html'))
-        return mytemplate.render(data=data)
 
 class SQLStatements(object):
     exposed = True
 
-    def GET(self, statement_id=None, **kwargs):
-        if statement_id:
-            kwargs['id'] = statement_id
-        statements = db.session.query(db.SQLStatement).filter_by(**kwargs).all()
+    def GET(self, **kwargs):
+        url = cherrypy.serving.request.path_info.split('/')[1]
+        mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','one_table.html'))
+        return mytemplate.render(url=url, column_list=column_order["SQLStatement"][1], encoded_kwargs=urlencode(kwargs))
 
-        data = []
-        for statement in statements:
-            del(statement.__dict__['_sa_instance_state'])
-            data.append(statement.__dict__)
 
-        mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html'))
-        return mytemplate.render(data=data)
+
+
+
+
+
+
 
 class Root(object):
     exposed = True
@@ -130,7 +147,7 @@ class Root(object):
     def GET(self):
         return 'Hello, world.'
 
-    # senders = Senders()
+    senders = Senders()
     methodcalls = MethodCalls()
     callstacks = CallStacks()
     sqlstatements = SQLStatements()
@@ -138,4 +155,5 @@ class Root(object):
     _senders = JSONSenders()
     _methodcalls = JSONMethodCalls()
     _callstacks = JSONCallStacks()
+    _callstackitems = JSONCallStackItems()
     _sqlstatements = JSONSQLStatements()
