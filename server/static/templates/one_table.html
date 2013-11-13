@@ -7,7 +7,31 @@
 <!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
   <script type="text/javascript">
     $(document).ready(function() {
-      $('#main').dataTable( {"sAjaxSource": "/_${url}?${encoded_kwargs}"} );
+      $('#main').dataTable( {"sAjaxSource": "/_${url}?${encoded_kwargs}",
+                             "bProcessing":true,
+                             "bDeferRender":true,
+                             "aoColumns": [
+                              % for column in column_list:
+                                % if column:
+                                  null,
+                                % else:
+                                  {"bVisible":false},
+                                % endif
+                              % endfor
+                              ],
+                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                                <% num_nulls = 1 %>
+                                % for i in range(len(column_list)):
+                                  % if i == 0:
+                                    // Link to individual page on id column
+                                    $('td:eq(0)', nRow).html( '<a href="/${url}/'+aData[0]+'">'+aData[0]+'</a>' );
+                                  % elif not column_list[i]:
+                                    $('td:eq(${i-num_nulls})', nRow).html( '<a href="'+aData[${i}]+'">'+aData[${i-1}]+'</a>' );
+                                    <% num_nulls += 1 %>
+                                  % endif
+                                % endfor
+                              }
+  } );
     });
   </script>
   

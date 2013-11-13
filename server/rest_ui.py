@@ -11,11 +11,11 @@ column_order = {'Sender':[['id','ip_address','exhibitor_chain','exhibitor_branch
                 'MethodCall':[['id','module','class_name','function'],
                               ['ID','Module','Class Name','Function']],
                 'CallStack':[['id','method_call_id','sender_id','total_time','datetime'],
-                             ['ID','Method Call','Sender','Total Time','Datetime']],
+                             ['ID','Method Call',None,'Sender',None,'Total Time','Datetime']],
                 'CallStackItem':[['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
-                                 ['ID','Call Stack','Function','Line Number','Module','Total Calls','Native Calls','Cumulative Time','Total Time']],
+                                 ['ID','Call Stack',None,'Function','Line Number','Module','Total Calls','Native Calls','Cumulative Time','Total Time']],
                 'SQLStatement':[['id','sender_id','sql_string','duration','datetime'],
-                                ['ID','Sender','SQL','Duration','Datetime']]}
+                                ['ID','Sender',None,'SQL','Duration','Datetime']]}
 
 
 def json_get(table_class, id=None, **kwargs):
@@ -24,9 +24,10 @@ def json_get(table_class, id=None, **kwargs):
     kwargs.pop('_', None)
     items = db.session.query(table_class).filter_by(**kwargs).all()
     data = []
-    for item in items:
+    for item in items[:]:
         item.__dict__.pop('_sa_instance_state', None)
-        data.append([html_escape(str(item.__dict__[x])) for x in column_order[table_class.__name__][0]])
+        record = [html_escape(str(item.__dict__[x])) for x in column_order[table_class.__name__][0]]
+        data.append(record)
     return {'aaData':data}
 
 
@@ -49,15 +50,22 @@ class JSONCallStacks(object):
     def GET(self, id=None, **kwargs):
         callstacks = json_get(db.CallStack, id, **kwargs)
         for item in callstacks['aaData']:
-            item[2] = json_get(db.Sender, item[2])['aaData'][0]
-            item[1] = json_get(db.MethodCall, item[1])['aaData'][0]
+            method_call_list = json_get(db.MethodCall, item[1])['aaData'][0]
+            sender_list = json_get(db.Sender, item[2])['aaData'][0]
+            item[1] = method_call_list
+            item[2] = sender_list[1]
+            item.insert(2,'/methodcalls/'+method_call_list[0])
+            item.insert(4,'/senders/'+sender_list[0])
         return callstacks
 
 class JSONCallStackItems(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.CallStackItem, id, **kwargs)
+        callstackitems = json_get(db.CallStackItem, id, **kwargs)
+        for item in callstackitems['aaData']:
+            item.insert(2,'/callstacks/'+item[1])
+        return callstackitems
 
 class JSONSQLStatements(object):
     exposed = True
@@ -65,7 +73,9 @@ class JSONSQLStatements(object):
     def GET(self, id=None, **kwargs):
         statements = json_get(db.SQLStatement, id, **kwargs)
         for item in statements['aaData']:
-            item[1] = json_get(db.Sender, item[1])['aaData'][0]
+            sender_list = json_get(db.Sender, item[1])['aaData'][0]
+            item[1] = sender_list[1]
+            item.insert(2,'/senders/'+sender_list[0])
         return statements
 
 
