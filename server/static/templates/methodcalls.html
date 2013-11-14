@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Hello, world.</title>
+  <title>Method Calls</title>
+  <h1>Method Calls</h1>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
 <!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
@@ -10,6 +11,7 @@
       $('#main').dataTable( {"sAjaxSource": "/_${url}?${encoded_kwargs}",
                              "bProcessing":true,
                              "bDeferRender":true,
+                             "bAutoWidth":false,
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 $('td:eq(0)', nRow).html( '<a href="/${url}/'+aData[0]+'">'+aData[0]+'</a>' );
                               }
