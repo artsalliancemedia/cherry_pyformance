@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Hello, world.</title>
+  <title>SQL Statements</title>
+  <h1>SQL Statements</h1>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
 <!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
@@ -10,6 +11,7 @@
       $('#main').dataTable( {"sAjaxSource": "/_${url}?${encoded_kwargs}",
                              "bProcessing":true,
                              "bDeferRender":true,
+                             "bAutoWidth":false,
                              "aoColumns": [
                                   null,
                                   null,
