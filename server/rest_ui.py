@@ -6,16 +6,11 @@ from urllib import urlencode
 from cgi import escape as html_escape
 
 
-column_order = {'Sender':[['id','ip_address','exhibitor_chain','exhibitor_branch','product','version'],
-                          ['ID','IP Address','Exhibitor Chain','Exhibitor Branch','Product','Version']],
-                'MethodCall':[['id','module','class_name','function'],
-                              ['ID','Module','Class Name','Function']],
-                'CallStack':[['id','method_call_id','sender_id','total_time','datetime'],
-                             ['ID','Method Call',None,'Sender',None,'Total Time','Datetime']],
-                'CallStackItem':[['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
-                                 ['ID','Call Stack','Function','Line Number','Module','Total Calls','Native Calls','Cumulative Time','Total Time']],
-                'SQLStatement':[['id','sender_id','sql_string','duration','datetime'],
-                                ['ID','Sender',None,'SQL','Duration','Datetime']]}
+column_order = {'Sender':['id','ip_address','exhibitor_chain','exhibitor_branch','product','version'],
+                'MethodCall':['id','module','class_name','function'],
+                'CallStack':['id','method_call_id','sender_id','total_time','datetime'],
+                'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
+                'SQLStatement':['id','sender_id','sql_string','duration','datetime']}
 
 
 def json_get(table_class, id=None, **kwargs):
@@ -25,7 +20,7 @@ def json_get(table_class, id=None, **kwargs):
     items = db.session.query(table_class).filter_by(**kwargs).all()
     data = []
     for item in items:
-        record = [html_escape(str(item.__dict__[x])) for x in column_order[table_class.__name__][0]]
+        record = [html_escape(str(item.__dict__[x])) for x in column_order[table_class.__name__]
         data.append(record)
     return {'aaData':data}
 
