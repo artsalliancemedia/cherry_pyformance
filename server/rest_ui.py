@@ -25,7 +25,6 @@ def json_get(table_class, id=None, **kwargs):
     items = db.session.query(table_class).filter_by(**kwargs).all()
     data = []
     for item in items:
-        # item.__dict__.pop('_sa_instance_state', None)
         record = [html_escape(str(item.__dict__[x])) for x in column_order[table_class.__name__][0]]
         data.append(record)
     return {'aaData':data}
@@ -49,7 +48,7 @@ class JSONCallStacks(object):
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
         callstacks = json_get(db.CallStack, id, **kwargs)
-        for item in callstacks['aaData'][:]:
+        for item in callstacks['aaData']:
             method_call_list = json_get(db.MethodCall, item[1])['aaData'][0]
             sender_list = json_get(db.Sender, item[2])['aaData'][0]
             item[1] = method_call_list
@@ -63,7 +62,7 @@ class JSONCallStackItems(object):
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
         callstackitems = json_get(db.CallStackItem, id, **kwargs)
-        for item in callstackitems['aaData'][:]:
+        for item in callstackitems['aaData']:
             item.insert(2, item[1])
         return callstackitems
 
@@ -72,7 +71,7 @@ class JSONSQLStatements(object):
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
         statements = json_get(db.SQLStatement, id, **kwargs)
-        for item in statements['aaData'][:]:
+        for item in statements['aaData']:
             sender_list = json_get(db.Sender, item[1])['aaData'][0]
             item[1] = sender_list[1]
             item.insert(2, sender_list[0])
