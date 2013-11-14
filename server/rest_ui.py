@@ -20,7 +20,7 @@ def json_get(table_class, id=None, **kwargs):
     items = db.session.query(table_class).filter_by(**kwargs).all()
     data = []
     for item in items:
-        record = [html_escape(str(item.__dict__[x])) for x in column_order[table_class.__name__]
+        record = [html_escape(str(item.__dict__[x])) for x in column_order[table_class.__name__]]
         data.append(record)
     return {'aaData':data}
 
