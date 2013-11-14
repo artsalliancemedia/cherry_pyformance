@@ -23,8 +23,8 @@
                               ],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 $('td:eq(0)', nRow).html( '<a href="/${url}/'+aData[0]+'">'+aData[0]+'</a>' );
-                                $('td:eq(1)', nRow).html( '<a href="'+aData[2]+'">'+aData[1]+'</a>' );
-                                $('td:eq(2)', nRow).html( '<a href="'+aData[4]+'">'+aData[3]+'</a>' );
+                                $('td:eq(1)', nRow).html( '<a href="/methodcalls/'+aData[2]+'">'+aData[1]+'</a>' );
+                                $('td:eq(2)', nRow).html( '<a href="/senders/'+aData[4]+'">'+aData[3]+'</a>' );
                               }
   } );
     });
