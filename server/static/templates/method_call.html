@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>${method_call.module}.${method_call.class_name}: ${method_call.function}</title>
+  <script type="text/javascript" src="/js/jquery.js"></script>
+  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+
+      var kwargs = "${encoded_kwargs}";
+      console.log(kwargs);
+
+      $('#main').dataTable({"sAjaxSource": "/_callstacks?${encoded_kwargs}",
+                             "bProcessing":true,
+                             "bDeferRender":true,
+                             "bAutoWidth":false,
+                             "aoColumns": [ null,
+                                            null,
+                                            {"bVisible":false},
+                                            null,
+                                            {"bVisible":false},
+                                            null,
+                                            null],
+                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                                    $('td:eq(1)', nRow).html( '<a href="/callstacks/'+aData[2]+'">'+aData[1]+'</a>' );
+                                    $('td:eq(2)', nRow).html( '<a href="/senders/'+aData[4]+'">'+aData[3]+'</a>' );
+                                  }
+                            });
+    });
+  </script>
+  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
+
+
+</head>
+<body>
+  <h1>Method ${method_call.id}</h1>
+  <h2>${method_call.module}.${method_call.class_name}: ${method_call.function}</h2>
+
+  <h2>Recorded Callstacks:</h2>
+  <table id="main">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Method Call</th>
+        <th>hidden</th>
+        <th>Sender</th>
+        <th>hidden</th>
+        <th>Total Time</th>
+        <th>Datetime</th>
+      </tr>
+    </thead>
+  </table>
+
+</body>
+</html>
