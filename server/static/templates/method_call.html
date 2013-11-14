@@ -2,6 +2,9 @@
 <html>
 <head>
   <title>${method_call.module}.${method_call.class_name}: ${method_call.function}</title>
+  <style type="text/css" title="currentStyle">
+    @import "/css/jquery-ui-1.10.3.custom.min.css";
+  </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
   <script type="text/javascript">
@@ -14,6 +17,7 @@
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,
+                             "bJQueryUI": true,
                              "aoColumns": [ null,
                                             null,
                                             {"bVisible":false},

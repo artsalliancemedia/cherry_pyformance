@@ -3,6 +3,9 @@
 <head>
   <title>Senders</title>
   <h1>Senders</h1>
+  <style type="text/css" title="currentStyle">
+    @import "/css/jquery-ui-1.10.3.custom.min.css";
+  </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
 <!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
@@ -12,6 +15,7 @@
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,
+                             "bJQueryUI": true,
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 $('td:eq(0)', nRow).html( '<a href="/senders/'+aData[0]+'">'+aData[0]+'</a>' );
                                 $('td:eq(2)', nRow).html( '<a href="/senders?exhibitor_chain='+aData[2]+'">'+aData[2]+'</a>' );

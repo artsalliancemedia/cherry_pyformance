@@ -2,6 +2,9 @@
 <html>
 <head>
   <title>Callstack ${callstack.id}</title>
+  <style type="text/css" title="currentStyle">
+    @import "/css/jquery-ui-1.10.3.custom.min.css";
+  </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
   <script type="text/javascript">
@@ -27,6 +30,7 @@
                              "bDeferRender":true,
                              "iDisplayLength": 20,
                              "bAutoWidth":false,
+                             "bJQueryUI": true,
                              "aoColumns": [ null,
                                             {"bVisible":false},
                                             null,
