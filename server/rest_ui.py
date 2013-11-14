@@ -13,7 +13,7 @@ column_order = {'Sender':[['id','ip_address','exhibitor_chain','exhibitor_branch
                 'CallStack':[['id','method_call_id','sender_id','total_time','datetime'],
                              ['ID','Method Call',None,'Sender',None,'Total Time','Datetime']],
                 'CallStackItem':[['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
-                                 ['ID','Call Stack',None,'Function','Line Number','Module','Total Calls','Native Calls','Cumulative Time','Total Time']],
+                                 ['ID','Call Stack','Function','Line Number','Module','Total Calls','Native Calls','Cumulative Time','Total Time']],
                 'SQLStatement':[['id','sender_id','sql_string','duration','datetime'],
                                 ['ID','Sender',None,'SQL','Duration','Datetime']]}
 
@@ -61,10 +61,7 @@ class JSONCallStackItems(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        callstackitems = json_get(db.CallStackItem, id, **kwargs)
-        for item in callstackitems['aaData']:
-            item.insert(2, item[1])
-        return callstackitems
+        return json_get(db.CallStackItem, id, **kwargs)
 
 class JSONSQLStatements(object):
     exposed = True
