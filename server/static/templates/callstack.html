@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Callstack ${callstack.id}</title>
+  <script type="text/javascript" src="/js/jquery.js"></script>
+  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+
+      var kwargs = "${encoded_kwargs}";
+      console.log(kwargs);
+
+      $.getJSON('/_methodcalls/${callstack.method_call_id}',function(data){
+        var method = data.aaData[0][1]+'.'+data.aaData[0][2]+': '+data.aaData[0][3];
+        document.title = method
+        $('#method').append('<a href="/methodcalls/'+data.aaData[0][0]+'">'+method+'</a>');
+      });
+
+      $.getJSON('/_senders/${callstack.sender_id}',function(data){
+        var sender = data.aaData[0][1];
+        $('#sender').append('<a href="/senders/'+data.aaData[0][0]+'">'+sender+'</a>');
+      });
+
+
+      $('#main').dataTable({"sAjaxSource": "/_callstackitems?${encoded_kwargs}",
+                             "bProcessing":true,
+                             "bDeferRender":true,
+                             "iDisplayLength": 20,
+                             "bAutoWidth":false,
+                             "aoColumns": [ null,
+                                            {"bVisible":false},
+                                            {"bVisible":false},
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null]
+                            });
+    });
+  </script>
+  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
+
+
+</head>
+<body>
+  <h1>Callstack ${callstack.id}</h1>
+  <h2 id="method">Method called:&nbsp;&nbsp;&nbsp;</h2>
+  <h2 id="sender">Sender calling:&nbsp;&nbsp;&nbsp;</h2>
+
+  <h2>Callstack data:</h2>
+  <table id="main">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Call Stack</th>
+        <th>hiddencol</th>
+        <th>Function</th>
+        <th>Line Number</th>
+        <th>Module</th>
+        <th>Total Calls</th>
+        <th>Native Calls</th>
+        <th>Cumulative Time</th>
+        <th>Total Time<th>
+      </tr>
+    </thead>
+  </table>
+
+</body>
+</html>
