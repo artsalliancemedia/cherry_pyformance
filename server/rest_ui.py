@@ -94,9 +94,8 @@ class Senders(object):
             return mytemplate.render(sender=sender,
                                      encoded_kwargs='sender_id=' + str(sender.id)+'&'+urlencode(kwargs))
         else:
-            url = cherrypy.serving.request.path_info.split('/')[1]
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','senders.html'))
-            return mytemplate.render(url=url, encoded_kwargs=urlencode(kwargs))
+            return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
 
 
@@ -110,9 +109,8 @@ class MethodCalls(object):
             return mytemplate.render(method_call=method_call,
                                      encoded_kwargs='method_call_id=' + str(method_call.id)+'&'+urlencode(kwargs))
         else:
-            url = cherrypy.serving.request.path_info.split('/')[1]
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','methodcalls.html'))
-            return mytemplate.render(url=url, encoded_kwargs=urlencode(kwargs))
+            return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
 
 
@@ -126,9 +124,8 @@ class CallStacks(object):
             return mytemplate.render(callstack=call_stack,
                                      encoded_kwargs='call_stack_id='+str(call_stack.id)+'&'+urlencode(kwargs))
         else:
-            url = cherrypy.serving.request.path_info.split('/')[1]
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstacks.html'))
-            return mytemplate.render(url=url, encoded_kwargs=urlencode(kwargs))
+            return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
 
 
@@ -136,9 +133,8 @@ class SQLStatements(object):
     exposed = True
 
     def GET(self, **kwargs):
-        url = cherrypy.serving.request.path_info.split('/')[1]
         mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatements.html'))
-        return mytemplate.render(url=url, encoded_kwargs=urlencode(kwargs))
+        return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
 
 
