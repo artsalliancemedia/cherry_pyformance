@@ -14,6 +14,9 @@
                              "bAutoWidth":false,
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 $('td:eq(0)', nRow).html( '<a href="/${url}/'+aData[0]+'">'+aData[0]+'</a>' );
+                                $('td:eq(1)', nRow).html( '<a href="/${url}?module='+aData[1]+'">'+aData[1]+'</a>' );
+                                $('td:eq(2)', nRow).html( '<a href="/${url}?class_name='+aData[2]+'">'+aData[2]+'</a>' );
+                                $('td:eq(3)', nRow).html( '<a href="/${url}?function='+aData[3]+'">'+aData[3]+'</a>' );
                               }
   } );
     });
