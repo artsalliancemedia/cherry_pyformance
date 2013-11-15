@@ -13,19 +13,7 @@
       var kwargs = "${encoded_kwargs}";
       console.log(kwargs);
 
-      $.getJSON('/_methodcalls/${callstack.method_call_id}',function(data){
-        var method = data.aaData[0][1]+'.'+data.aaData[0][2]+': '+data.aaData[0][3];
-        document.title = method
-        $('#method').append('<a href="/methodcalls/'+data.aaData[0][0]+'">'+method+'</a>');
-      });
-
-      $.getJSON('/_senders/${callstack.sender_id}',function(data){
-        var sender = data.aaData[0][1];
-        $('#sender').append('<a href="/senders/'+data.aaData[0][0]+'">'+sender+'</a>');
-      });
-
-
-      $('#main').dataTable({"sAjaxSource": "/_callstackitems?${encoded_kwargs}",
+      $('#callstackitems').dataTable({"sAjaxSource": "/_callstackitems?${encoded_kwargs}",
                              "bProcessing":true,
                              "bDeferRender":true,
                              "iDisplayLength": 20,
@@ -41,6 +29,17 @@
                                             null,
                                             null]
                             });
+
+      $('#metadata').dataTable({"sAjaxSource": "/_metadata?${encoded_kwargs}",
+                             "bProcessing":true,
+                             "bDeferRender":true,
+                             "iDisplayLength": 20,
+                             "bAutoWidth":false,
+                             "bJQueryUI": true,
+                             "aoColumns": [ {"bVisible":false},
+                                            null,
+                                            null]
+                            });
     });
   </script>
   <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
@@ -49,11 +48,9 @@
 </head>
 <body>
   <h1>Callstack ${callstack.id}</h1>
-  <h2 id="method">Method called:&nbsp;&nbsp;&nbsp;</h2>
-  <h2 id="sender">Sender calling:&nbsp;&nbsp;&nbsp;</h2>
 
   <h2>Callstack data:</h2>
-  <table id="main">
+  <table id="callstackitems">
     <thead>
       <tr>
         <th>ID</th>
@@ -68,6 +65,18 @@
       </tr>
     </thead>
   </table>
+  
+  <h2>Callstack Metadata:</h2>
+  <table id="metadata">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Key</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+  </table>
+  
 
 </body>
 </html>

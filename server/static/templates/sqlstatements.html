@@ -19,14 +19,9 @@
                              "aoColumns": [
                                   null,
                                   null,
-                                  {'bVisible':false},
                                   null,
                                   null,
-                                  null,
-                              ],
-                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                $('td:eq(1)', nRow).html( '<a href="/senders/'+aData[2]+'">'+aData[1]+'</a>' );
-                              }
+                              ]
   } );
     });
   </script>
@@ -42,8 +37,6 @@
     <thead>
       <tr>
         <th>ID</th>
-        <th>Sender</th>
-        <th>Sender ID</th>
         <th>SQL</th>
         <th>Duration</th>
         <th>Datetime</th>
