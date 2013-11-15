@@ -50,7 +50,9 @@ class StatHandler(object):
 
     @cherrypy.tools.json_in(content_type=allowed_content_types, processor=decompress_json)
     def POST(self):
-        self.push_fn(cherrypy.serving.request.json, cherrypy.request.remote.ip)
+        # Add sender's ip to flush metadata
+        cherrypy.serving.request.json['flush_metadata']['ip_address'] = cherrypy.request.remote.ip
+        self.push_fn(cherrypy.serving.request.json)
         return 'Hello, World.'
 
 

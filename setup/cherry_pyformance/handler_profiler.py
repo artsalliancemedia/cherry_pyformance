@@ -53,13 +53,14 @@ class StatsTool(cherrypy.Tool):
         # These are guaranteed to be unique, even if two of the same request are
         # fired at the same time.
         req_id = id(request)
-        handler_stats_buffer[req_id] = {'id': req_id,
-                                'function': request.path_info,
-                                'class': request.app.root.__class__.__name__,
-                                'module': inspect.getmodule(request.app.root.__class__).__name__,
-                                'datetime': time.time(),
-                                'total_time': 0,
-                                'profile': cProfile.Profile()}
+        handler_stats_buffer[req_id] = {'stats_buffer': {'id': req_id,
+                                                         'datetime': time.time(),
+                                                         'total_time': 0,
+                                                         'profile': cProfile.Profile()},
+                                        'metadata_buffer': {'function': request.path_info,
+                                                            'class': request.app.root.__class__.__name__,
+                                                            'module': inspect.getmodule(request.app.root.__class__).__name__}
+                                       }
         # At this point the profile key of the object on the stats buffer has no
         # profile stats in it. It needs to be put in the buffer now as multiple
         # handler calls could be occuring simultaneously during the lifetime of
@@ -67,7 +68,7 @@ class StatsTool(cherrypy.Tool):
         handler = cherrypy.serving.request.handler
         def wrapper(*args, **kwargs):
             # profile the handler
-            return handler_stats_buffer[req_id]['profile'].runcall(handler, *args, **kwargs)
+            return handler_stats_buffer[req_id]['stats_buffer']['profile'].runcall(handler, *args, **kwargs)
         cherrypy.serving.request.handler = wrapper
 
     def record_stop(self):
@@ -80,17 +81,17 @@ class StatsTool(cherrypy.Tool):
         global handler_stats_buffer
         req_id = id(cherrypy.serving.request)
         try:
-            handler_stats_buffer[req_id]['profile'] = pstats.Stats(handler_stats_buffer[req_id]['profile'])
+            handler_stats_buffer[req_id]['stats_buffer']['profile'] = pstats.Stats(handler_stats_buffer[req_id]['stats_buffer']['profile'])
             # add total time taken
-            handler_stats_buffer[req_id]['total_time'] = handler_stats_buffer[req_id]['profile'].total_tt
+            handler_stats_buffer[req_id]['stats_buffer']['total_time'] = handler_stats_buffer[req_id]['stats_buffer']['profile'].total_tt
             # sort the stats in decending order of the sorting stat, then trim
             # to num_results, there will be a lot of negligable stats we can ignore
-            stats = sorted(handler_stats_buffer[req_id]['profile'].stats.items(),
+            stats = sorted(handler_stats_buffer[req_id]['stats_buffer']['profile'].stats.items(),
                            key=lambda x: get_stat(x,self.sort),
                            reverse=True )[:self.num_results]
-            handler_stats_buffer[req_id]['pstats'] = copy.deepcopy(stats)
+            handler_stats_buffer[req_id]['stats_buffer']['pstats'] = copy.deepcopy(stats)
             # remove the profile data
-            del handler_stats_buffer[req_id]['profile']
+            del handler_stats_buffer[req_id]['stats_buffer']['profile']
         except KeyError:
             # If TMS UI is open when TMS is starting started it tries to recall
             # a non-exsistent item from the buffer. 

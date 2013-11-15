@@ -115,12 +115,9 @@ def setup_profile_database(username, password):
     global session
     session = Session()
 
-sender_metadata_keys = ['exhibitor_chain','exhibitor_branch','product','version']
-method_call_metadata_keys = ['function','class','module']
-
-def get_metadata_list(metadata_dictionary, metadata_keys):
+def get_metadata_list(metadata_dictionary):
     metadata_list = []
-    for metadata_key in metadata_keys:
+    for metadata_key in metadata_dictionary.keys():
         metadata_query = session.query(MetaData).filter_by(key=metadata_key, value=metadata_dictionary[metadata_key])
         if metadata_query.count() == 0:
             # Add new metadata if does not exist
@@ -132,48 +129,55 @@ def get_metadata_list(metadata_dictionary, metadata_keys):
             metadata_list.append(metadata_query.first())
     return metadata_list
 
-def push_fn_stats(stats_packet, ip_address):
-    # Add sender metadata
-    sender_metadata_list = get_metadata_list(stats_packet, sender_metadata_keys)
-    for sender_metadata in sender_metadata_list:
-        session.add(sender_metadata)
+def push_fn_stats(stats_packet):
+    # Add flush metadata
+    flush_metadata_list = get_metadata_list(stats_packet['flush_metadata'])
+    for flush_metadata in flush_metadata_list:
+        session.add(flush_metadata)
     
-    for profile_stats in stats_packet['stats']:
+    for profile_stats in stats_packet['profile']:
         # Add function metadata
-        function_metadata_list = get_metadata_list(profile_stats, method_call_metadata_keys)
+        function_metadata_list = get_metadata_list(profile_stats['metadata_buffer'])
         for function_metadata in function_metadata_list:
             session.add(function_metadata)
             
         # Add call stack
-        call_stack = CallStack(profile_stats)
+        call_stack = CallStack(profile_stats['stats_buffer'])
         session.add(call_stack)
         session.commit()
         
         # Add call stack/metadata relationships
-        for sender_metadata in sender_metadata_list:
-            session.add(CallStackMetadata(call_stack.id, sender_metadata.id))
+        for flush_metadata in flush_metadata_list:
+            session.add(CallStackMetadata(call_stack.id, flush_metadata.id))
         for function_metadata in function_metadata_list:
             session.add(CallStackMetadata(call_stack.id, function_metadata.id))
         
         # Add call stack items
-        pstats = profile_stats['pstats']
+        pstats = profile_stats['stats_buffer']['pstats']
         for stats in pstats:
             session.add(CallStackItem(call_stack.id, stats))
     session.commit()
 
-def push_sql_stats(stats_packet, ip_address):
-    # Add sender metadata
-    sender_metadata_list = get_metadata_list(stats_packet, sender_metadata_keys)
-    for sender_metadata in sender_metadata_list:
-        session.add(sender_metadata)
+def push_sql_stats(stats_packet):
+    # Add flush metadata
+    flush_metadata_list = get_metadata_list(stats_packet['flush_metadata'])
+    for flush_metadata in flush_metadata_list:
+        session.add(flush_metadata)
     
-    for sql_stat in stats_packet['stats']:
+    for profile_stats in stats_packet['profile']:
+        # Add SQL metadata
+        sql_metadata_list = get_metadata_list(profile_stats['metadata_buffer'])
+        for sql_metadata in sql_metadata_list:
+            session.add(sql_metadata)
+            
         # Add sql statement
-        sql_statement = SQLStatement(sql_stat)
+        sql_statement = SQLStatement(profile_stats['stats_buffer'])
         session.add(sql_statement)
         session.commit()
         
         # Add sql statement/metadata relationships
-        for sender_metadata in sender_metadata_list:
-            session.add(SQLStatementMetadata(sql_statement.id, sender_metadata.id))
+        for flush_metadata in flush_metadata_list:
+            session.add(SQLStatementMetadata(sql_statement.id, flush_metadata.id))
+        for sql_metadata in sql_metadata_list:
+            session.add(SQLStatementMetadata(sql_statement.id, sql_metadata.id))
     session.commit()

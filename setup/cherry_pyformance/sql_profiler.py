@@ -133,10 +133,11 @@ def profile_sql(action, sql, *args, **kwargs):
     if time_diff > 0:
         _id = id(sql+str(end_time))
         global sql_stats_buffer
-        sql_stats_buffer[_id] = {'sql':sql.replace('\n','\\n'),
-                              'datetime':start_time,
-                              'duration':time_diff
-                             }
+        sql_stats_buffer[_id] = {'stats_buffer': {'sql':sql.replace('\n','\\n'),
+                                                  'datetime':start_time,
+                                                  'duration':time_diff},
+                                 'metadata_buffer': {}
+                                }
     return output
 
 def decorate_connections():

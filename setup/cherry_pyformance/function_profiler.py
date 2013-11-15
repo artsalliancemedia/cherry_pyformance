@@ -58,14 +58,15 @@ class StatWrapper(object):
         stats = sorted(self._profile.stats.items(), key=lambda x: get_stat(x,self._sort), reverse=True)[:self._num_results]
         # Take the id of the current time as a unique identifier.
         # This is inkeeping with the request ids seen on the stat records seen on the tool.
-        _id = id(time.time())
-        function_stats_buffer[_id] = {'id': _id,
-                            'function': self._name,
-                            'class': self._class_name,
-                            'module': self._module_name,
-                            'datetime': time.time(),
-                            'total_time': self._profile.total_tt,
-                            'pstats': stats}
+        req_id = id(time.time())
+        function_stats_buffer[req_id] = {'stats_buffer': {'id': req_id,
+                                                       'datetime': time.time(),
+                                                       'total_time': self._profile.total_tt,
+                                                       'pstats': stats},
+                                         'metadata_buffer': {'function': self._name,
+                                                             'class': self._class_name,
+                                                             'module': self._module_name}
+                                        }
         # reset the profiler for new function calls.
         ################### TODO TEST IF MULTIPLE FUNCTION CALLS OVERLAP. 
         ###### Currently only one profiler exists for each function instance
