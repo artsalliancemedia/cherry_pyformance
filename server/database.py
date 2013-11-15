@@ -91,6 +91,19 @@ class SQLStatementMetadata(Base):
         self.sql_statement_id = sql_statement_id
         self.metadata_id = metadata_id
 
+class SQLStacks(Base):
+    __tablename__ = 'sql_stack_items'
+    id = Column(Integer, primary_key=True)
+    sql_statement_id = Column(None, ForeignKey('sql_statements.id'))
+    module = Column(String)
+    function = Column(String)
+
+    def __init__(self, sql_statement_id, stack_item):
+        self.sql_statement_id = sql_statement_id
+        self.module = stack_item['module']
+        self.function = stack_item['function']
+
+
 def create_db_and_connect(postgres_string):
     database = sqlalchemy.create_engine(postgres_string + '/profile_stats')
     database.connect()
@@ -169,7 +182,9 @@ def push_sql_stats(stats_packet):
         sql_metadata_list = get_metadata_list(profile_stats['metadata_buffer'])
         for sql_metadata in sql_metadata_list:
             session.add(sql_metadata)
-            
+        
+        sql_stack_list = profile_stats['stack']
+
         # Add sql statement
         sql_statement = SQLStatement(profile_stats['stats_buffer'])
         session.add(sql_statement)
@@ -180,4 +195,6 @@ def push_sql_stats(stats_packet):
             session.add(SQLStatementMetadata(sql_statement.id, flush_metadata.id))
         for sql_metadata in sql_metadata_list:
             session.add(SQLStatementMetadata(sql_statement.id, sql_metadata.id))
+        for sql_stack_item in sql_stack_list:
+            session.add(SQLStacks(sql_statement.id, sql_stack_item))
     session.commit()

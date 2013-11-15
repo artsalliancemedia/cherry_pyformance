@@ -5,12 +5,12 @@
     "version":"0.0.1",
 
     "output":{
-                "type":"disk",
-                "location":"D:\\",
+                "type":"server",
+                "location":"localhost:8888",
                 "compress":true
              },
-    "flush_interval":20,
-    "sort_on":"time",
+    "flush_interval":30,
+    "sort_on":"cumulative",
     "num_results":20,
 
     "functions":[
