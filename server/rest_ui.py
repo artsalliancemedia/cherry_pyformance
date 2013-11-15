@@ -45,8 +45,15 @@ class JSONMetadata(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        call_stack_metadata = db.session.query(db.CallStackMetadata).filter_by(call_stack_id=kwargs['call_stack_id']).all()
-        metadata_ids = [item.metadata_id for item in call_stack_metadata]
+        metadata_relations = []
+        if 'call_stack_id' in kwargs:
+            metadata_relations = db.session.query(db.CallStackMetadata).filter_by(call_stack_id=kwargs['call_stack_id']).all()
+        elif 'sql_statement_id' in kwargs:
+            metadata_relations = db.session.query(db.SQLStatementMetadata).filter_by(sql_statement_id=kwargs['sql_statement_id']).all()
+        else:
+            # Need call stack or sql statement id
+            return {'aaData':[]}
+        metadata_ids = [item.metadata_id for item in metadata_relations]
         metadata_list = db.session.query(db.MetaData).filter(db.MetaData.id.in_(metadata_ids)).all()
         data = []
         for metadata in metadata_list:
