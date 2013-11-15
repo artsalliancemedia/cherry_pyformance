@@ -14,11 +14,6 @@ function_stats_buffer = {}
 handler_stats_buffer = {}
 sql_stats_buffer = {}
 
-# stat_logger = None
-# cfg = None
-# push_stats = None
-# stats_package_template = None
-
 def get_stat(item, stat):
     """
     Returns the value of an item's stat based on the stat name, not the tuple index
@@ -130,11 +125,12 @@ def initialise(config_file_path):
     push_stats = create_output_fn()
     
     global stats_package_template
-    stats_package_template = {'exhibitor_chain': cfg['exhibitor_chain'],
-                              'exhibitor_branch': cfg['exhibitor_branch'],
-                              'product': cfg['product'],
-                              'version': cfg['version'],
-                              'stats': []}
+    stats_package_template = {'flush_metadata': {'exhibitor_chain': cfg['exhibitor_chain'],
+                                                 'exhibitor_branch': cfg['exhibitor_branch'],
+                                                 'product': cfg['product'],
+                                                 'version': cfg['version']},
+                              'type': 'default_type',
+                              'profile': []}
 
     if cfg['functions']:
         from function_profiler import decorate_functions
