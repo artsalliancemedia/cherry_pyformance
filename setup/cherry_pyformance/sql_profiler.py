@@ -1,5 +1,5 @@
 import time
-
+import inspect
 from cherry_pyformance import cfg, stat_logger, sql_stats_buffer
 
 ###============================================================###
@@ -138,6 +138,11 @@ def profile_sql(action, sql, *args, **kwargs):
                                                   'duration':time_diff},
                                  'metadata_buffer': {}
                                 }
+        stack = inspect.stack()
+        for i in range(len(stack)):
+            stack[i] = {'module': stack[i][1], 'function': stack[i][3]}
+        sql_stats_buffer[_id]['stack'] = stack
+        del stack
     return output
 
 def decorate_connections():

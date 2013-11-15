@@ -105,7 +105,7 @@ if __name__ == '__main__':
     username = sys.argv[1]
     password = sys.argv[2]
     host = sys.argv[3]
-    port = None
+    port = 8888
     if len(sys.argv) == 5:
         port = sys.argv[4]
     
