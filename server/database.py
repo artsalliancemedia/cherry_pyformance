@@ -98,10 +98,8 @@ def create_db_and_connect(postgres_string):
 
 session = None
 
-def setup_profile_database(username, password, host, port):
-    postgres_string = 'postgresql://' + username + ':' + password + '@' + host
-    if port != None:
-        postgres_string += ':' + port
+def setup_profile_database(username, password):
+    postgres_string = 'postgresql://' + username + ':' + password + '@localhost'
     try:
         db = create_db_and_connect(postgres_string)
     except:

@@ -19,16 +19,10 @@
                              "aoColumns": [
                                   null,
                                   null,
-                                  {'bVisible':false},
-                                  null,
-                                  {'bVisible':false},
-                                  null,
                                   null,
                               ],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 $('td:eq(0)', nRow).html( '<a href="/callstacks/'+aData[0]+'">'+aData[0]+'</a>' );
-                                $('td:eq(1)', nRow).html( '<a href="/method_calls/'+aData[2]+'">'+aData[1]+'</a>' );
-                                $('td:eq(2)', nRow).html( '<a href="/senders/'+aData[4]+'">'+aData[3]+'</a>' );
                               }
   } );
     });
@@ -45,10 +39,6 @@
     <thead>
       <tr>
         <th>ID</th>
-        <th>Method Call</th>
-        <th>Method Call ID</th>
-        <th>Sender</th>
-        <th>Sender ID</th>
         <th>Total Time</th>
         <th>Datetime</th>
       </tr>

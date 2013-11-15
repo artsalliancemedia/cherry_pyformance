@@ -7,7 +7,7 @@ import os
 
 def print_help_string():
     print 'Use as follows:\n\n' \
-          'python stats_server.py username password host [port]\n'
+          'python stats_server.py database_username database_password server_host [server_port]\n'
     
 def print_arg_error():
     print 'Arguments incorrect!'
@@ -54,8 +54,9 @@ class StatHandler(object):
         return 'Hello, World.'
 
 
-def start_cherrypy():
-    cherrypy.config.update({'server.socket_port': 8888})
+def start_cherrypy(host, port):
+    cherrypy.server.socket_host = host
+    cherrypy.server.socket_port = int(port)
     cherrypy.log('Mounting the handlers')
     method_dispatch_cfg = {'/': {'request.dispatch': cherrypy.dispatch.MethodDispatcher()} }
     front_end_config = {'/': {'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
@@ -107,7 +108,7 @@ if __name__ == '__main__':
         port = sys.argv[4]
     
     try:
-        db.setup_profile_database(username, password, host, port)
-        start_cherrypy()
+        db.setup_profile_database(username, password)
+        start_cherrypy(host, port)
     except Exception, ex:
         print str(ex)
