@@ -136,7 +136,7 @@ def profile_sql(action, sql, *args, **kwargs):
         sql_stats_buffer[_id] = {'stats_buffer': {'sql':sql.replace('\n','\\n'),
                                                   'datetime':start_time,
                                                   'duration':time_diff},
-                                 'metadata_buffer': {}
+                                 'metadata_buffer': {'statement_type':sql.split()[0]}
                                 }
     return output
 
