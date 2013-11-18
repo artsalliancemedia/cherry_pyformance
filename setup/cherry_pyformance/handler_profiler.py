@@ -26,7 +26,7 @@ class StatsTool(cherrypy.Tool):
     been sent, the stats are sorted and put on the buffer.
     """
 
-    def __init__(self, sort='time', num_results=10):
+    def __init__(self, sort, num_results):
         self._name = 'profile'
         self._point = 'before_handler'
         self._priority = 80

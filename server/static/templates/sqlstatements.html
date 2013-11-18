@@ -22,7 +22,9 @@
                                   null,
                               ],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                $('td:eq(0)', nRow).html( '<a href="/sqlstatements/'+aData[0]+'">'+aData[0]+'</a>' );
+                                $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/sqlstatements/'+aData[0] });
+                                d = new Date(aData[3]*1000);
+                                $('td:eq(3)', nRow).text(d);
                               }
   } );
     });
@@ -35,6 +37,8 @@
 </head>
 <body>
 
+  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;SQL Statements
+
   <h1>SQL Statements</h1>
   <table id="main">
     <thead>
@@ -46,10 +50,6 @@
       </tr>
     </thead>
   </table>
-  
-  <p>
-    <a href="/">Back to Main Page</a>
-  </p>
 
 </body>
 </html>

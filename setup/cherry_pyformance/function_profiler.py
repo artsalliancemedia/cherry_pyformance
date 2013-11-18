@@ -31,7 +31,7 @@ class StatWrapper(object):
     is seamlessly returned without waiting on the push to the buffer.
     """
 
-    def __init__(self, function, inner_func=None, sort='time', num_results=10):
+    def __init__(self, function, sort, num_results, inner_func=None):
         self._function = function
         self._profile = cProfile.Profile()
         self._sort = sort
@@ -137,7 +137,7 @@ def decorate_function(path):
             inner_func = None
 
         # replace the function instance with a wrapped one.
-        setattr(parent, attribute, StatWrapper(outer_func, inner_func=inner_func, sort='time', num_results=10))
+        setattr(parent, attribute, StatWrapper(outer_func, sort=cfg['sort_on'], num_results=cfg['num_results'], inner_func=inner_func))
     except Exception as e:
         stat_logger.warning('Failed to wrap function %s for stats profiling. Check configuration and importation method. The function will not be profiled.' % path_string)
 
