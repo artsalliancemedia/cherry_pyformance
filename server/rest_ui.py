@@ -27,7 +27,11 @@ def json_get(table_class, id=None, **kwargs):
                 datum = time.strftime('%a, %d %b %Y %H:%M:%S', time.localtime(datum))
             if type(datum) == float:
                 datum = "%f"%datum
-            record.append(html_escape(str(datum)))
+            if column == 'sql_string':
+                datum = datum.replace('\\n', '<br>')
+            else:
+                datum = html_escape(str(datum))
+            record.append(datum)
         data.append(record)
     return {'aaData':data}
 
