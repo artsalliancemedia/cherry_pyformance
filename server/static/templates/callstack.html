@@ -4,6 +4,10 @@
   <title>Call Stack</title>
   <style type="text/css" title="currentStyle">
     @import "/css/jquery-ui-1.10.3.custom.min.css";
+    .meta{
+      width:50%;
+      float:left;
+    }
   </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
@@ -63,8 +67,14 @@
 </head>
 
 <body>
+
+<div class="breadcrumbs">
   <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/callstacks">Callstacks</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Callstack&nbsp;${callstack.id}
-  <h1>Call Stack</h1>
+</div>
+
+
+<div class="meta">
+  <h2>Call Stack</h2>
   <table id="main">
     <thead>
       <tr>
@@ -74,6 +84,20 @@
       </tr>
     </thead>
   </table>
+</div>
+
+<div class="meta">
+  <h2>Call Stack Metadata:</h2>
+  <table id="metadata">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Key</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+  </table>
+</div>
 
   <h2>Call Stack Data:</h2>
   <table id="callstackitems">
@@ -91,17 +115,7 @@
       </tr>
     </thead>
   </table>
-  
-  <h2>Call Stack Metadata:</h2>
-  <table id="metadata">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Key</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-  </table>
+
 
 </body>
 </html>

@@ -4,6 +4,10 @@
   <title>SQL Statement</title>
   <style type="text/css" title="currentStyle">
     @import "/css/jquery-ui-1.10.3.custom.min.css";
+    .meta{
+      width:50%;
+      float:left;
+    }
   </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
@@ -60,9 +64,12 @@
 </head>
 <body>
 
-  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/sqlstatements">SQL Statements</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;SQL Statement&nbsp;${sql_statement.id}
+  <div class="breadcrumbs">
+    <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/sqlstatements">SQL Statements</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;SQL Statement&nbsp;${sql_statement.id}
+  </div>
 
-  <h1>SQL Statement</h1>
+<div class="meta">
+  <h2>SQL Statement</h2>
   <table id="main">
     <thead>
       <tr>
@@ -73,6 +80,20 @@
       </tr>
     </thead>
   </table>
+</div>
+
+<div class="meta">
+  <h2>SQL Statement Metadata:</h2>
+  <table id="metadata">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Key</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+  </table>
+</div>
 
   <h2>SQL Statement Stack:</h2>
   <table id="stack">
@@ -86,16 +107,8 @@
     </thead>
   </table>
 
-  <h2>SQL Statement Metadata:</h2>
-  <table id="metadata">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Key</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-  </table>
+
+
 
 </body>
 </html>
