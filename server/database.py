@@ -91,7 +91,7 @@ class SQLStatementMetadata(Base):
         self.sql_statement_id = sql_statement_id
         self.metadata_id = metadata_id
 
-class SQLStacks(Base):
+class SQLStack(Base):
     __tablename__ = 'sql_stack_items'
     id = Column(Integer, primary_key=True)
     sql_statement_id = Column(None, ForeignKey('sql_statements.id'))
@@ -196,5 +196,5 @@ def push_sql_stats(stats_packet):
         for sql_metadata in sql_metadata_list:
             session.add(SQLStatementMetadata(sql_statement.id, sql_metadata.id))
         for sql_stack_item in sql_stack_list:
-            session.add(SQLStacks(sql_statement.id, sql_stack_item))
+            session.add(SQLStack(sql_statement.id, sql_stack_item))
     session.commit()

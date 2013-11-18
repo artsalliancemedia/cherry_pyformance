@@ -9,6 +9,7 @@ from cgi import escape as html_escape
 column_order = {'CallStack':['id','total_time','datetime'],
                 'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
                 'SQLStatement':['id','sql_string','duration','datetime'],
+                'SQLStack':['id','sql_statement_id','module','function'],
                 'MetaData':['id','key','value']}
 
 def json_get(table_class, id=None, **kwargs):
@@ -59,6 +60,15 @@ class JSONMetadata(object):
         return {'aaData':data}
 
 
+class JSONSQLStacks(object):
+    exposed = True
+    @cherrypy.tools.json_out()
+    def GET(self, id=None, **kwargs):
+        return json_get(db.SQLStack, id, **kwargs)
+
+
+
+
 class CallStacks(object):
     exposed = True
 
@@ -75,9 +85,15 @@ class CallStacks(object):
 class SQLStatements(object):
     exposed = True
 
-    def GET(self, **kwargs):
-        mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatements.html'))
-        return mytemplate.render(encoded_kwargs=urlencode(kwargs))
+    def GET(self, id=None, **kwargs):
+        if id:
+            sql_statement = db.session.query(db.SQLStatement).get(id)
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatement.html'))
+            return mytemplate.render(sql_statement=sql_statement,
+                                     encoded_kwargs=urlencode(kwargs))
+        else:
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatements.html'))
+            return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
 
 class Root(object):
@@ -92,4 +108,5 @@ class Root(object):
     _callstacks = JSONCallStacks()
     _callstackitems = JSONCallStackItems()
     _sqlstatements = JSONSQLStatements()
+    _sqlstacks = JSONSQLStacks()
     _metadata = JSONMetadata()
