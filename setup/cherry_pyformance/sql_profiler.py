@@ -1,6 +1,5 @@
 import time
 import inspect
-from sqlparse import tokens as sql_tokens, parse as parse_sql
 from cherry_pyformance import cfg, stat_logger, sql_stats_buffer
 
 ###============================================================###
@@ -133,16 +132,6 @@ def profile_sql(action, sql, *args, **kwargs):
     end_clock = time.clock()
     time_diff = end_clock-start_clock
     if time_diff > 0:
-        parsed_sql = parse_sql(sql)[0]
-        sql_keywords = []
-        sql_identifiers = []
-        for token in parsed_sql.tokens:
-            for item in token.flatten():
-                if item.ttype == sql_tokens.Keyword:
-                    sql_keywords.append(item.value)
-                elif item.ttype == sql_tokens.Name:
-                    sql_identifiers.append(item.value)
-        
         stack = inspect.stack()
         for i in range(len(stack)):
             stack[i] = {'module': stack[i][1], 'function': stack[i][3]}
@@ -153,9 +142,7 @@ def profile_sql(action, sql, *args, **kwargs):
                                                   'datetime':start_time,
                                                   'duration':time_diff,
                                                   'stack':stack},
-                                 'metadata_buffer': {'statement_type':sql.split()[0],
-                                                     'statement_keywords':sql_keywords,
-                                                     'statement_identifiers':sql_identifiers}
+                                 'metadata_buffer': {'statement_type':sql.split()[0]}
                                 }
         del stack
     return output
