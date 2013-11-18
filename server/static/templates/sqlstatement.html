@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SQL Statements</title>
-  <h1>SQL Statements</h1>
+  <title>SQL Statement</title>
   <style type="text/css" title="currentStyle">
     @import "/css/jquery-ui-1.10.3.custom.min.css";
   </style>
@@ -24,17 +23,6 @@
                               ]
                           });
 
-
-      $('#metadata').dataTable({"sAjaxSource": "/_metadata?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "iDisplayLength": 20,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "aoColumns": [ {"bVisible":false},
-                                            null,
-                                            null]
-                            });
       $('#stack').dataTable({"sAjaxSource": "/_sqlstacks?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
                              "bProcessing":true,
                              "bDeferRender":true,
@@ -42,7 +30,18 @@
                              "bAutoWidth":false,
                              "bJQueryUI": true,
                              "aoColumns": [ null,
+                                            {"bVisible":false},
                                             null,
+                                            null]
+                            });
+                            
+      $('#metadata').dataTable({"sAjaxSource": "/_metadata?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
+                             "bProcessing":true,
+                             "bDeferRender":true,
+                             "iDisplayLength": 20,
+                             "bAutoWidth":false,
+                             "bJQueryUI": true,
+                             "aoColumns": [ {"bVisible":false},
                                             null,
                                             null]
                             });
@@ -57,6 +56,7 @@
 </head>
 <body>
 
+  <h1>SQL Statement</h1>
   <table id="main">
     <thead>
       <tr>
@@ -64,17 +64,6 @@
         <th>SQL</th>
         <th>Duration</th>
         <th>Datetime</th>
-      </tr>
-    </thead>
-  </table>
-
-  <h2>SQL Statement Metadata:</h2>
-  <table id="metadata">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Key</th>
-        <th>Value</th>
       </tr>
     </thead>
   </table>
@@ -90,6 +79,21 @@
       </tr>
     </thead>
   </table>
+
+  <h2>SQL Statement Metadata:</h2>
+  <table id="metadata">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Key</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+  </table>
+  
+  <p>
+    <a href="/sqlstatements">Back to SQL Statements</a>
+  </p>
 
 </body>
 </html>
