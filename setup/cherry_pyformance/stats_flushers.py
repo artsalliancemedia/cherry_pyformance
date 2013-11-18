@@ -49,8 +49,13 @@ def flush_sql_stats(stats_buffer, stat_type):
     # initialise a package of stats to push, not all stats may be ready to be pushed
     stats_to_push = []
     for _id in stats_buffer.keys():
-        stats_to_push.append(copy.deepcopy(stats_buffer[_id]))
-        del stats_buffer[_id]
+        # sometimes stat has already gone by this point.
+        try:
+            stats_to_push.append(copy.deepcopy(stats_buffer[_id]))
+            del stats_buffer[_id]
+        except:
+            # if does not exist, assume another flusher on another thread has taken care of it
+            pass
     length = len(stats_to_push)
     if length != 0:
         stats_package = copy.deepcopy(stats_package_template)
