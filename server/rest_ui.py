@@ -76,8 +76,7 @@ class CallStacks(object):
         if id:
             call_stack = db.session.query(db.CallStack).get(id)
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstack.html'))
-            return mytemplate.render(callstack=call_stack,
-                                     encoded_kwargs='call_stack_id='+str(call_stack.id)+'&'+urlencode(kwargs))
+            return mytemplate.render(callstack=call_stack, encoded_kwargs=urlencode(kwargs))
         else:
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstacks.html'))
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
@@ -89,8 +88,7 @@ class SQLStatements(object):
         if id:
             sql_statement = db.session.query(db.SQLStatement).get(id)
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatement.html'))
-            return mytemplate.render(sql_statement=sql_statement,
-                                     encoded_kwargs=urlencode(kwargs))
+            return mytemplate.render(sql_statement=sql_statement, encoded_kwargs=urlencode(kwargs))
         else:
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatements.html'))
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
@@ -100,7 +98,7 @@ class Root(object):
     exposed = True
 
     def GET(self):
-        return 'Hello, world.'
+        return mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html')).render()
 
     callstacks = CallStacks()
     sqlstatements = SQLStatements()
