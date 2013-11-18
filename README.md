@@ -18,7 +18,26 @@ import cherry_pyformance
 cherry_pyformance.initialise('path/to/config.json')
 ```
 
+### Client Requirements
+* Python 2.6/7
+* CherryPy
+
 ## Server
 
 The server is a CherryPy application which accepts stats pushed by the cherry_pyformance client storing them for analysis and browsing.
 
+### Server Instructions
+Go to the server directory and run
+```
+python stats_server.py <db_username> <db_password> <server_host> [<server_port>]
+```
+(`server_port` defaults to 8888)
+
+The server UI then runs on `http://server_host:server_port/`.
+
+### Server Requirements
+* Python 2.6/7
+* CherryPy
+* Mako
+* SQLAlchemy
+* SQLParse
