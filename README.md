@@ -30,7 +30,7 @@ The server is a CherryPy application which accepts stats pushed by the cherry_py
 ### Server Instructions
 Go to the server directory and run
 ```
-python stats_server.py &lt;db_username&gt; &lt;db_password&gt; &lt;server_host&gt; [&lt;server_port&gt;]
+python stats_server.py <db_username> <db_password> <server_host> [<server_port>]
 ```
 (or follow the help instrustions by running `python stats_server.py --help`)
 
