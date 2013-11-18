@@ -21,12 +21,15 @@
                                   null,
                               ],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                $('td:eq(0)', nRow).html( '<a href="/callstacks/'+aData[0]+'">'+aData[0]+'</a>' );
+                                $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/callstacks/'+aData[0] });
+                                // $('td:eq(0)', nRow).html( '<a href="/callstacks/'+aData[0]+'">'+aData[0]+'</a>' );
                                 d = new Date(aData[2]*1000);
                                 $('td:eq(2)', nRow).text(d);
                               }
-  } );
+                          } );
     });
+
+
   </script>
   
 
