@@ -21,10 +21,14 @@
                                   null,
                               ],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                $('td:eq(0)', nRow).html( '<a href="/callstacks/'+aData[0]+'">'+aData[0]+'</a>' );
+                                $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/callstacks/'+aData[0] });
+                                d = new Date(aData[2]*1000);
+                                $('td:eq(2)', nRow).text(d);
                               }
-  } );
+                          } );
     });
+
+
   </script>
   
 
@@ -33,7 +37,7 @@
 
 </head>
 <body>
-
+  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Callstacks
   <h1>Call Stacks</h1>
   <table id="main">
     <thead>
@@ -45,9 +49,5 @@
     </thead>
   </table>
   
-  <p>
-    <a href="/">Back to Main Page</a>
-  </p>
-
 </body>
 </html>

@@ -20,7 +20,11 @@
                                   null,
                                   null,
                                   null,
-                              ]
+                              ],
+                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                                d = new Date(aData[3]*1000);
+                                $('td:eq(3)', nRow).text(d);
+                              }
                           });
 
       $('#stack').dataTable({"sAjaxSource": "/_sqlstacks?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
@@ -56,6 +60,8 @@
 </head>
 <body>
 
+  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/sqlstatements">SQL Statements</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;SQL Statement&nbsp;${sql_statement.id}
+
   <h1>SQL Statement</h1>
   <table id="main">
     <thead>
@@ -90,10 +96,6 @@
       </tr>
     </thead>
   </table>
-  
-  <p>
-    <a href="/sqlstatements">Back to SQL Statements</a>
-  </p>
 
 </body>
 </html>

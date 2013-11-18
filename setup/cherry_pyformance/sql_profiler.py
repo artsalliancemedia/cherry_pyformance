@@ -127,13 +127,14 @@ class SqliteConnectionFactory(object):
 
 def profile_sql(action, sql, *args, **kwargs):
     start_time = time.time()
+    start_clock = time.clock()
     output = action(sql, *args, **kwargs)
-    end_time = time.time()
-    time_diff = end_time-start_time
+    end_clock = time.clock()
+    time_diff = end_clock-start_clock
     if time_diff > 0:
-        _id = id(sql+str(end_time))
+        _id = id(sql+str(start_time))
         global sql_stats_buffer
-        sql_stats_buffer[_id] = {'stats_buffer': {'sql':sql.replace('\n','\\n'),
+        sql_stats_buffer[_id] = {'stats_buffer': {'sql':sql,
                                                   'datetime':start_time,
                                                   'duration':time_diff},
                                  'metadata_buffer': {'statement_type':sql.split()[0]}

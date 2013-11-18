@@ -4,6 +4,7 @@ import mako.template
 import os
 from urllib import urlencode
 from cgi import escape as html_escape
+import time
 
 
 column_order = {'CallStack':['id','total_time','datetime'],
@@ -19,7 +20,16 @@ def json_get(table_class, id=None, **kwargs):
     items = db.session.query(table_class).filter_by(**kwargs).all()
     data = []
     for item in items:
-        record = [html_escape(str(item.__dict__[x])) for x in column_order[table_class.__name__]]
+        record = []
+        for column in column_order[table_class.__name__]:
+            datum = item.__dict__[column]
+            if type(datum) == float:
+                datum = "%f"%datum
+            if column == 'sql_string':
+                datum = datum.replace('\\n', '<br>')
+            else:
+                datum = html_escape(str(datum))
+            record.append(datum)
         data.append(record)
     return {'aaData':data}
 

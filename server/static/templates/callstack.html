@@ -22,7 +22,11 @@
                                   null,
                                   null,
                                   null,
-                              ]
+                              ],
+                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                                d = new Date(aData[2]*1000);
+                                $('td:eq(2)', nRow).text(d);
+                              }
                             });
 
       $('#callstackitems').dataTable({"sAjaxSource": "/_callstackitems?call_stack_id=${callstack.id}&${encoded_kwargs}",
@@ -56,9 +60,10 @@
   </script>
   <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
 
-
 </head>
+
 <body>
+  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/callstacks">Callstacks</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Callstack&nbsp;${callstack.id}
   <h1>Call Stack</h1>
   <table id="main">
     <thead>
@@ -97,10 +102,6 @@
       </tr>
     </thead>
   </table>
-  
-  <p>
-    <a href="/callstacks">Back to Call Stacks</a>
-  </p>
 
 </body>
 </html>
