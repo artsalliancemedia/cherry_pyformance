@@ -22,7 +22,11 @@
                                   null,
                                   null,
                                   null,
-                              ]
+                              ],
+                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                                d = new Date(aData[2]*1000);
+                                $('td:eq(2)', nRow).text(d);
+                              }
                             });
 
       $('#callstackitems').dataTable({"sAjaxSource": "/_callstackitems?call_stack_id=${callstack.id}&${encoded_kwargs}",

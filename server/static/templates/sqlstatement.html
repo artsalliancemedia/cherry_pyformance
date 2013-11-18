@@ -20,7 +20,11 @@
                                   null,
                                   null,
                                   null,
-                              ]
+                              ],
+                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                                d = new Date(aData[3]*1000);
+                                $('td:eq(3)', nRow).text(d);
+                              }
                           });
 
       $('#stack').dataTable({"sAjaxSource": "/_sqlstacks?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
