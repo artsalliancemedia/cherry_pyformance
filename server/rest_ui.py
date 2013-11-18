@@ -23,8 +23,6 @@ def json_get(table_class, id=None, **kwargs):
         record = []
         for column in column_order[table_class.__name__]:
             datum = item.__dict__[column]
-            if column == 'datetime':
-                datum = time.strftime('%a, %d %b %Y %H:%M:%S', time.localtime(datum))
             if type(datum) == float:
                 datum = "%f"%datum
             if column == 'sql_string':

@@ -23,6 +23,8 @@
                               ],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 $('td:eq(0)', nRow).html( '<a href="/sqlstatements/'+aData[0]+'">'+aData[0]+'</a>' );
+                                d = new Date(aData[3]*1000);
+                                $('td:eq(3)', nRow).text(d);
                               }
   } );
     });
