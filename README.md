@@ -21,7 +21,6 @@ cherry_pyformance.initialise('path/to/config.json')
 ### Client Requirements
 * Python 2.6/7
 * CherryPy
-* SQLParse
 
 ## Server
 
@@ -41,3 +40,4 @@ The server UI then runs on `http://server_host:server_port/`.
 * CherryPy
 * Mako
 * SQLAlchemy
+* SQLParse
