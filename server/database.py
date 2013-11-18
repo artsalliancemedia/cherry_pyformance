@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from threading import Thread
+from sqlparse import tokens as sql_tokens, parse as parse_sql
 
 Base = declarative_base()
 
@@ -148,6 +149,7 @@ def get_metadata_list(metadata_dictionary, db_session):
 
 def push_fn_stats_new_thread(stats_packet):
     db_session = Session()
+    
     # Add flush metadata
     flush_metadata_list = get_metadata_list(stats_packet['flush_metadata'], db_session)
     for flush_metadata in flush_metadata_list:
@@ -165,9 +167,9 @@ def push_fn_stats_new_thread(stats_packet):
         db_session.commit()
         
         # Add call stack/metadata relationships
-        for flush_metadata in flush_metadata_list:
+        for flush_metadata in set(flush_metadata_list):
             db_session.add(CallStackMetadata(call_stack.id, flush_metadata.id))
-        for function_metadata in function_metadata_list:
+        for function_metadata in set(function_metadata_list):
             db_session.add(CallStackMetadata(call_stack.id, function_metadata.id))
         
         # Add call stack items
@@ -181,12 +183,27 @@ def push_fn_stats(stats_packet):
     
 def push_sql_stats_new_thread(stats_packet):
     db_session = Session()
+                    
     # Add flush metadata
     flush_metadata_list = get_metadata_list(stats_packet['flush_metadata'], db_session)
     for flush_metadata in flush_metadata_list:
         db_session.add(flush_metadata)
     
     for profile_stats in stats_packet['profile']:
+        # Parse SQL statement
+        parsed_sql = parse_sql(profile_stats['stats_buffer']['sql'])[0]
+        sql_keywords = []
+        sql_identifiers = []
+        for token in parsed_sql.tokens:
+            for item in token.flatten():
+                if item.ttype == sql_tokens.Keyword:
+                    sql_keywords.append(item.value)
+                elif item.ttype == sql_tokens.Name:
+                    sql_identifiers.append(item.value)
+                    
+        profile_stats['metadata_buffer']['statement_keywords'] = sql_keywords
+        profile_stats['metadata_buffer']['statement_identifiers'] = sql_identifiers
+                    
         # Add SQL metadata
         sql_metadata_list = get_metadata_list(profile_stats['metadata_buffer'], db_session)
         for sql_metadata in sql_metadata_list:
@@ -200,10 +217,12 @@ def push_sql_stats_new_thread(stats_packet):
         sql_stack_list = profile_stats['stats_buffer']['stack']
         
         # Add sql statement/metadata relationships
-        for flush_metadata in flush_metadata_list:
+        for flush_metadata in set(flush_metadata_list):
             db_session.add(SQLStatementMetadata(sql_statement.id, flush_metadata.id))
-        for sql_metadata in sql_metadata_list:
+        for sql_metadata in set(sql_metadata_list):
             db_session.add(SQLStatementMetadata(sql_statement.id, sql_metadata.id))
+        
+        # Add sql stack items
         for sql_stack_item in sql_stack_list:
             db_session.add(SQLStack(sql_statement.id, sql_stack_item))
     db_session.commit()
