@@ -133,7 +133,6 @@ def profile_sql(action, sql, *args, **kwargs):
     end_clock = time.clock()
     time_diff = end_clock-start_clock
     if time_diff > 0:
-        _id = id(sql+str(end_time))
         parsed_sql = parse_sql(sql)[0]
         sql_keywords = []
         sql_identifiers = []
