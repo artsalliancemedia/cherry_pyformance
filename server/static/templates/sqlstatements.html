@@ -11,16 +11,11 @@
   <script type="text/javascript">
     $(document).ready(function() {
       $('#main').dataTable( {"sAjaxSource": "/_sqlstatements?${encoded_kwargs}",
+                             "aaSorting": [[ 0, "desc" ]],
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,
                              "bJQueryUI": true,
-                             "aoColumns": [
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                              ],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/sqlstatements/'+aData[0] });
                                 d = new Date(aData[3]*1000);
@@ -29,10 +24,8 @@
   } );
     });
   </script>
-  
 
   <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
-
 
 </head>
 <body>

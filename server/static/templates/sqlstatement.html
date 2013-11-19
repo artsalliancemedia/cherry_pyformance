@@ -15,12 +15,6 @@
                              "bDeferRender":true,
                              "bAutoWidth":false,
                              "bJQueryUI": true,
-                             "aoColumns": [
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                              ],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 d = new Date(aData[3]*1000);
                                 $('td:eq(3)', nRow).text(d);
@@ -53,9 +47,7 @@
     });
   </script>
   
-
   <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
-
 
 </head>
 <body>

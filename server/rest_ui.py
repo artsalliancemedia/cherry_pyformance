@@ -17,7 +17,14 @@ def json_get(table_class, id=None, **kwargs):
     if id:
         kwargs['id'] = id
     kwargs.pop('_', None)
-    items = db.session.query(table_class).filter_by(**kwargs).all()
+    
+    filtered_query = db.session.query(table_class).filter_by(**kwargs)
+    num_items = filtered_query.count()
+    # Might set start/length using keyword args at some point in the future
+    length = 10000
+    start = max(0, num_items - length)
+        
+    items = filtered_query.offset(start).limit(length).all()
     data = []
     for item in items:
         record = []
