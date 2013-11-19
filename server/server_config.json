@@ -1,7 +1,7 @@
 {
-    "database_username":"postgres",
-    "database_password":"my_password",
-    "server_host":"172.17.140.28",
+    "database_username":"username",
+    "database_password":"password",
+    "server_host":"localhost",
     "server_port":"8888",
     "max_table_items":"10000"
 }
