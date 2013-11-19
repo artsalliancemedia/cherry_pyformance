@@ -55,6 +55,7 @@ def create_output_fn():
                     """A function to write the json to disk"""
                     filename = os.path.join(location, 'tms_%s_stats_%s.json'%( stats['type'], str(int(time.time())) ) )
                     with open(filename,'w') as json_file:
+                        print json_file
                         json.dump(stats, json_file, indent=4, separators=(',', ': '))
 
         elif output_type == 'server':

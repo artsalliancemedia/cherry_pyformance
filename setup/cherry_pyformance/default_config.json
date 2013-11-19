@@ -5,9 +5,9 @@
     "version":"0.0.1",
 
     "output":{
-                "type":"server",
-                "location":"localhost:8888",
-                "compress":true
+                "type":"disk",
+                "location":"D:\\",
+                "compress":false
              },
     "flush_interval":30,
     "sort_on":"cumulative",
@@ -22,5 +22,6 @@
     "ignored_handlers":{
                         "/core":["/device_infos"]
                        },
-    "database":"sqlite"
+    "database":"sqlite",
+    "files":true
 }
