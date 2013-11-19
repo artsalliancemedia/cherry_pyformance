@@ -74,12 +74,14 @@ def start_cherrypy(host, port):
     function_stat_handler = StatHandler(db.push_fn_stats)
     handler_stat_handler = StatHandler(db.push_fn_stats)
     sql_stat_handler = StatHandler(db.push_sql_stats)
+    file_stat_handler = StatHandler(db.push_file_stats)
 
     from rest_ui import Root
 
     cherrypy.tree.mount( function_stat_handler, '/function', method_dispatch_cfg )
     cherrypy.tree.mount( handler_stat_handler,  '/handler',  method_dispatch_cfg )
     cherrypy.tree.mount( sql_stat_handler,      '/database', method_dispatch_cfg )
+    cherrypy.tree.mount( file_stat_handler,     '/file',     method_dispatch_cfg )
     cherrypy.tree.mount( Root(),                '/',         front_end_config )
     
     cherrypy.log('Starting CherryPy')
