@@ -5,7 +5,9 @@ import os
 from urllib import urlencode
 from cgi import escape as html_escape
 import time
+from stats_server import load_config
 
+cfg = load_config()
 
 column_order = {'CallStack':['id','total_time','datetime'],
                 'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
@@ -21,7 +23,7 @@ def json_get(table_class, id=None, **kwargs):
     filtered_query = db.session.query(table_class).filter_by(**kwargs)
     num_items = filtered_query.count()
     # Might set start/length using keyword args at some point in the future
-    length = 10000
+    length = int(cfg['max_table_items'])
     start = max(0, num_items - length)
         
     items = filtered_query.offset(start).limit(length).all()
@@ -76,14 +78,11 @@ class JSONMetadata(object):
             data.append(record)
         return {'aaData':data}
 
-
 class JSONSQLStacks(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
         return json_get(db.SQLStack, id, **kwargs)
-
-
 
 
 class CallStacks(object):

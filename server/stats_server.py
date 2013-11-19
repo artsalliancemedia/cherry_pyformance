@@ -1,17 +1,10 @@
+import json
 import cherrypy
 from cherrypy._cpcompat import ntou, json_decode
 import sys
 import database as db
 import zlib
 import os
-
-def print_help_string():
-    print 'Use as follows:\n\n' \
-          'python stats_server.py database_username database_password server_host [server_port]\n'
-    
-def print_arg_error():
-    print 'Arguments incorrect!'
-    print_help_string()
 
 # add gzip to allowed content types for decompressing JSON if compressed.
 allowed_content_types = [ntou('application/json'),
@@ -55,7 +48,6 @@ class StatHandler(object):
         self.push_fn(cherrypy.serving.request.json)
         return 'Hello, World.'
 
-
 def start_cherrypy(host, port):
     cherrypy.server.socket_host = host
     cherrypy.server.socket_port = int(port)
@@ -93,21 +85,23 @@ def start_cherrypy(host, port):
     cherrypy.log('CherryPy started')
     cherrypy.engine.block()
 
+def load_config():
+    try:
+        with open('server_config.json') as cfg_file:
+            cfg = json.load(cfg_file)
+            return cfg
+    except:
+        print 'Failed to load config file (server_config.json)'
+        sys.exit(1)
 
 if __name__ == '__main__':
-    if '--help' in sys.argv:
-        print_help_string()
-        sys.exit(1)
-    if not (len(sys.argv) == 4 or len(sys.argv) == 5):
-        print_arg_error()
-        sys.exit(1)
+    global cfg
+    cfg = load_config()
         
-    username = sys.argv[1]
-    password = sys.argv[2]
-    host = sys.argv[3]
-    port = 8888
-    if len(sys.argv) == 5:
-        port = sys.argv[4]
+    username = cfg['database_username']
+    password = cfg['database_password']
+    host = cfg['server_host']
+    port = cfg['server_port']
     
     try:
         db.setup_profile_database(username, password)
