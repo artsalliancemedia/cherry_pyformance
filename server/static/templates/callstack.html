@@ -18,11 +18,6 @@
                              "bDeferRender":true,
                              "bAutoWidth":false,
                              "bJQueryUI": true,
-                             "aoColumns": [
-                                  null,
-                                  null,
-                                  null,
-                              ],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 d = new Date(aData[2]*1000);
                                 $('td:eq(2)', nRow).text(d);
