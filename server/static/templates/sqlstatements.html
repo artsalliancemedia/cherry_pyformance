@@ -11,6 +11,7 @@
   <script type="text/javascript">
     $(document).ready(function() {
       $('#main').dataTable( {"sAjaxSource": "/_sqlstatements?${encoded_kwargs}",
+                             "aaSorting": [[ 0, "desc" ]],
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,
