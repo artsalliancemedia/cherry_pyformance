@@ -10,7 +10,7 @@ import time
 column_order = {'CallStack':['id','total_time','datetime'],
                 'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
                 'SQLStatement':['id','sql_string','duration','datetime'],
-                'SQLStack':['id','sql_statement_id','module','function'],
+                'SQLStackItem':['id','sql_statement_id','module','function'],
                 'FileAccess':['id','time_to_open','duration_open','data_written','datetime'],
                 'MetaData':['id','key','value']}
 
@@ -62,6 +62,8 @@ class JSONMetadata(object):
             metadata_relations = db.session.query(db.CallStackMetadata).filter_by(call_stack_id=kwargs['call_stack_id']).all()
         elif 'sql_statement_id' in kwargs:
             metadata_relations = db.session.query(db.SQLStatementMetadata).filter_by(sql_statement_id=kwargs['sql_statement_id']).all()
+        elif 'file_access_id' in kwargs:
+            metadata_relations = db.session.query(db.FileAccessMetadata).filter_by(file_access_id=kwargs['file_access_id']).all()
         metadata_ids = [item.metadata_id for item in metadata_relations]
         metadata_list = db.session.query(db.MetaData).filter(db.MetaData.id.in_(metadata_ids)).all()
         data = []
@@ -70,11 +72,11 @@ class JSONMetadata(object):
             data.append(record)
         return {'aaData':data}
 
-class JSONSQLStacks(object):
+class JSONSQLStackItems(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.SQLStack, id, **kwargs)
+        return json_get(db.SQLStackItem, id, **kwargs)
 
 class JSONFileAccesses(object):
     exposed = True
@@ -138,6 +140,6 @@ class Root(object):
     _callstacks = JSONCallStacks()
     _callstackitems = JSONCallStackItems()
     _sqlstatements = JSONSQLStatements()
-    _sqlstacks = JSONSQLStacks()
+    _sqlstackitems = JSONSQLStackItems()
     _fileaccesses = JSONFileAccesses()
     _metadata = JSONMetadata()

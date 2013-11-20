@@ -31,7 +31,7 @@
                               }
                           });
 
-      $('#stack').dataTable({"sAjaxSource": "/_sqlstacks?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
+      $('#stack').dataTable({"sAjaxSource": "/_sqlstackitems?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
                              "bProcessing":true,
                              "bDeferRender":true,
                              "iDisplayLength": 20,
