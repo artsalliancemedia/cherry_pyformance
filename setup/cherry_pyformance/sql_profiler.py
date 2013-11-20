@@ -77,14 +77,20 @@ class SqliteCursorWrapper(object):
     def execute(self, sql, *args, **kwargs):
         if not sql.startswith('PRAGMA'):
             return profile_sql(self._cursor.execute, sql, *args, **kwargs)
+        else:
+            return self._cursor.execute(sql, *args, **kwargs)
 
     def executemany(self, sql, *args, **kwargs):
         if not sql.startswith('PRAGMA'):
             return profile_sql(self._cursor.executemany, sql, *args, **kwargs)
+        else:
+            return self._cursor.executemany(sql, *args, **kwargs)
 
     def executescript(self, script, *args, **kwargs):
         if not script.startswith('PRAGMA'):
             return profile_sql(self._cursor.executescript, script, *args, **kwargs)
+        else:
+            return self._cursor.executescript(script, *args, **kwargs)
 
 class SqliteConnectionWrapper(object):
 
@@ -108,15 +114,22 @@ class SqliteConnectionWrapper(object):
         return self._connection.rollback()
 
     def execute(self, sql, *args, **kwargs):
-        return profile_sql(self._connection.execute, sql, *args, **kwargs)
-        
+        if not sql.startswith('PRAGMA'):
+            return profile_sql(self._connection.execute, sql, *args, **kwargs)
+        else:
+            return self._connection.execute(sql, *args, **kwargs)
 
     def executemany(self, sql, *args, **kwargs):
-        return profile_sql(self._connection.executemany, sql, *args, **kwargs)
-        
+        if not sql.startswith('PRAGMA'):
+            return profile_sql(self._connection.executemany, sql, *args, **kwargs)
+        else:
+            return self._connection.executemany(sql, *args, **kwargs)
 
     def executescript(self, script, *args, **kwargs):
-        return self._cursor.executescript(script, *args, **kwargs)
+        if not script.startswith('PRAGMA'):
+            return profile_sql(self._connection.executescript, script, *args, **kwargs)
+        else:
+            return self._connection.executescript(script, *args, **kwargs)
 
 class SqliteConnectionFactory(object):
 
@@ -141,11 +154,11 @@ def profile_sql(action, sql, *args, **kwargs):
         
         _id = id(sql+str(start_time))
         global sql_stats_buffer
-        sql_stats_buffer[_id] = {'stats_buffer': {'sql':sql,
-                                                  'datetime':start_time,
+        sql_stats_buffer[_id] = {'stats_buffer': {'datetime':start_time,
                                                   'duration':time_diff,
                                                   'stack':stack},
-                                 'metadata_buffer': {'statement_type':sql.split()[0]}
+                                 'metadata_buffer': {'sql_string':sql,
+                                                     'statement_type':sql.split()[0]}
                                 }
         del stack
     return output

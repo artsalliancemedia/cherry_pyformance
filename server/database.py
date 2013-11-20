@@ -26,12 +26,10 @@ class CallStack(Base):
 class SQLStatement(Base):
     __tablename__ = 'sql_statements'
     id = Column(Integer, primary_key=True)
-    sql_string = Column(String)
     datetime = Column(Float)
     duration = Column(Float)
   
     def __init__(self, profile_stats):
-        self.sql_string = profile_stats['sql']
         self.datetime = profile_stats['datetime']
         self.duration = profile_stats['duration']
       
@@ -232,17 +230,12 @@ def push_sql_stats_new_thread(stats_packet):
     
     for profile_stats in stats_packet['profile']:
         # Parse SQL statement
-        parsed_sql = parse_sql(profile_stats['stats_buffer']['sql'])[0]
-        sql_keywords = []
+        parsed_sql = parse_sql(profile_stats['metadata_buffer']['sql_string'])[0]
         sql_identifiers = []
         for token in parsed_sql.tokens:
             for item in token.flatten():
-                if item.ttype == sql_tokens.Keyword:
-                    sql_keywords.append(item.value)
-                elif item.ttype == sql_tokens.Name:
+                if item.ttype == sql_tokens.Name:
                     sql_identifiers.append(item.value)
-                    
-        profile_stats['metadata_buffer']['statement_keywords'] = sql_keywords
         profile_stats['metadata_buffer']['statement_identifiers'] = sql_identifiers
                     
         # Add SQL metadata
