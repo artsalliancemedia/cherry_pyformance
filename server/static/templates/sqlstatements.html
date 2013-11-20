@@ -12,6 +12,7 @@
     $(document).ready(function() {
       $('#main').dataTable( {"sAjaxSource": "/_sqlstatements?${encoded_kwargs}",
                              "aaSorting": [[ 0, "desc" ]],
+                             "bServerSide" : true,
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,
@@ -21,7 +22,7 @@
                                 d = new Date(aData[3]*1000);
                                 $('td:eq(3)', nRow).text(d);
                               }
-  } );
+      });
     });
   </script>
 

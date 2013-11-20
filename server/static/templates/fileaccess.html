@@ -18,6 +18,7 @@
       console.log(kwargs);
       
       $('#main').dataTable( {"sAjaxSource": "/_fileaccesses/${file_access.id}?${encoded_kwargs}",
+                             "bServerSide" : true,
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,

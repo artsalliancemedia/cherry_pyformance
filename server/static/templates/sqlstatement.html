@@ -15,6 +15,7 @@
   <script type="text/javascript">
     $(document).ready(function() {
       $('#main').dataTable( {"sAjaxSource": "/_sqlstatements/${sql_statement.id}?${encoded_kwargs}",
+                             "bServerSide" : true,
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,
@@ -26,6 +27,7 @@
                           });
 
       $('#stack').dataTable({"sAjaxSource": "/_sqlstackitems?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
+                             "bServerSide" : true,
                              "bProcessing":true,
                              "bDeferRender":true,
                              "iDisplayLength": 20,

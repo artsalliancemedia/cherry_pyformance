@@ -18,6 +18,7 @@
       console.log(kwargs);
       
       $('#main').dataTable( {"sAjaxSource": "/_callstacks/${callstack.id}?${encoded_kwargs}",
+                             "bServerSide" : true,
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,
@@ -29,6 +30,7 @@
                             });
 
       $('#callstackitems').dataTable({"sAjaxSource": "/_callstackitems?call_stack_id=${callstack.id}&${encoded_kwargs}",
+                             "bServerSide" : true,
                              "bProcessing":true,
                              "bDeferRender":true,
                              "iDisplayLength": 20,
