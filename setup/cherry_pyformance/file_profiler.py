@@ -64,6 +64,9 @@ class FileWrapper(object):
     def __exit__(self, *args, **kwargs):
         self.close_time = time.clock()
         self.file.close()
+        for file_path in cfg['ignored_directories']:
+            if file_path in self.fullname.replace('\\','/'):
+                return
         file_stats_buffer[id(self)] = {'stats_buffer': {'datetime':self.datetime,
                                                         'time_to_open':self.time_to_open,
                                                         'duration_open':self.close_time-self.open_time,
