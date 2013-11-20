@@ -114,15 +114,22 @@ class SqliteConnectionWrapper(object):
         return self._connection.rollback()
 
     def execute(self, sql, *args, **kwargs):
-        return profile_sql(self._connection.execute, sql, *args, **kwargs)
-        
+        if not sql.startswith('PRAGMA'):
+            return profile_sql(self._connection.execute, sql, *args, **kwargs)
+        else:
+            return self._connection.execute(sql, *args, **kwargs)
 
     def executemany(self, sql, *args, **kwargs):
-        return profile_sql(self._connection.executemany, sql, *args, **kwargs)
-        
+        if not sql.startswith('PRAGMA'):
+            return profile_sql(self._connection.executemany, sql, *args, **kwargs)
+        else:
+            return self._connection.executemany(sql, *args, **kwargs)
 
     def executescript(self, script, *args, **kwargs):
-        return self._cursor.executescript(script, *args, **kwargs)
+        if not script.startswith('PRAGMA'):
+            return profile_sql(self._connection.executescript, script, *args, **kwargs)
+        else:
+            return self._connection.executescript(script, *args, **kwargs)
 
 class SqliteConnectionFactory(object):
 
