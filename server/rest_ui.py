@@ -12,7 +12,6 @@ cfg = load_config()
 column_order = {'CallStack':['id','total_time','datetime'],
                 'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
                 'SQLStatement':['id','sql_string','duration','datetime'],
-
                 'SQLStackItem':['id','sql_statement_id','module','function'],
                 'FileAccess':['id','time_to_open','duration_open','data_written','datetime'],
                 'MetaData':['id','key','value']}
@@ -149,7 +148,6 @@ class Root(object):
     _callstacks = JSONCallStacks()
     _callstackitems = JSONCallStackItems()
     _sqlstatements = JSONSQLStatements()
-
     _sqlstackitems = JSONSQLStackItems()
     _fileaccesses = JSONFileAccesses()
     _metadata = JSONMetadata()
