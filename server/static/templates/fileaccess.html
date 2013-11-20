@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SQL Statement</title>
+  <title>File Access</title>
   <style type="text/css" title="currentStyle">
     @import "/css/jquery-ui-1.10.3.custom.min.css";
     .meta{
@@ -11,33 +11,24 @@
   </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
-<!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
   <script type="text/javascript">
     $(document).ready(function() {
-      $('#main').dataTable( {"sAjaxSource": "/_sqlstatements/${sql_statement.id}?${encoded_kwargs}",
+
+      var kwargs = "${encoded_kwargs}";
+      console.log(kwargs);
+      
+      $('#main').dataTable( {"sAjaxSource": "/_fileaccesses/${file_access.id}?${encoded_kwargs}",
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,
                              "bJQueryUI": true,
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                d = new Date(aData[3]*1000);
-                                $('td:eq(3)', nRow).text(d);
+                                d = new Date(aData[4]*1000);
+                                $('td:eq(4)', nRow).text(d);
                               }
-                          });
-
-      $('#stack').dataTable({"sAjaxSource": "/_sqlstackitems?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "iDisplayLength": 20,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "aoColumns": [ null,
-                                            {"bVisible":false},
-                                            null,
-                                            null]
                             });
-                            
-      $('#metadata').dataTable({"sAjaxSource": "/_metadata?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
+
+      $('#metadata').dataTable({"sAjaxSource": "/_metadata?file_access_id=${file_access.id}&${encoded_kwargs}",
                              "bProcessing":true,
                              "bDeferRender":true,
                              "iDisplayLength": 20,
@@ -47,27 +38,28 @@
                                             null,
                                             null]
                             });
-
     });
   </script>
-  
   <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
 
 </head>
+
 <body>
 
-  <div class="breadcrumbs">
-    <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/sqlstatements">SQL Statements</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;SQL Statement&nbsp;${sql_statement.id}
-  </div>
+<div class="breadcrumbs">
+  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/fileaccesses">File Accesses</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;File Access&nbsp;${file_access.id}
+</div>
+
 
 <div class="meta">
-  <h2>SQL Statement</h2>
+  <h2>File Access</h2>
   <table id="main">
     <thead>
       <tr>
         <th>ID</th>
-        <th>SQL</th>
-        <th>Duration</th>
+        <th>Time to Open</th>
+        <th>Duration Open</th>
+        <th>Bytes Written</th>
         <th>Datetime</th>
       </tr>
     </thead>
@@ -75,7 +67,7 @@
 </div>
 
 <div class="meta">
-  <h2>SQL Statement Metadata:</h2>
+  <h2>File Access Metadata:</h2>
   <table id="metadata">
     <thead>
       <tr>
@@ -86,20 +78,6 @@
     </thead>
   </table>
 </div>
-
-  <h2>SQL Statement Stack:</h2>
-  <table id="stack">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>SQL Statement ID</th>
-        <th>Module</th>
-        <th>Function</th>
-      </tr>
-    </thead>
-  </table>
-
-
 
 
 </body>
