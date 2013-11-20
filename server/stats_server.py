@@ -95,7 +95,6 @@ def load_config():
         sys.exit(1)
 
 if __name__ == '__main__':
-    global cfg
     cfg = load_config()
         
     username = cfg['database_username']
