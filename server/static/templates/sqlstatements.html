@@ -18,8 +18,8 @@
                              "bJQueryUI": true,
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
                                 $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/sqlstatements/'+aData[0] });
-                                d = new Date(aData[3]*1000);
-                                $('td:eq(3)', nRow).text(d);
+                                d = new Date(aData[2]*1000);
+                                $('td:eq(2)', nRow).text(d);
                               }
   } );
     });
@@ -37,7 +37,6 @@
     <thead>
       <tr>
         <th>ID</th>
-        <th>SQL</th>
         <th>Duration</th>
         <th>Datetime</th>
       </tr>

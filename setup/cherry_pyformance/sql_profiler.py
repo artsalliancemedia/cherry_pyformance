@@ -141,11 +141,11 @@ def profile_sql(action, sql, *args, **kwargs):
         
         _id = id(sql+str(start_time))
         global sql_stats_buffer
-        sql_stats_buffer[_id] = {'stats_buffer': {'sql':sql,
-                                                  'datetime':start_time,
+        sql_stats_buffer[_id] = {'stats_buffer': {'datetime':start_time,
                                                   'duration':time_diff,
                                                   'stack':stack},
-                                 'metadata_buffer': {'statement_type':sql.split()[0]}
+                                 'metadata_buffer': {'sql_string':sql,
+                                                     'statement_type':sql.split()[0]}
                                 }
         del stack
     return output
