@@ -5,11 +5,14 @@ import os
 from urllib import urlencode
 from cgi import escape as html_escape
 import time
+from stats_server import load_config
 
+cfg = load_config()
 
 column_order = {'CallStack':['id','total_time','datetime'],
                 'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
                 'SQLStatement':['id','sql_string','duration','datetime'],
+
                 'SQLStackItem':['id','sql_statement_id','module','function'],
                 'FileAccess':['id','time_to_open','duration_open','data_written','datetime'],
                 'MetaData':['id','key','value']}
@@ -18,7 +21,14 @@ def json_get(table_class, id=None, **kwargs):
     if id:
         kwargs['id'] = id
     kwargs.pop('_', None)
-    items = db.session.query(table_class).filter_by(**kwargs).all()
+    
+    filtered_query = db.session.query(table_class).filter_by(**kwargs)
+    num_items = filtered_query.count()
+    # Might set start/length using keyword args at some point in the future
+    length = int(cfg['max_table_items'])
+    start = max(0, num_items - length)
+        
+    items = filtered_query.offset(start).limit(length).all()
     data = []
     for item in items:
         record = []
@@ -78,13 +88,12 @@ class JSONSQLStackItems(object):
     def GET(self, id=None, **kwargs):
         return json_get(db.SQLStackItem, id, **kwargs)
 
+
 class JSONFileAccesses(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
         return json_get(db.FileAccess, id, **kwargs)
-
-
 
 
 class CallStacks(object):
@@ -140,6 +149,7 @@ class Root(object):
     _callstacks = JSONCallStacks()
     _callstackitems = JSONCallStackItems()
     _sqlstatements = JSONSQLStatements()
+
     _sqlstackitems = JSONSQLStackItems()
     _fileaccesses = JSONFileAccesses()
     _metadata = JSONMetadata()
