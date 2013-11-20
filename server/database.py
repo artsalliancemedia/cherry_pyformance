@@ -20,7 +20,43 @@ class CallStack(Base):
         self.total_time = profile_stats['total_time']
       
     def __repr__(self):
-        return str(self.id)
+        return '<callstack %d>'%(self.id)
+
+
+class SQLStatement(Base):
+    __tablename__ = 'sql_statements'
+    id = Column(Integer, primary_key=True)
+    sql_string = Column(String)
+    datetime = Column(Float)
+    duration = Column(Float)
+  
+    def __init__(self, profile_stats):
+        self.sql_string = profile_stats['sql']
+        self.datetime = profile_stats['datetime']
+        self.duration = profile_stats['duration']
+      
+    def __repr__(self):
+        return '<sql statement %d>'%(self.id)
+
+
+class FileAccess(Base):
+    __tablename__ = 'file_accesses'
+    id = Column(Integer, primary_key=True)
+    time_to_open = Column(Float)
+    datetime = Column(Float)
+    duration_open = Column(Float)
+    data_written = Column(Integer)
+  
+    def __init__(self, profile_stats):
+        self.datetime = profile_stats['datetime']
+        self.time_to_open = profile_stats['time_to_open']
+        self.duration_open = profile_stats['duration_open']
+        self.data_written = profile_stats['data_written']
+      
+    def __repr__(self):
+        return '<file access %d>'%(self.id)
+
+#========================================#
 
 class CallStackItem(Base):
     __tablename__ = 'call_stack_items'
@@ -45,54 +81,10 @@ class CallStackItem(Base):
         self.total_time = stats['time']
       
     def __repr__(self):
-        return ""
+        return '<callstack item %d>'%(self.id)
 
-class SQLStatement(Base):
-    __tablename__ = 'sql_statements'
-    id = Column(Integer, primary_key=True)
-    sql_string = Column(String)
-    datetime = Column(Float)
-    duration = Column(Float)
-  
-    def __init__(self, profile_stats):
-        self.sql_string = profile_stats['sql']
-        self.datetime = profile_stats['datetime']
-        self.duration = profile_stats['duration']
-      
-    def __repr__(self):
-        return self.sql_string
 
-class MetaData(Base):
-    __tablename__ = 'metadata'
-    id = Column(Integer, primary_key=True)
-    key = Column(String)
-    value = Column(String)
-  
-    def __init__(self, key, value):
-        self.key = key
-        self.value = value
-        
-class CallStackMetadata(Base):
-    __tablename__ = 'call_stack_metadata'
-    id = Column(Integer, primary_key=True)
-    call_stack_id = Column(None, ForeignKey('call_stacks.id'))
-    metadata_id = Column(None, ForeignKey('metadata.id'))
-  
-    def __init__(self, call_stack_id, metadata_id):
-        self.call_stack_id = call_stack_id
-        self.metadata_id = metadata_id
-        
-class SQLStatementMetadata(Base):
-    __tablename__ = 'sql_statement_metadata'
-    id = Column(Integer, primary_key=True)
-    sql_statement_id = Column(None, ForeignKey('sql_statements.id'))
-    metadata_id = Column(None, ForeignKey('metadata.id'))
-  
-    def __init__(self, sql_statement_id, metadata_id):
-        self.sql_statement_id = sql_statement_id
-        self.metadata_id = metadata_id
-
-class SQLStack(Base):
+class SQLStackItem(Base):
     __tablename__ = 'sql_stack_items'
     id = Column(Integer, primary_key=True)
     sql_statement_id = Column(None, ForeignKey('sql_statements.id'))
@@ -104,6 +96,53 @@ class SQLStack(Base):
         self.module = stack_item['module']
         self.function = stack_item['function']
 
+#========================================#
+
+class MetaData(Base):
+    __tablename__ = 'metadata'
+    id = Column(Integer, primary_key=True)
+    key = Column(String)
+    value = Column(String)
+
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
+      
+
+class CallStackMetadata(Base):
+    __tablename__ = 'call_stack_metadata'
+    id = Column(Integer, primary_key=True)
+    call_stack_id = Column(None, ForeignKey('call_stacks.id'))
+    metadata_id = Column(None, ForeignKey('metadata.id'))
+  
+    def __init__(self, call_stack_id, metadata_id):
+        self.call_stack_id = call_stack_id
+        self.metadata_id = metadata_id
+        
+
+class SQLStatementMetadata(Base):
+    __tablename__ = 'sql_statement_metadata'
+    id = Column(Integer, primary_key=True)
+    sql_statement_id = Column(None, ForeignKey('sql_statements.id'))
+    metadata_id = Column(None, ForeignKey('metadata.id'))
+  
+    def __init__(self, sql_statement_id, metadata_id):
+        self.sql_statement_id = sql_statement_id
+        self.metadata_id = metadata_id
+
+
+class FileAccessMetadata(Base):
+    __tablename__ = 'file_access_metadata'
+    id = Column(Integer, primary_key=True)
+    file_access_id = Column(None, ForeignKey('file_accesses.id'))
+    metadata_id = Column(None, ForeignKey('metadata.id'))
+  
+    def __init__(self, file_access_id, metadata_id):
+        self.file_access_id = file_access_id
+        self.metadata_id = metadata_id
+
+
+#========================================#
 
 def create_db_and_connect(postgres_string):
     database = sqlalchemy.create_engine(postgres_string + '/profile_stats')
@@ -147,6 +186,7 @@ def get_metadata_list(metadata_dictionary, db_session):
                 metadata_list.append(metadata_query.first())
     return metadata_list
 
+
 def push_fn_stats_new_thread(stats_packet):
     db_session = Session()
     
@@ -180,7 +220,8 @@ def push_fn_stats_new_thread(stats_packet):
 
 def push_fn_stats(stats_packet):
     Thread(target=push_fn_stats_new_thread, args=(stats_packet,)).start()
-    
+   
+
 def push_sql_stats_new_thread(stats_packet):
     db_session = Session()
                     
@@ -224,9 +265,39 @@ def push_sql_stats_new_thread(stats_packet):
         
         # Add sql stack items
         for sql_stack_item in sql_stack_list:
-            db_session.add(SQLStack(sql_statement.id, sql_stack_item))
+            db_session.add(SQLStackItem(sql_statement.id, sql_stack_item))
     db_session.commit()
-
 
 def push_sql_stats(stats_packet):
     Thread(target=push_sql_stats_new_thread, args=(stats_packet,)).start()
+
+
+def push_file_stats_new_thread(stats_packet):
+    db_session = Session()
+                    
+    # Add flush metadata
+    flush_metadata_list = get_metadata_list(stats_packet['flush_metadata'], db_session)
+    for flush_metadata in flush_metadata_list:
+        db_session.add(flush_metadata)
+    
+    for profile_stats in stats_packet['profile']:
+        # Add file metadata
+        file_metadata_list = get_metadata_list(profile_stats['metadata_buffer'], db_session)
+        for file_access_metadata in file_metadata_list:
+            db_session.add(file_access_metadata)
+
+        # Add file access obj
+        file_access = FileAccess(profile_stats['stats_buffer'])
+        db_session.add(file_access)
+        db_session.commit()
+        
+        # Add file access/metadata relationships
+        for flush_metadata in set(flush_metadata_list):
+            db_session.add(FileAccessMetadata(file_access.id, flush_metadata.id))
+        for file_access_metadata in set(file_metadata_list):
+            db_session.add(FileAccessMetadata(file_access.id, file_access_metadata.id))
+
+    db_session.commit()
+
+def push_file_stats(stats_packet):
+    Thread(target=push_file_stats_new_thread, args=(stats_packet,)).start()
