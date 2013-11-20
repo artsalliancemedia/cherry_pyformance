@@ -110,33 +110,33 @@ class MetaData(Base):
 class CallStackMetadata(Base):
     __tablename__ = 'call_stack_metadata'
     id = Column(Integer, primary_key=True)
-    call_stack_id = Column(None, ForeignKey('call_stacks.id'))
+    main_table_id = Column(None, ForeignKey('call_stacks.id'))
     metadata_id = Column(None, ForeignKey('metadata.id'))
   
     def __init__(self, call_stack_id, metadata_id):
-        self.call_stack_id = call_stack_id
+        self.main_table_id = call_stack_id
         self.metadata_id = metadata_id
         
 
 class SQLStatementMetadata(Base):
     __tablename__ = 'sql_statement_metadata'
     id = Column(Integer, primary_key=True)
-    sql_statement_id = Column(None, ForeignKey('sql_statements.id'))
+    main_table_id = Column(None, ForeignKey('sql_statements.id'))
     metadata_id = Column(None, ForeignKey('metadata.id'))
   
     def __init__(self, sql_statement_id, metadata_id):
-        self.sql_statement_id = sql_statement_id
+        self.main_table_id = sql_statement_id
         self.metadata_id = metadata_id
 
 
 class FileAccessMetadata(Base):
     __tablename__ = 'file_access_metadata'
     id = Column(Integer, primary_key=True)
-    file_access_id = Column(None, ForeignKey('file_accesses.id'))
+    main_table_id = Column(None, ForeignKey('file_accesses.id'))
     metadata_id = Column(None, ForeignKey('metadata.id'))
   
     def __init__(self, file_access_id, metadata_id):
-        self.file_access_id = file_access_id
+        self.main_table_id = file_access_id
         self.metadata_id = metadata_id
 
 

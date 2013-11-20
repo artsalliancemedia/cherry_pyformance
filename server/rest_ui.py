@@ -15,6 +15,14 @@ column_order = {'CallStack':['id','total_time','datetime'],
                 'FileAccess':['id','time_to_open','duration_open','data_written','datetime'],
                 'MetaData':['id','key','value']}
 
+def metadata_filter(query, table_class, metadata_table_class, metadata_ids):
+    if metadata_table_class and metadata_ids:
+        for meta_id in metadata_ids:
+            metadata_relations = db.session.query(metadata_table_class).filter_by(metadata_id=meta_id).all()
+        filter_ids = [item.main_table_id for item in metadata_relations]
+        query = query.filter(table_class.id.in_(filter_ids))
+    return query
+
 def search_filter(query, table_class, search_string):
     if search_string:
         string_clauses = []
@@ -36,22 +44,30 @@ def sort_filter(query, table_class, sorted_columns, sort_directions):
                 query = query.order_by(attr.desc())
     return query
 
-def json_get(table_class, id=None, **kwargs):
+def json_get(table_class, metadata_table_class=None, id=None, **kwargs):
     if id:
         kwargs['id'] = id
     kwargs.pop('_', None)
     
     # Get filter keyword args (id, total_time, etc)
     keyword_args = {}
-    for key in kwargs.keys():
-        if key in column_order[table_class.__name__]:
-            keyword_args[key] = kwargs[key]
+    metadata_ids = []
+    for keyword in kwargs.keys():
+        if keyword in column_order[table_class.__name__]:
+            keyword_args[keyword] = kwargs[keyword]
+        elif metadata_table_class:
+            query = db.session.query(db.MetaData).filter_by(key=keyword, value=kwargs[keyword])
+            if query.count() > 0:
+                metadata_ids.append(query.first().id) # Should only be one entry for every key/value pair
     
     total_query = db.session.query(table_class)
     total_num_items = total_query.count()
     
     # Filter using keyword arguments
     filtered_query = total_query.filter_by(**keyword_args)
+        
+    # Filter using metadata
+    filtered_query = metadata_filter(filtered_query, table_class, metadata_table_class, metadata_ids)
     
     # Apply search
     filtered_query = search_filter(filtered_query, table_class, kwargs['sSearch'])
@@ -94,7 +110,7 @@ class JSONCallStacks(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.CallStack, id, **kwargs)
+        return json_get(db.CallStack, db.CallStackMetadata, id, **kwargs)
 
 class JSONCallStackItems(object):
     exposed = True
@@ -106,7 +122,7 @@ class JSONSQLStatements(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.SQLStatement, id, **kwargs)
+        return json_get(db.SQLStatement, db.SQLStatementMetadata, id, **kwargs)
 
 class JSONMetadata(object):
     exposed = True
@@ -114,11 +130,11 @@ class JSONMetadata(object):
     def GET(self, id=None, **kwargs):
         metadata_relations = []
         if 'call_stack_id' in kwargs:
-            metadata_relations = db.session.query(db.CallStackMetadata).filter_by(call_stack_id=kwargs['call_stack_id']).all()
+            metadata_relations = db.session.query(db.CallStackMetadata).filter_by(main_table_id=kwargs['call_stack_id']).all()
         elif 'sql_statement_id' in kwargs:
-            metadata_relations = db.session.query(db.SQLStatementMetadata).filter_by(sql_statement_id=kwargs['sql_statement_id']).all()
+            metadata_relations = db.session.query(db.SQLStatementMetadata).filter_by(main_table_id=kwargs['sql_statement_id']).all()
         elif 'file_access_id' in kwargs:
-            metadata_relations = db.session.query(db.FileAccessMetadata).filter_by(file_access_id=kwargs['file_access_id']).all()
+            metadata_relations = db.session.query(db.FileAccessMetadata).filter_by(main_table_id=kwargs['file_access_id']).all()
         metadata_ids = [item.metadata_id for item in metadata_relations]
         metadata_list = db.session.query(db.MetaData).filter(db.MetaData.id.in_(metadata_ids)).all()
         data = []
@@ -138,7 +154,7 @@ class JSONFileAccesses(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.FileAccess, id, **kwargs)
+        return json_get(db.FileAccess, db.FileAccessMetadata, id, **kwargs)
 
 
 class CallStacks(object):
