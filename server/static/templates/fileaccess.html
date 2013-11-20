@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Call Stack</title>
+  <style type="text/css" title="currentStyle">
+    @import "/css/jquery-ui-1.10.3.custom.min.css";
+    .meta{
+      width:50%;
+      float:left;
+    }
+  </style>
+  <script type="text/javascript" src="/js/jquery.js"></script>
+  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+
+      var kwargs = "${encoded_kwargs}";
+      console.log(kwargs);
+      
+      $('#main').dataTable( {"sAjaxSource": "/_fileaccesses/${file_access.id}?${encoded_kwargs}",
+                             "bProcessing":true,
+                             "bDeferRender":true,
+                             "bAutoWidth":false,
+                             "bJQueryUI": true,
+                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                                d = new Date(aData[4]*1000);
+                                $('td:eq(4)', nRow).text(d);
+                              }
+                            });
+
+      $('#metadata').dataTable({"sAjaxSource": "/_metadata?file_access_id=${file_access.id}&${encoded_kwargs}",
+                             "bProcessing":true,
+                             "bDeferRender":true,
+                             "iDisplayLength": 20,
+                             "bAutoWidth":false,
+                             "bJQueryUI": true,
+                             "aoColumns": [ {"bVisible":false},
+                                            null,
+                                            null]
+                            });
+    });
+  </script>
+  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
+
+</head>
+
+<body>
+
+<div class="breadcrumbs">
+  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/fileaccesses">File Accesses</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;File Access&nbsp;${file_access.id}
+</div>
+
+
+  <h2>File Access</h2>
+  <table id="main">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Time to Open</th>
+        <th>Duration Open</th>
+        <th>Bytes Written</th>
+        <th>Datetime</th>
+      </tr>
+    </thead>
+  </table>
+
+<div class="meta">
+  <h2>File Access Metadata:</h2>
+  <table id="metadata">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Key</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+  </table>
+</div>
+
+
+</body>
+</html>
