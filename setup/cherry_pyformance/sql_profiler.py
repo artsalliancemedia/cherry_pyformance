@@ -77,14 +77,20 @@ class SqliteCursorWrapper(object):
     def execute(self, sql, *args, **kwargs):
         if not sql.startswith('PRAGMA'):
             return profile_sql(self._cursor.execute, sql, *args, **kwargs)
+        else:
+            return self._cursor.execute(sql, *args, **kwargs)
 
     def executemany(self, sql, *args, **kwargs):
         if not sql.startswith('PRAGMA'):
             return profile_sql(self._cursor.executemany, sql, *args, **kwargs)
+        else:
+            return self._cursor.executemany(sql, *args, **kwargs)
 
     def executescript(self, script, *args, **kwargs):
         if not script.startswith('PRAGMA'):
             return profile_sql(self._cursor.executescript, script, *args, **kwargs)
+        else:
+            return self._cursor.executescript(script, *args, **kwargs)
 
 class SqliteConnectionWrapper(object):
 
