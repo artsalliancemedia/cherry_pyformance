@@ -5,8 +5,8 @@
     "version":"0.0.1",
 
     "output":{
-                "type":"disk",
-                "location":"D:\\",
+                "type":"server",
+                "location":"localhost:8888",
                 "compress":false
              },
     "flush_interval":30,

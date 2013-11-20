@@ -11,6 +11,7 @@ column_order = {'CallStack':['id','total_time','datetime'],
                 'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
                 'SQLStatement':['id','sql_string','duration','datetime'],
                 'SQLStack':['id','sql_statement_id','module','function'],
+                'FileAccess':['id','time_to_open','duration_open','data_written','datetime'],
                 'MetaData':['id','key','value']}
 
 def json_get(table_class, id=None, **kwargs):
@@ -69,12 +70,17 @@ class JSONMetadata(object):
             data.append(record)
         return {'aaData':data}
 
-
 class JSONSQLStacks(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
         return json_get(db.SQLStack, id, **kwargs)
+
+class JSONFileAccesses(object):
+    exposed = True
+    @cherrypy.tools.json_out()
+    def GET(self, id=None, **kwargs):
+        return json_get(db.FileAccess, id, **kwargs)
 
 
 
@@ -103,6 +109,21 @@ class SQLStatements(object):
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatements.html'))
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
+class FileAccesses(object):
+    exposed = True
+
+    def GET(self, id=None, **kwargs):
+        if id:
+            file_access = db.session.query(db.FileAccess).get(id)
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','fileaccess.html'))
+            return mytemplate.render(file_access=file_access, encoded_kwargs=urlencode(kwargs))
+        else:
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','fileaccesses.html'))
+            return mytemplate.render(encoded_kwargs=urlencode(kwargs))
+
+
+
+
 
 class Root(object):
     exposed = True
@@ -112,9 +133,11 @@ class Root(object):
 
     callstacks = CallStacks()
     sqlstatements = SQLStatements()
+    fileaccesses = FileAccesses()
 
     _callstacks = JSONCallStacks()
     _callstackitems = JSONCallStackItems()
     _sqlstatements = JSONSQLStatements()
     _sqlstacks = JSONSQLStacks()
+    _fileaccesses = JSONFileAccesses()
     _metadata = JSONMetadata()

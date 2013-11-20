@@ -45,7 +45,7 @@ class FileAccess(Base):
     time_to_open = Column(Float)
     datetime = Column(Float)
     duration_open = Column(Float)
-    data_written = Column(Float)
+    data_written = Column(Integer)
   
     def __init__(self, profile_stats):
         self.datetime = profile_stats['datetime']
@@ -265,7 +265,7 @@ def push_sql_stats_new_thread(stats_packet):
         
         # Add sql stack items
         for sql_stack_item in sql_stack_list:
-            db_session.add(SQLStack(sql_statement.id, sql_stack_item))
+            db_session.add(SQLStackItem(sql_statement.id, sql_stack_item))
     db_session.commit()
 
 def push_sql_stats(stats_packet):
@@ -299,5 +299,5 @@ def push_file_stats_new_thread(stats_packet):
 
     db_session.commit()
 
-def push_sql_stats(stats_packet):
+def push_file_stats(stats_packet):
     Thread(target=push_file_stats_new_thread, args=(stats_packet,)).start()
