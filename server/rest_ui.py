@@ -334,11 +334,16 @@ class Test(object):
         q.filter()
         
 
-
-
+def handle_error():
+    cherrypy.response.status = 500
+    cherrypy.response.body = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','500.html')).render()
 
 class Root(object):
     exposed = True
+    
+    def __init__(self):
+        cherrypy.config.update({'request.error_response': handle_error})
+        cherrypy.config.update({'error_page.404': os.path.join(os.getcwd(),'static','templates','404.html')})
 
     def GET(self):
         return mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html')).render()
