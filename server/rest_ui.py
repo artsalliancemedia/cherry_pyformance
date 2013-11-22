@@ -294,16 +294,13 @@ class AggregateSQL(object):
     exposed = True
     def GET(self, id=None, start_date=None, end_date=None, **kwargs):
         if id:
-<<<<<<< HEAD
             statement, total, filtered = json_aggregate_sql(id=id, datatables=False, start_date=start_date, end_date=end_date,
                                                             sort=[], start=None, limit=None, **kwargs)
             statement[1]=str(statement[1]) #unicode throws off template when casting dict as js obj
-=======
             statement, total, filered = json_aggregate_sql(id=id, start_date=time.time()-6000)
             if statement == None:
                 raise cherrypy.HTTPError(404)
             statement['sql']=str(statement['sql']) #unicode throws off template when casting dict as js obj
->>>>>>> 979ecd449b629cf5d789578053167af4f94329ab
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatesql.html'))
             return mytemplate.render(statement=statement)
         else:
@@ -311,8 +308,6 @@ class AggregateSQL(object):
             return mytemplate.render()
 
 
-<<<<<<< HEAD
-=======
 class Test(object):
     exposed=True
     def GET(self):
@@ -324,7 +319,6 @@ class Test(object):
                              db.SQLStatement.datetime)
         q.filter()
 
->>>>>>> 979ecd449b629cf5d789578053167af4f94329ab
 
 def handle_error():
     cherrypy.response.status = 500
