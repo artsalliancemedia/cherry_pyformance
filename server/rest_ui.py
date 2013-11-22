@@ -1,6 +1,6 @@
 import database as db
 import sqlalchemy
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 import cherrypy
 import mako.template
 import os
@@ -17,14 +17,6 @@ column_order = {'CallStack':['id','total_time','datetime'],
                 'SQLStackItem':['id','sql_statement_id','module','function'],
                 'FileAccess':['id','time_to_open','duration_open','data_written','datetime'],
                 'MetaData':['id','key','value']}
-
-def metadata_filter(query, table_class, metadata_table_class, metadata_ids):
-    if metadata_table_class and metadata_ids:
-        for meta_id in metadata_ids:
-            metadata_relations = db.session.query(metadata_table_class).filter_by(metadata_id=meta_id).all()
-        filter_ids = [item.main_table_id for item in metadata_relations]
-        query = query.filter(table_class.id.in_(filter_ids))
-    return query
 
 def search_filter(query, table_class, search_string):
     if search_string:
@@ -47,7 +39,7 @@ def sort_filter(query, table_class, sorted_columns, sort_directions):
                 query = query.order_by(attr.desc())
     return query
 
-def json_get(table_class, metadata_table_class=None, id=None, **kwargs):
+def json_get(table_class, id=None, **kwargs):
     if id:
         kwargs['id'] = id
     kwargs.pop('_', None)
@@ -58,19 +50,21 @@ def json_get(table_class, metadata_table_class=None, id=None, **kwargs):
     for keyword in kwargs.keys():
         if keyword in column_order[table_class.__name__]:
             keyword_args[keyword] = kwargs[keyword]
-        elif metadata_table_class:
-            query = db.session.query(db.MetaData).filter_by(key=keyword, value=kwargs[keyword])
-            if query.count() > 0:
-                metadata_ids.append(query.first().id) # Should only be one entry for every key/value pair
+        query = db.session.query(db.MetaData).filter_by(key=keyword, value=kwargs[keyword])
+        if query.count() > 0:
+            metadata_ids.append(query.first().id) # Should only be one entry for every key/value pair
     
     total_query = db.session.query(table_class)
     total_num_items = total_query.count()
     
     # Filter using keyword arguments
     filtered_query = total_query.filter_by(**keyword_args)
-        
+    
     # Filter using metadata
-    filtered_query = metadata_filter(filtered_query, table_class, metadata_table_class, metadata_ids)
+    metadata_clauses = []
+    for metadata_id in metadata_ids:
+        metadata_clauses.append(table_class.metadata_items.any(id=metadata_id))
+    filtered_query = filtered_query.filter(and_(*metadata_clauses))
     
     # Apply search
     filtered_query = search_filter(filtered_query, table_class, kwargs['sSearch'])
@@ -114,37 +108,15 @@ def meta_id(meta_key,meta_value):
         return db.session.query(db.MetaData).filter(db.MetaData.key==meta_key, db.MetaData.value==meta_value).first().id
     except:
         return None
+    
+datatables_keys = ['sEcho','iColumns','sColumns','iDisplayStart','iDisplayLength','sSearch','bRegex','iSortingCols',
+                   'mDataProp_','sSearch_','bRegex_','iSortCol_','sSortDir_','bSortable_']
      
 def is_datatables_key(key):
-    if key in ('sEcho',
-               'iColumns',
-               'sColumns',
-               'iDisplayStart',
-               'iDisplayLength',
-               'sSearch',
-               'bRegex',
-               'iSortingCols'):
-        return True
-    elif key.startswith('mDataProp_'):
-        return True
-    elif key.startswith('sSearch_'):
-        return True
-    elif key.startswith('bSearchable_'):
-        return True
-    elif key.startswith('bRegex_'):
-        return True
-    elif key.startswith('iSortCol_'):
-        return True
-    elif key.startswith('sSortDir_'):
-        return True
-    elif key.startswith('bSortable_'):
-        return True
-    else:
-        return False
-
-
-
-
+    for database_key in datatables_keys:
+        if database_key in key:
+            return True
+    return False
 
 def json_aggregate_sql(id=None, search=None, start_date=None, end_date=None,
                        sort=[('avg',True)], start=0, limit=20):
@@ -254,7 +226,7 @@ class JSONCallStacks(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.CallStack, db.CallStackMetadata, id, **kwargs)
+        return json_get(db.CallStack, id, **kwargs)
 
 class JSONCallStackItems(object):
     exposed = True
@@ -266,25 +238,25 @@ class JSONSQLStatements(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.SQLStatement, db.SQLStatementMetadata, id, **kwargs)
+        return json_get(db.SQLStatement, id, **kwargs)
 
 class JSONMetadata(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        metadata_relations = []
+        main_table_item = None
         if 'call_stack_id' in kwargs:
-            metadata_relations = db.session.query(db.CallStackMetadata).filter_by(main_table_id=kwargs['call_stack_id']).all()
+            main_table_item = db.session.query(db.CallStack).get(kwargs['call_stack_id'])
         elif 'sql_statement_id' in kwargs:
-            metadata_relations = db.session.query(db.SQLStatementMetadata).filter_by(main_table_id=kwargs['sql_statement_id']).all()
+            main_table_item = db.session.query(db.SQLStatement).get(kwargs['sql_statement_id'])
         elif 'file_access_id' in kwargs:
-            metadata_relations = db.session.query(db.FileAccessMetadata).filter_by(main_table_id=kwargs['file_access_id']).all()
-        metadata_ids = [item.metadata_id for item in metadata_relations]
-        metadata_list = db.session.query(db.MetaData).filter(db.MetaData.id.in_(metadata_ids)).all()
+            main_table_item = db.session.query(db.FileAccess).get(kwargs['file_access_id'])
+        
         data = []
-        for metadata in metadata_list:
-            record = [html_escape(str(metadata.__dict__[x])) for x in column_order['MetaData']]
-            data.append(record)
+        if main_table_item:
+            for metadata in main_table_item.metadata_items:
+                record = [html_escape(str(metadata.__dict__[x])) for x in column_order['MetaData']]
+                data.append(record)
         return {'aaData':data}
 
 class JSONSQLStackItems(object):
@@ -298,7 +270,7 @@ class JSONFileAccesses(object):
     exposed = True
     @cherrypy.tools.json_out()
     def GET(self, id=None, **kwargs):
-        return json_get(db.FileAccess, db.FileAccessMetadata, id, **kwargs)
+        return json_get(db.FileAccess, id, **kwargs)
 
 
 class CallStacks(object):
