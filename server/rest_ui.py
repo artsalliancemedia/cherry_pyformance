@@ -1,6 +1,6 @@
 import database as db
 import sqlalchemy
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, func, and_
 import cherrypy
 import mako.template
 import os
@@ -9,7 +9,6 @@ from cgi import escape as html_escape
 import time
 import math
 from operator import itemgetter
-import sqlparse
 
 column_order = {'CallStack':['id','total_time','datetime'],
                 'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
@@ -17,6 +16,10 @@ column_order = {'CallStack':['id','total_time','datetime'],
                 'SQLStackItem':['id','sql_statement_id','module','function'],
                 'FileAccess':['id','time_to_open','duration_open','data_written','datetime'],
                 'MetaData':['id','key','value']}
+
+datatables_keys = ['sEcho','iColumns','sColumns','iDisplayStart','iDisplayLength','sSearch','bRegex','iSortingCols',
+                   'mDataProp_','sSearch_','bRegex_','iSortCol_','sSortDir_','bSortable_']
+
 
 def search_filter(query, table_class, search_string):
     if search_string:
@@ -102,15 +105,7 @@ def json_get(table_class, id=None, **kwargs):
             "iTotalDisplayRecords": filtered_num_items
            }
 
-
-def meta_id(meta_key,meta_value):
-    try:
-        return db.session.query(db.MetaData).filter(db.MetaData.key==meta_key, db.MetaData.value==meta_value).first().id
-    except:
-        return None
-    
-datatables_keys = ['sEcho','iColumns','sColumns','iDisplayStart','iDisplayLength','sSearch','bRegex','iSortingCols',
-                   'mDataProp_','sSearch_','bRegex_','iSortCol_','sSortDir_','bSortable_']
+ 
      
 def is_datatables_key(key):
     for database_key in datatables_keys:
@@ -118,75 +113,10 @@ def is_datatables_key(key):
             return True
     return False
 
-def json_aggregate_sql(id=None, search=None, start_date=None, end_date=None,
-                       sort=[('avg',True)], start=0, limit=20):
-    if id:
-        sql_strings = [db.session.query(db.MetaData).get(id)]
-        total_num_items = 1
-        if sql_strings[0].key != 'sql_string':
-            return {}, 0, 0
-    else:
-        # get all sql strings
-        sql_string_query = db.session.query(db.MetaData).filter(db.MetaData.key=='sql_string')
-        # get total count
-        total_num_items = sql_string_query.count()
-        # filter query by table search and get results
-        if search:
-            sql_string_query = sql_string_query.filter(db.MetaData.value.like('%%%s%%'%search))
-        sql_strings = sql_string_query.all()
 
-    results = []
-    for sql_string in sql_strings:
-        times = []
-        datetimes = []
-        # get items from sqlstatementmetadata table for each sql query
-        sql_statement_links = db.session.query(db.SQLStatementMetadata).filter(db.SQLStatementMetadata.metadata_id==sql_string.id)
-        for sql_statement_link in sql_statement_links.all():
-            # get the individual calls for that statement
-            sql_statements = db.session.query(db.SQLStatement).filter(db.SQLStatement.id==sql_statement_link.main_table_id)
-            # filter by date
-            if start_date:
-                sql_statements = sql_statements.filter(db.SQLStatement.datetime>start_date)
-            if end_date:
-                sql_statements = sql_statements.filter(db.SQLStatement.datetime<end_date)
-            # get data from resultant set
-            for sql_statement in sql_statements.all():
-                times.append(sql_statement.duration)
-                if id:
-                    datetimes.append(sql_statement.datetime)
-        count = len(times)
-        results.append({'id': sql_string.id,
-                        'sql': sql_string.value,
-                        'count': count,
-                        'min': min(times),
-                        'max': max(times),
-                        'avg': (math.fsum(times)/count)})
-        # if id exists, add the times to the only result
-        if id:
-            results[0]['calls'] = [{'duration':times[i],'datetime':datetimes[i]} for i in range(len(times))]
-            results[0]['calls'] = sorted(results[0]['calls'],key=itemgetter('datetime'))
-            return results[0], 1, 1
-
-    # Apply sort
-    for sort_item in sort:
-        results = sorted(results, key=itemgetter(sort_item[0]), reverse=sort_item[1])
-    # get filtered count
-    filtered_num_items = len(results)
-
-    # apply start and limit
-    results = results[start:start+limit]
-
-    return results, total_num_items, filtered_num_items
-
-
-
-
-
-class JSONAggregateSQL(object):
-    exposed = True
-
-    @cherrypy.tools.json_out()
-    def GET(self, id=None, datatables=False, start_date=None, end_date=None, **kwargs):
+def datatables(query_func):
+    def dt_wrapped(id, datatables, start_date, end_date, sort, start, limit, **kwargs):
+        print id
         if datatables == 'true':
             # move datatables keys to another dict
             table_kwargs ={}
@@ -197,29 +127,74 @@ class JSONAggregateSQL(object):
             # parse datatables kwargs
             search = table_kwargs['sSearch']
             sort = []
-            cols = ('id','sql','count','min','max','avg')
+            cols = ('id','sql','count','avg','min','max')
             for i in range(int(table_kwargs['iSortingCols'])):
                 sort_col = cols[int(table_kwargs['iSortCol_' + str(i)])]
-                sort_rev = True if table_kwargs['sSortDir_' + str(i)]=='desc' else False
-                sort.append((sort_col,sort_rev))
+                sort_dir = 'DESC' if table_kwargs['sSortDir_' + str(i)]=='desc' else 'ASC'
+                sort.append((sort_col,sort_dir))
             start = int(table_kwargs['iDisplayStart'])
             limit = int(table_kwargs['iDisplayLength'])
-
-            results, total_num_items, filtered_num_items = json_aggregate_sql(id=None,
-                                                                              search=search,
-                                                                              start_date=start_date,
-                                                                              end_date=end_date,
-                                                                              sort=sort,
-                                                                              start=start,
-                                                                              limit=limit)
-            for irow in range(len(results)):
-                results[irow] = [results[irow][col_name] for col_name in cols]
+            results, total_num_items, filtered_num_items = query_func(id=id,
+                                                                      search=search,
+                                                                      start_date=start_date,
+                                                                      end_date=end_date,
+                                                                      sort=sort,
+                                                                      start=start,
+                                                                      limit=limit)
             return {'aaData':results,
                     "sEcho": int(table_kwargs['sEcho']),
                     "iTotalRecords": total_num_items,
                     "iTotalDisplayRecords": filtered_num_items}
         else:
-            return json_aggregate_sql(id=id)[0]
+            results, total_num_items, filtered_num_items = query_func(id=id,
+                                                                      search=None,
+                                                                      start_date=start_date,
+                                                                      end_date=end_date,
+                                                                      sort=[],
+                                                                      start=start,
+                                                                      limit=limit)
+            return results
+    return dt_wrapped
+
+
+@datatables
+def json_aggregate_sql(id, search, start_date, end_date, sort, start, limit):
+    if id:
+        total_num_items = 1
+    else:
+        total_num_items = db.session.query(db.MetaData).filter(db.MetaData.key=='sql_string').count()
+
+    query = db.session.query(db.MetaData.id,
+                             db.MetaData.value.label('sql'),
+                             func.count(db.MetaData.id).label('count'),
+                             func.avg(db.SQLStatement.duration).label('avg'),
+                             func.min(db.SQLStatement.duration).label('min'),
+                             func.max(db.SQLStatement.duration).label('max'))
+    query = query.filter(db.MetaData.key=='sql_string')
+    query = query.join(db.SQLStatement.metadata_items)
+    query = query.group_by(db.MetaData.id)
+    # if id:          query = query.filter(db.MetaData.id==id)
+    if start_date:  query = query.filter(db.SQLStatement.datetime>start_date)
+    if end_date:    query = query.filter(db.SQLStatement.datetime<end_date)
+    if search:      query = query.filter(db.SQLStatement.sql_string.like('%%%s%%'%search))
+    for sorter in sort:
+        query = query.order_by('%s %s'%sorter)
+    filtered_num_items = query.count()
+    if start:       query = query.offset(start)
+    if limit:       query = query.limit(limit)
+    results = query.all()
+    if id: results = results[0]
+
+    return results, total_num_items, filtered_num_items
+
+
+
+class JSONAggregateSQL(object):
+    exposed = True
+    @cherrypy.tools.json_out()
+    def GET(self, id=None, datatables=False, start_date=None, end_date=None, **kwargs):
+        return json_aggregate_sql(id=id, datatables=datatables, start_date=start_date, end_date=end_date,
+                                  sort=[('avg','ASC')], start=None, limit=None, **kwargs)
 
 
 class JSONCallStacks(object):
@@ -317,15 +292,18 @@ class FileAccesses(object):
 
 class AggregateSQL(object):
     exposed = True
-    def GET(self, id=None):
+    def GET(self, id=None, start_date=None, end_date=None, **kwargs):
         if id:
+            statement, total, filtered = json_aggregate_sql(id=id, datatables=False, start_date=start_date, end_date=end_date,
+                                                            sort=[], start=None, limit=None, **kwargs)
+            statement[1]=str(statement[1]) #unicode throws off template when casting dict as js obj
             statement, total, filered = json_aggregate_sql(id=id, start_date=time.time()-6000)
             if statement == None:
                 raise cherrypy.HTTPError(404)
             statement['sql']=str(statement['sql']) #unicode throws off template when casting dict as js obj
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatesql.html'))
             return mytemplate.render(statement=statement)
-        else:            
+        else:
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatesqls.html'))
             return mytemplate.render()
 
@@ -346,6 +324,7 @@ def handle_error():
     cherrypy.response.status = 500
     cherrypy.response.body = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','500.html'))\
                                           .render(error_str=cherrypy._cperror.format_exc())
+
 
 class Root(object):
     exposed = True
@@ -370,3 +349,4 @@ class Root(object):
     _fileaccesses = JSONFileAccesses()
     _metadata = JSONMetadata()
     _aggregatesql = JSONAggregateSQL()
+
