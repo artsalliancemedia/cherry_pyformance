@@ -23,5 +23,8 @@
                         "/core":["/device_infos"]
                        },
     "database":"sqlite",
-    "files":true
+    "files":true,
+    "ignored_directories":[
+                            "C:/lms-data/tmp"
+                          ]
 }
