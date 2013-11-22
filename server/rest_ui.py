@@ -254,6 +254,8 @@ class CallStacks(object):
     def GET(self, id=None, **kwargs):
         if id:
             call_stack = db.session.query(db.CallStack).get(id)
+            if call_stack == None:
+                raise cherrypy.HTTPError(404)
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstack.html'))
             return mytemplate.render(callstack=call_stack, encoded_kwargs=urlencode(kwargs))
         else:
@@ -266,6 +268,8 @@ class SQLStatements(object):
     def GET(self, id=None, **kwargs):
         if id:
             sql_statement = db.session.query(db.SQLStatement).get(id)
+            if sql_statement == None:
+                raise cherrypy.HTTPError(404)
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatement.html'))
             return mytemplate.render(sql_statement=sql_statement, encoded_kwargs=urlencode(kwargs))
         else:
@@ -278,6 +282,8 @@ class FileAccesses(object):
     def GET(self, id=None, **kwargs):
         if id:
             file_access = db.session.query(db.FileAccess).get(id)
+            if file_access == None:
+                raise cherrypy.HTTPError(404)
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','fileaccess.html'))
             return mytemplate.render(file_access=file_access, encoded_kwargs=urlencode(kwargs))
         else:
@@ -288,9 +294,16 @@ class AggregateSQL(object):
     exposed = True
     def GET(self, id=None, start_date=None, end_date=None, **kwargs):
         if id:
+<<<<<<< HEAD
             statement, total, filtered = json_aggregate_sql(id=id, datatables=False, start_date=start_date, end_date=end_date,
                                                             sort=[], start=None, limit=None, **kwargs)
             statement[1]=str(statement[1]) #unicode throws off template when casting dict as js obj
+=======
+            statement, total, filered = json_aggregate_sql(id=id, start_date=time.time()-6000)
+            if statement == None:
+                raise cherrypy.HTTPError(404)
+            statement['sql']=str(statement['sql']) #unicode throws off template when casting dict as js obj
+>>>>>>> 979ecd449b629cf5d789578053167af4f94329ab
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatesql.html'))
             return mytemplate.render(statement=statement)
         else:
@@ -298,10 +311,25 @@ class AggregateSQL(object):
             return mytemplate.render()
 
 
+<<<<<<< HEAD
+=======
+class Test(object):
+    exposed=True
+    def GET(self):
+        q = db.session.query(db.MetaData.value,
+                             db.SQLStatementMetadata,
+                             db.SQLStatement.duration,
+                             db.SQLStatement.duration,
+                             db.SQLStatement.duration,
+                             db.SQLStatement.datetime)
+        q.filter()
+
+>>>>>>> 979ecd449b629cf5d789578053167af4f94329ab
 
 def handle_error():
     cherrypy.response.status = 500
-    cherrypy.response.body = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','500.html')).render()
+    cherrypy.response.body = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','500.html'))\
+                                          .render(error_str=cherrypy._cperror.format_exc())
 
 
 class Root(object):
@@ -313,6 +341,7 @@ class Root(object):
 
     def GET(self):
         return mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html')).render()
+    handle_error.exposed = False
 
     callstacks = CallStacks()
     sqlstatements = SQLStatements()
