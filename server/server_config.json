@@ -1,6 +1,6 @@
 {
-    "database_username":"username",
-    "database_password":"password",
+    "database_username":"postgres",
+    "database_password":"AAM",
     "server_host":"localhost",
     "server_port":"8888"
 }
