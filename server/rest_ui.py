@@ -116,7 +116,6 @@ def is_datatables_key(key):
 
 def datatables(query_func):
     def dt_wrapped(id, datatables, start_date, end_date, sort, start, limit, **kwargs):
-        print id
         if datatables == 'true':
             # move datatables keys to another dict
             table_kwargs ={}
@@ -141,7 +140,14 @@ def datatables(query_func):
                                                                       sort=sort,
                                                                       start=start,
                                                                       limit=limit)
-            return {'aaData':results,
+            data = []
+            for result in results:
+                record = []
+                for column in cols:
+                    datum = result.__dict__[column]
+                    record.append(datum)
+                data.append(record)
+            return {'aaData':data,
                     "sEcho": int(table_kwargs['sEcho']),
                     "iTotalRecords": total_num_items,
                     "iTotalDisplayRecords": filtered_num_items}
@@ -335,7 +341,6 @@ class Root(object):
 
     def GET(self):
         return mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html')).render()
-    handle_error.exposed = False
 
     callstacks = CallStacks()
     sqlstatements = SQLStatements()
