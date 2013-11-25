@@ -68,7 +68,7 @@ def start_cherrypy(host, port):
     sql_stat_handler = StatHandler(db.push_sql_stats)
     file_stat_handler = StatHandler(db.push_file_stats)
 
-    from root_ui import Root
+    from rest_ui import Root
 
     cherrypy.tree.mount( function_stat_handler, '/function', method_dispatch_cfg )
     cherrypy.tree.mount( handler_stat_handler,  '/handler',  method_dispatch_cfg )
