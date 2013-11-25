@@ -5,10 +5,10 @@ import cherrypy
 import os
 from urllib import urlencode
 
-class CallStacks(object):
-    exposed = True
+class Tables(object):
 
-    def GET(self, id=None, **kwargs):
+    @cherrypy.expose
+    def callstacks(self, id=None, **kwargs):
         if id:
             call_stack = db.session.query(db.CallStack).get(id)
             if call_stack == None:
@@ -19,10 +19,8 @@ class CallStacks(object):
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstacks.html'))
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
-class SQLStatements(object):
-    exposed = True
-
-    def GET(self, id=None, **kwargs):
+    @cherrypy.expose
+    def sqlstatements(self, id=None, **kwargs):
         if id:
             sql_statement = db.session.query(db.SQLStatement).get(id)
             if sql_statement == None:
@@ -33,10 +31,8 @@ class SQLStatements(object):
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatements.html'))
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
-class FileAccesses(object):
-    exposed = True
-
-    def GET(self, id=None, **kwargs):
+    @cherrypy.expose
+    def fileaccesses(self, id=None, **kwargs):
         if id:
             file_access = db.session.query(db.FileAccess).get(id)
             if file_access == None:

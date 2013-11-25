@@ -5,11 +5,23 @@ import sys
 import database as db
 import zlib
 import os
+import mako.template
+
+from json_ui import JSONAPI
+from table_ui import Tables
+from aggregate_json_ui import AggregateAPI
+from aggregate_table_ui import AggregatePages
 
 # add gzip to allowed content types for decompressing JSON if compressed.
 allowed_content_types = [ntou('application/json'),
                          ntou('text/javascript'),
                          ntou('application/gzip')]
+
+def handle_error():
+    cherrypy.response.status = 500
+    cherrypy.response.body = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','500.html'))\
+                                          .render(error_str=cherrypy._cperror.format_exc())
+
 
 def decompress_json(entity):
     """Try decompressing json before parsing, incase compressed
@@ -53,8 +65,7 @@ def start_cherrypy(host, port):
     cherrypy.server.socket_port = int(port)
     cherrypy.log('Mounting the handlers')
     method_dispatch_cfg = {'/': {'request.dispatch': cherrypy.dispatch.MethodDispatcher()} }
-    front_end_config = {'/': {'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-                              'tools.staticdir.on': True,
+    front_end_config = {'/': {'tools.staticdir.on': True,
                               'tools.staticdir.dir': os.path.join(os.getcwd(), 'static'),
                               'tools.staticdir.content_types': {'js': 'application/javascript',
                                                                 'css': 'text/css',
@@ -62,19 +73,24 @@ def start_cherrypy(host, port):
                               }
                         }
 
+    cherrypy.config.update({'request.error_response': handle_error})
+    cherrypy.config.update({'error_page.404': os.path.join(os.getcwd(),'static','templates','404.html')})
+
 
     function_stat_handler = StatHandler(db.push_fn_stats)
     handler_stat_handler = StatHandler(db.push_fn_stats)
     sql_stat_handler = StatHandler(db.push_sql_stats)
     file_stat_handler = StatHandler(db.push_file_stats)
 
-    from root_ui import Root
-
-    cherrypy.tree.mount( function_stat_handler, '/function', method_dispatch_cfg )
-    cherrypy.tree.mount( handler_stat_handler,  '/handler',  method_dispatch_cfg )
-    cherrypy.tree.mount( sql_stat_handler,      '/database', method_dispatch_cfg )
-    cherrypy.tree.mount( file_stat_handler,     '/file',     method_dispatch_cfg )
-    cherrypy.tree.mount( Root(),                '/',         front_end_config )
+    cherrypy.tree.mount( function_stat_handler, '/function',   method_dispatch_cfg )
+    cherrypy.tree.mount( handler_stat_handler,  '/handler',    method_dispatch_cfg )
+    cherrypy.tree.mount( sql_stat_handler,      '/database',   method_dispatch_cfg )
+    cherrypy.tree.mount( file_stat_handler,     '/file',       method_dispatch_cfg )
+    
+    cherrypy.tree.mount( Tables(),              '/tables',     front_end_config )
+    cherrypy.tree.mount( JSONAPI(),             '/tables/api', {'/':{}} )
+    cherrypy.tree.mount( AggregatePages(),      '/',           front_end_config )
+    cherrypy.tree.mount( AggregateAPI(),        '/api',        {'/':{}} )
     
     cherrypy.log('Starting CherryPy')
     try:

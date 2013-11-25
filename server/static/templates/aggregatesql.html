@@ -126,7 +126,7 @@
       }
 
 
-      $.getJSON('/_aggregatesql/${statement[0]}?${encoded_kwargs}', parseJSON, noDataError);
+      $.getJSON('/api/sqlstatements/${statement[0]}?${encoded_kwargs}', parseJSON, noDataError);
 
       function dpChange(e){
         var start_date = new Date($('#datepick1').val())/1000;
@@ -134,7 +134,7 @@
         var dateLimit = '';
         if (start_date){dateLimit+='start_date='+start_date+'&'};
         if (end_date){dateLimit+='end_date='+end_date+'&'};
-        $.getJSON('/_aggregatesql/${statement[0]}?'+dateLimit+'${encoded_kwargs}', parseJSON, noDataError);
+        $.getJSON('/api/sqlstatements/${statement[0]}?'+dateLimit+'${encoded_kwargs}', parseJSON, noDataError);
       };
       $.datepicker.formatDate('@');
       $('#datepick1').datepicker().change(dpChange);
@@ -146,7 +146,7 @@
 </head>
 <body>
 
-  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/aggregatesql">Aggregated SQL</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Statement
+  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/sqlstatements">Aggregated SQL</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Statement
   <div>
     <pre class="sh_sql">${statement[1].replace(', ',',\n      ').replace('AND','\n  AND')}</pre>
   </div>

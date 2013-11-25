@@ -27,14 +27,14 @@ class CallStack(Base):
     id = Column(Integer, primary_key=True)
     datetime = Column(Float)
     duration = Column(Float)
-    
+
     call_stack_items = relationship("CallStackItem", cascade="all", backref='call_stacks')
     metadata_items = relationship('MetaData', secondary=call_stack_metadata_association_table, cascade='all', backref='call_stacks')
-  
+
     def __init__(self, profile_stats):
         self.datetime = profile_stats['datetime']
         self.duration = profile_stats['total_time']
-      
+
     def __repr__(self):
         return '<callstack %d>'%(self.id)
 
@@ -44,14 +44,14 @@ class SQLStatement(Base):
     id = Column(Integer, primary_key=True)
     datetime = Column(Float)
     duration = Column(Float)
-    
+
     sql_stack_items = relationship('SQLStackItem', cascade='all', backref='sql_statements')
     metadata_items = relationship('MetaData', secondary=sql_statement_metadata_association_table, cascade='all', backref='sql_statements')
-  
+
     def __init__(self, profile_stats):
         self.datetime = profile_stats['datetime']
         self.duration = profile_stats['duration']
-      
+
     def __repr__(self):
         return '<sql statement %d>'%(self.id)
 

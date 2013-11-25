@@ -18,7 +18,7 @@
 
       $('#main').dataTable( {"aaSorting": [[ 3, "desc" ]],
                              "bServerSide":true,
-                             "sAjaxSource":"/_aggregatesql?datatables=true",
+                             "sAjaxSource":"/api/sqlstatements?datatables=true",
                              "bProcessing":true,
                              "bDeferRender":true,
                              "bAutoWidth":false,
@@ -30,7 +30,7 @@
                                            null,
                                            null],
                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/aggregatesql/'+aData[0] });
+                                $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/sqlstatements/'+aData[0] });
                                 $('td:eq(0)', nRow).text(trunc(aData[1],100));
                               }
       });
@@ -79,15 +79,15 @@
             $(this).children('rect').attr({'fill':'skyblue'});
         }).click(function(){
           id = $(this).children('rect').attr('data-id');
-          window.location.href = '/aggregatesql/'+id;
+          window.location.href = '/sqlstatements/'+id;
         });
       };
 
-      $.getJSON('/_aggregatesql?sort=avg',function(data){
+      $.getJSON('/api/sqlstatements?sort=avg',function(data){
         $('svg').remove();
         //draw graph
         draw(data[0].slice(0,numBars), 3);
-        $.getJSON('/_aggregatesql?sort=count',function(data){
+        $.getJSON('/api/sqlstatements?sort=count',function(data){
           draw(data[0].slice(0,numBars),2)
         });
       });

@@ -9,7 +9,7 @@ class FileWrapper(object):
         self.open_time = time.clock()
         self.file = file
         self.name = file.name
-        self.fullname = os.path.abspath(file.name)
+        self.fullname = os.path.relpath(file.name)
         self.mode = file.mode
         self.datetime = datetime
         self.time_to_open = time_to_open
