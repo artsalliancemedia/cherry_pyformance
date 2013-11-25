@@ -59,13 +59,15 @@ class StatWrapper(object):
         # Take the id of the current time as a unique identifier.
         # This is inkeeping with the request ids seen on the stat records seen on the tool.
         req_id = id(time.time())
+        full_method_name = self._module_name + ' - ' + self._class_name + ' - ' + self._name
         function_stats_buffer[req_id] = {'stats_buffer': {'id': req_id,
                                                        'datetime': time.time(),
                                                        'total_time': self._profile.total_tt,
                                                        'pstats': stats},
                                          'metadata_buffer': {'function': self._name,
                                                              'class': self._class_name,
-                                                             'module': self._module_name}
+                                                             'module': self._module_name,
+                                                             'full_method': full_method_name}
                                         }
         # reset the profiler for new function calls.
         ################### TODO TEST IF MULTIPLE FUNCTION CALLS OVERLAP. 
