@@ -161,8 +161,10 @@ def json_aggregate_sql(id=None, search=None, start_date=None, end_date=None, sor
                                  db.SQLStatement.datetime)
         times_query = times_query.filter(db.MetaData.id==id)
         times_query = times_query.join(db.SQLStatement.metadata_items)
+        if start_date:  times_query = times_query.filter(db.SQLStatement.datetime>start_date)
+        if end_date:    times_query = times_query.filter(db.SQLStatement.datetime<end_date)
         times = times_query.all()
-        times = [(time[1],time[2]) for time in times]
+        times = [(time[1],time[2],time[0]) for time in times]
         times = sorted(times, key=itemgetter(1))
     else:
         total_num_items = db.session.query(db.MetaData).filter(db.MetaData.key=='sql_string').count()
@@ -200,14 +202,21 @@ def parse_kwargs(kwargs):
     # move datatables keys to another dict
     table_kwargs = {}
     for key in kwargs.keys():
-        table_kwargs[key] = kwargs.pop(key) if is_datatables_key(key) else None
+        if is_datatables_key(key):
+            table_kwargs[key] = kwargs.pop(key)
+
+    # remove any empty kwargs MUST BE AFTER TABLE KWARGS
+    for k,v in kwargs.items():
+        if v == '':
+            del(kwargs[k])
 
     # move filters to another dict
-    # filter_kwargs = {}
-    # for key in ['start_date','end_date','start','limit']:
-    #     filter_kwargs[key] = kwargs.pop(key)
+    filter_kwargs = {}
+    for key in ['start_date','end_date','start','limit']:
+        if key in kwargs:
+            filter_kwargs[key] = int(kwargs.pop(key))
 
-    return table_kwargs, kwargs
+    return table_kwargs, filter_kwargs
 
 
 class JSONAggregateSQL(object):
@@ -215,7 +224,7 @@ class JSONAggregateSQL(object):
     @cherrypy.tools.json_out()
     # def GET(self, id=None, datatables=False, start_date=None, end_date=None, **kwargs):
     def GET(self, id=None, **kwargs):
-        
+
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
 
         return json_aggregate_sql(id, table_kwargs, filter_kwargs)
@@ -325,7 +334,8 @@ class AggregateSQL(object):
             statement[1]=str(statement[1]) #unicode throws off template when casting dict as js obj
             statement[2]=int(statement[2]) #convert long to int
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatesql.html'))
-            return mytemplate.render(statement=statement)
+            if 'id' in filter_kwargs: filter_kwargs.pop('id')
+            return mytemplate.render(statement=statement, encoded_kwargs=urlencode(filter_kwargs))
         else:
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatesqls.html'))
             return mytemplate.render()
