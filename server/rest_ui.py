@@ -157,6 +157,7 @@ def json_aggregate_sql(id=None, search=None, start_date=None, end_date=None, sor
         total_num_items = 1
 
         times_query = db.session.query(db.MetaData.id,
+                                 db.SQLStatement.id,
                                  db.SQLStatement.duration,
                                  db.SQLStatement.datetime)
         times_query = times_query.filter(db.MetaData.id==id)
@@ -164,7 +165,7 @@ def json_aggregate_sql(id=None, search=None, start_date=None, end_date=None, sor
         if start_date:  times_query = times_query.filter(db.SQLStatement.datetime>start_date)
         if end_date:    times_query = times_query.filter(db.SQLStatement.datetime<end_date)
         times = times_query.all()
-        times = [(time[1],time[2],time[0]) for time in times]
+        times = [(time[2],time[3],time[1]) for time in times]
         times = sorted(times, key=itemgetter(1))
     else:
         total_num_items = db.session.query(db.MetaData).filter(db.MetaData.key=='sql_string').count()
@@ -188,9 +189,13 @@ def json_aggregate_sql(id=None, search=None, start_date=None, end_date=None, sor
     if start:       query = query.offset(start)
     if limit:       query = query.limit(limit)
     if id:
-        result = list(query.first())
-        result.append(times)
-        return result,1,1
+        try:
+            result = list(query.first())
+            result.append(times)
+            return result,1,1
+        except:
+            raise cherrypy.HTTPError(404)
+
     else:
         return query.all(), total_num_items, filtered_num_items
 
