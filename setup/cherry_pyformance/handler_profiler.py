@@ -53,13 +53,20 @@ class StatsTool(cherrypy.Tool):
         # These are guaranteed to be unique, even if two of the same request are
         # fired at the same time.
         req_id = id(request)
+        
+        _method = request.path_info
+        _class = request.app.root.__class__.__name__
+        _module = inspect.getmodule(request.app.root.__class__).__name__
+        full_method_name = _module + ' - ' + _class + ' - ' + _method
+        
         handler_stats_buffer[req_id] = {'stats_buffer': {'id': req_id,
                                                          'datetime': time.time(),
                                                          'total_time': 0,
                                                          'profile': cProfile.Profile()},
-                                        'metadata_buffer': {'function': request.path_info,
-                                                            'class': request.app.root.__class__.__name__,
-                                                            'module': inspect.getmodule(request.app.root.__class__).__name__}
+                                        'metadata_buffer': {'function': _method,
+                                                            'class': _class,
+                                                            'module': _module,
+                                                            'full_method': full_method_name}
                                        }
         # At this point the profile key of the object on the stats buffer has no
         # profile stats in it. It needs to be put in the buffer now as multiple
