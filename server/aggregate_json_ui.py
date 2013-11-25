@@ -35,6 +35,12 @@ def parse_kwargs(kwargs):
         if key in kwargs:
             filter_kwargs[key] = int(kwargs.pop(key))
 
+    if 'sort' in kwargs:
+        if type(kwargs['sort'])==unicode:
+            filter_kwargs['sort']=[(str(kwargs.pop('sort')),'DESC')]
+        elif type(kwargs['sort'])==list:
+            filter_kwargs['sort']=kwargs.pop('sort')
+
     return table_kwargs, filter_kwargs
 
 column_name_dict = {db.CallStack: 'full_method',
