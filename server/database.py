@@ -26,14 +26,14 @@ class CallStack(Base):
     __tablename__ = 'call_stacks'
     id = Column(Integer, primary_key=True)
     datetime = Column(Float)
-    total_time = Column(Float)
+    duration = Column(Float)
     
     call_stack_items = relationship("CallStackItem", cascade="all", backref='call_stacks')
     metadata_items = relationship('MetaData', secondary=call_stack_metadata_association_table, cascade='all', backref='call_stacks')
   
     def __init__(self, profile_stats):
         self.datetime = profile_stats['datetime']
-        self.total_time = profile_stats['total_time']
+        self.duration = profile_stats['total_time']
       
     def __repr__(self):
         return '<callstack %d>'%(self.id)
@@ -61,7 +61,7 @@ class FileAccess(Base):
     id = Column(Integer, primary_key=True)
     time_to_open = Column(Float)
     datetime = Column(Float)
-    duration_open = Column(Float)
+    duration = Column(Float)
     data_written = Column(Integer)
     
     metadata_items = relationship('MetaData', secondary=file_access_metadata_association_table, cascade='all', backref='file_accesses')
@@ -69,7 +69,7 @@ class FileAccess(Base):
     def __init__(self, profile_stats):
         self.datetime = profile_stats['datetime']
         self.time_to_open = profile_stats['time_to_open']
-        self.duration_open = profile_stats['duration_open']
+        self.duration = profile_stats['duration_open']
         self.data_written = profile_stats['data_written']
       
     def __repr__(self):
