@@ -118,8 +118,15 @@
         draw(statement[6]);
 
       };
+      
+      function noDataError() {
+        $('svg').remove();
+        $('#data').html('<p>No data.</p>')
+        
+      }
 
-      $.getJSON('/_aggregatesql/${statement[0]}?${encoded_kwargs}', parseJSON);
+
+      $.getJSON('/_aggregatesql/${statement[0]}?${encoded_kwargs}', parseJSON, noDataError);
 
       function dpChange(e){
         var start_date = new Date($('#datepick1').val())/1000;
@@ -127,7 +134,7 @@
         var dateLimit = '';
         if (start_date){dateLimit+='start_date='+start_date+'&'};
         if (end_date){dateLimit+='end_date='+end_date+'&'};
-        $.getJSON('/_aggregatesql/${statement[0]}?'+dateLimit+'${encoded_kwargs}', parseJSON);
+        $.getJSON('/_aggregatesql/${statement[0]}?'+dateLimit+'${encoded_kwargs}', parseJSON, noDataError);
       };
       $.datepicker.formatDate('@');
       $('#datepick1').datepicker().change(dpChange);
