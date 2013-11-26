@@ -53,9 +53,9 @@ class AggregatePages(object):
                 raise cherrypy.HTTPError(404)
             file_access[1]=str(file_access[1]) #unicode throws off template when casting dict as js obj
             file_access[2]=int(file_access[2]) #convert long to int
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatefileaccesses.html'))
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatefileaccess.html'))
             if 'id' in filter_kwargs: filter_kwargs.pop('id')
             return mytemplate.render(file_access=file_access, encoded_kwargs=urlencode(filter_kwargs))
         else:
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatefileaccess.html'))
+            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatefileaccesses.html'))
             return mytemplate.render()

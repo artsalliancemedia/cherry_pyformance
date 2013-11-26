@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Aggregated File Accesses</title>
+  <style type="text/css" title="currentStyle">
+    @import "/css/jquery-ui-1.10.3.custom.min.css";
+  </style>
+  <script type="text/javascript" src="/js/jquery.js"></script>
+  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
+<!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
+  <script type="text/javascript">
+    $(document).ready(function() {
+      function trunc(string, numChars){
+        return string.length>numChars?string.substring(0,numChars-3)+'...':string
+      }
+
+      $('#main').dataTable( {"aaSorting": [[ 5, "desc" ]],
+                             "bServerSide":true,
+                             "sAjaxSource":"/_aggregatefileaccesses?datatables=true",
+                             "bProcessing":true,
+                             "bDeferRender":true,
+                             "bAutoWidth":false,
+                             "bJQueryUI": true,
+                             "aoColumns": [{"bVisible":false},
+                                           null,
+                                           null,
+                                           null,
+                                           null,
+                                           null],
+                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                                $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/aggregatefileaccesses/'+aData[0] });
+                                $('td:eq(0)', nRow).text(trunc(aData[1],100));
+                              }
+      });
+    });
+  </script>
+
+  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
+
+</head>
+<body>
+
+  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Aggregated&nbsp;File Accesses
+
+  <h1>Aggregated File Accesses</h1>
+  <table id="main">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>File Name</th>
+        <th>Count</th>
+        <th>Average</th>
+        <th>Min</th>
+        <th>Max</th>
+      </tr>
+    </thead>
+  </table>
+
+</body>
+</html>

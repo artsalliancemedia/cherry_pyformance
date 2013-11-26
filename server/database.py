@@ -6,17 +6,25 @@ from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
 
 Base = declarative_base()
-        
+
 call_stack_metadata_association_table = Table('call_stack_metadata_association', Base.metadata,
     Column('call_stack_id', Integer, ForeignKey('call_stacks.id')), 
     Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
-)    
+)
+call_stack_item_metadata_association_table = Table('call_stack_item_metadata_association', Base.metadata,
+    Column('call_stack_item_id', Integer, ForeignKey('call_stacks_items.id')), 
+    Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
+)
 
 sql_statement_metadata_association_table = Table('sql_statement_metadata_association', Base.metadata,
     Column('sql_statement_id', Integer, ForeignKey('sql_statements.id')), 
     Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
 )
-        
+sql_stack_metadata_association_table = Table('sql_stack_metadata_association', Base.metadata,
+    Column('sql_stack_item_id', Integer, ForeignKey('sql_stack_items.id')), 
+    Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
+)
+
 file_access_metadata_association_table = Table('file_access_metadata_association', Base.metadata,
     Column('file_access_id', Integer, ForeignKey('file_accesses.id')), 
     Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
@@ -81,18 +89,14 @@ class CallStackItem(Base):
     __tablename__ = 'call_stack_items'
     id = Column(Integer, primary_key=True)
     call_stack_id = Column(Integer, ForeignKey('call_stacks.id'))
-    function_name = Column(String)
-    line_number = Column(Integer)
-    module = Column(String)
     total_calls = Column(Integer)
     native_calls = Column(Integer)
     cumulative_time = Column(Float)
     total_time = Column(Float)
+
+    metadata_items = relationship('MetaData', secondary=sql_stack_metadata_association_table, cascade='all', backref='sql_stack_items')
   
     def __init__(self, stats):
-        self.function_name = stats['function']['name']
-        self.line_number = stats['function']['line']
-        self.module = stats['function']['module']
         self.total_calls = stats['total_calls']
         self.native_calls = stats['native_calls']
         self.cumulative_time = stats['cumulative']
@@ -106,12 +110,9 @@ class SQLStackItem(Base):
     __tablename__ = 'sql_stack_items'
     id = Column(Integer, primary_key=True)
     sql_statement_id = Column(Integer, ForeignKey('sql_statements.id'))
-    module = Column(String)
-    function = Column(String)
 
-    def __init__(self, stack_item):
-        self.module = stack_item['module']
-        self.function = stack_item['function']
+    metadata_items = relationship('MetaData', secondary=sql_stack_metadata_association_table, cascade='all', backref='sql_stack_items')
+
 
 #========================================#
 
@@ -183,8 +184,11 @@ def push_fn_stats_new_thread(stats_packet):
         # Create call stack items
         call_stack_item_list = []
         for stats in profile_stats['stats_buffer']['pstats']:
-            call_stack_item_list.append(CallStackItem(stats))
-        
+            call_stack_item_meta_list = [MetaData(kvpair) for kvpair in stats['function'].items()]
+            call_stack_item = CallStackItem(stats)
+            call_stack_item.metadata_items = metadata_list + call_stack_item_meta_list
+            call_stack_item_list.append(call_stack_item)
+
         # Add call stack
         call_stack = CallStack(profile_stats['stats_buffer'])
         call_stack.call_stack_items = call_stack_item_list
@@ -218,8 +222,11 @@ def push_sql_stats_new_thread(stats_packet):
         
         # Create sql stack items
         sql_stack_item_list = []
-        for sql_stack_item in profile_stats['stats_buffer']['stack']:
-            sql_stack_item_list.append(SQLStackItem(sql_stack_item))
+        for sql_stack_stat in profile_stats['stats_buffer']['stack']:
+            sql_stack_item_meta_list = [MetaData(key,sql_stack_stat[key]) for key in ['module','function']]
+            sql_stack_item = SQLStackItem(sql_stack_stat)
+            sql_stack_item.metadata_items = metadata_list + sql_stack_item_meta_list
+            sql_stack_item_list.append(sql_stack_item)
 
         # Add sql statement
         sql_statement = SQLStatement(profile_stats['stats_buffer'])
