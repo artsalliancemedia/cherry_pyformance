@@ -35,6 +35,12 @@ def parse_kwargs(kwargs):
         if key in kwargs:
             filter_kwargs[key] = int(kwargs.pop(key))
 
+    if 'sort' in kwargs:
+        if type(kwargs['sort'])==unicode:
+            filter_kwargs['sort']=[(str(kwargs.pop('sort')),'DESC')]
+        elif type(kwargs['sort'])==list:
+            filter_kwargs['sort']=kwargs.pop('sort')
+
     return table_kwargs, filter_kwargs
 
 column_name_dict = {db.CallStack: 'full_method',
@@ -125,43 +131,25 @@ def json_aggregate(table_class, id=None, search=None, start_date=None, end_date=
     else:
         return query.all(), total_num_items, filtered_num_items
 
-
-class JSONAggregateCallStacks(object):
-    exposed = True
+class AggregateAPI(object):
+    
+    @cherrypy.expose
     @cherrypy.tools.json_out()
-    def GET(self, id=None, **kwargs):
+    def callstacks(self, id=None, **kwargs):
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
         return json_aggregate(id, table_kwargs, filter_kwargs, db.CallStack)
-    
-class JSONAggregateSQL(object):
-    exposed = True
+
+    @cherrypy.expose
     @cherrypy.tools.json_out()
-    def GET(self, id=None, **kwargs):
+    def sqlstatements(self, id=None, **kwargs):
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
         return json_aggregate(id, table_kwargs, filter_kwargs, db.SQLStatement)
     
-class JSONAggregateFileAccesses(object):
-    exposed = True
+    @cherrypy.expose
     @cherrypy.tools.json_out()
-    def GET(self, id=None, **kwargs):
+    def fileaccesses(self, id=None, **kwargs):
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
         return json_aggregate(id, table_kwargs, filter_kwargs, db.FileAccess)
 
-class JSONMetadata(object):
-    exposed = True
-    @cherrypy.tools.json_out()
-    def GET(self, id=None, **kwargs):
-        main_table_item = None
-        if 'call_stack_id' in kwargs:
-            main_table_item = db.session.query(db.CallStack).get(kwargs['call_stack_id'])
-        elif 'sql_statement_id' in kwargs:
-            main_table_item = db.session.query(db.SQLStatement).get(kwargs['sql_statement_id'])
-        elif 'file_access_id' in kwargs:
-            main_table_item = db.session.query(db.FileAccess).get(kwargs['file_access_id'])
-        
-        data = []
-        if main_table_item:
-            for metadata in main_table_item.metadata_items:
-                record = [html_escape(str(metadata.__dict__[x])) for x in ['id','key','value']]
-                data.append(record)
-        return {'aaData':data}
+
+

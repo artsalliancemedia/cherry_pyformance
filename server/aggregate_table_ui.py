@@ -5,9 +5,15 @@ import os
 from urllib import urlencode
 import database as db
 
-class AggregateCallStacks(object):
-    exposed = True
-    def GET(self, id=None, **kwargs):
+
+class AggregatePages(object):
+
+    @cherrypy.expose
+    def index(self):
+        return mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html')).render()
+
+    @cherrypy.expose
+    def callstacks(self, id=None, **kwargs):
         if id:
             table_kwargs, filter_kwargs = parse_kwargs(kwargs)
             call_stack, total, filtered = json_aggregate(id, table_kwargs, filter_kwargs, db.CallStack)
@@ -22,9 +28,8 @@ class AggregateCallStacks(object):
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatecallstacks.html'))
             return mytemplate.render()
 
-class AggregateSQL(object):
-    exposed = True
-    def GET(self, id=None, **kwargs):
+    @cherrypy.expose
+    def sqlstatements(self, id=None, **kwargs):
         if id:
             table_kwargs, filter_kwargs = parse_kwargs(kwargs)
             statement, total, filtered = json_aggregate(id, table_kwargs, filter_kwargs, db.SQLStatement)
@@ -39,9 +44,8 @@ class AggregateSQL(object):
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatesqls.html'))
             return mytemplate.render()
 
-class AggregateFileAccesses(object):
-    exposed = True
-    def GET(self, id=None, **kwargs):
+    @cherrypy.expose
+    def fileaccesses(self, id=None, **kwargs):
         if id:
             table_kwargs, filter_kwargs = parse_kwargs(kwargs)
             file_access, total, filtered = json_aggregate(id, table_kwargs, filter_kwargs, db.FileAccess)

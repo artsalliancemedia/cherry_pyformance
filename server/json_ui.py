@@ -94,32 +94,48 @@ def json_get(table_class, id=None, **kwargs):
             "iTotalDisplayRecords": filtered_num_items
            }
 
-class JSONCallStacks(object):
-    exposed = True
+class JSONAPI(object):
+
+    @cherrypy.expose
     @cherrypy.tools.json_out()
-    def GET(self, id=None, **kwargs):
+    def callstacks(self, id=None, **kwargs):
         return json_get(db.CallStack, id, **kwargs)
 
-class JSONCallStackItems(object):
-    exposed = True
+    @cherrypy.expose
     @cherrypy.tools.json_out()
-    def GET(self, id=None, **kwargs):
+    def callstackitems(self, id=None, **kwargs):
         return json_get(db.CallStackItem, id, **kwargs)
 
-class JSONSQLStatements(object):
-    exposed = True
+    @cherrypy.expose
     @cherrypy.tools.json_out()
-    def GET(self, id=None, **kwargs):
+    def sqlstatements(self, id=None, **kwargs):
         return json_get(db.SQLStatement, id, **kwargs)
 
-class JSONSQLStackItems(object):
-    exposed = True
+    @cherrypy.expose
     @cherrypy.tools.json_out()
-    def GET(self, id=None, **kwargs):
+    def sqlstackitems(self, id=None, **kwargs):
         return json_get(db.SQLStackItem, id, **kwargs)
 
-class JSONFileAccesses(object):
-    exposed = True
+    @cherrypy.expose
     @cherrypy.tools.json_out()
-    def GET(self, id=None, **kwargs):
+    def fileaccesses(self, id=None, **kwargs):
         return json_get(db.FileAccess, id, **kwargs)
+
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def metadata(self, id=None, **kwargs):
+        main_table_item = None
+        if 'call_stack_id' in kwargs:
+            main_table_item = db.session.query(db.CallStack).get(kwargs['call_stack_id'])
+        elif 'sql_statement_id' in kwargs:
+            main_table_item = db.session.query(db.SQLStatement).get(kwargs['sql_statement_id'])
+        elif 'file_access_id' in kwargs:
+            main_table_item = db.session.query(db.FileAccess).get(kwargs['file_access_id'])
+        
+        data = []
+        if main_table_item:
+            for metadata_item in main_table_item.metadata_items:
+                record = [html_escape(str(metadata_item.__dict__[x])) for x in ['id','key','value']]
+                data.append(record)
+        return {'aaData':data}
