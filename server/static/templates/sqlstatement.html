@@ -14,7 +14,7 @@
 <!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
   <script type="text/javascript">
     $(document).ready(function() {
-      $('#main').dataTable( {"sAjaxSource": "/_sqlstatements/${sql_statement.id}?${encoded_kwargs}",
+      $('#main').dataTable( {"sAjaxSource": "/tables/api/sqlstatements/${sql_statement.id}?${encoded_kwargs}",
                              "bServerSide" : true,
                              "bProcessing":true,
                              "bDeferRender":true,
@@ -26,7 +26,7 @@
                               }
                           });
 
-      $('#stack').dataTable({"sAjaxSource": "/_sqlstackitems?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
+      $('#stack').dataTable({"sAjaxSource": "/tables/api/sqlstackitems?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
                              "bServerSide" : true,
                              "bProcessing":true,
                              "bDeferRender":true,
@@ -39,7 +39,7 @@
                                             null]
                             });
                             
-      $('#metadata').dataTable({"sAjaxSource": "/_metadata?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
+      $('#metadata').dataTable({"sAjaxSource": "/tables/api/metadata?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
                              "bProcessing":true,
                              "bDeferRender":true,
                              "iDisplayLength": 20,
