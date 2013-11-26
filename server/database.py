@@ -12,7 +12,7 @@ call_stack_metadata_association_table = Table('call_stack_metadata_association',
     Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
 )
 call_stack_item_metadata_association_table = Table('call_stack_item_metadata_association', Base.metadata,
-    Column('call_stack_item_id', Integer, ForeignKey('call_stacks_items.id')), 
+    Column('call_stack_item_id', Integer, ForeignKey('call_stack_items.id')), 
     Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
 )
 
@@ -94,7 +94,7 @@ class CallStackItem(Base):
     cumulative_time = Column(Float)
     total_time = Column(Float)
 
-    metadata_items = relationship('MetaData', secondary=sql_stack_metadata_association_table, cascade='all', backref='sql_stack_items')
+    metadata_items = relationship('MetaData', secondary=call_stack_item_metadata_association_table, cascade='all', backref='call_stack_items')
   
     def __init__(self, stats):
         self.total_calls = stats['total_calls']
@@ -184,7 +184,7 @@ def push_fn_stats_new_thread(stats_packet):
         # Create call stack items
         call_stack_item_list = []
         for stats in profile_stats['stats_buffer']['pstats']:
-            call_stack_item_meta_list = [MetaData(kvpair) for kvpair in stats['function'].items()]
+            call_stack_item_meta_list = [MetaData(*kvpair) for kvpair in stats['function'].items()]
             call_stack_item = CallStackItem(stats)
             call_stack_item.metadata_items = metadata_list + call_stack_item_meta_list
             call_stack_item_list.append(call_stack_item)
@@ -224,7 +224,7 @@ def push_sql_stats_new_thread(stats_packet):
         sql_stack_item_list = []
         for sql_stack_stat in profile_stats['stats_buffer']['stack']:
             sql_stack_item_meta_list = [MetaData(key,sql_stack_stat[key]) for key in ['module','function']]
-            sql_stack_item = SQLStackItem(sql_stack_stat)
+            sql_stack_item = SQLStackItem()
             sql_stack_item.metadata_items = metadata_list + sql_stack_item_meta_list
             sql_stack_item_list.append(sql_stack_item)
 

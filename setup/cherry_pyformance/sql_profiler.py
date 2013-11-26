@@ -150,7 +150,7 @@ def profile_sql(action, sql, *args, **kwargs):
     if time_diff > 0:
         stack = inspect.stack()
         for i in range(len(stack)):
-            stack[i] = {'module': os.path.relpath(stack[i][1], 'function': stack[i][3]}
+            stack[i] = {'module': stack[i][1], 'function': stack[i][3]}
         
         _id = id(sql+str(start_time))
         global sql_stats_buffer
