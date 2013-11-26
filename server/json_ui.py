@@ -4,11 +4,11 @@ import cherrypy
 from sqlalchemy import or_, and_
 from cgi import escape as html_escape
 
-column_order = {'CallStack':['id','total_time','datetime'],
+column_order = {'CallStack':['id','duration','datetime'],
                 'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
                 'SQLStatement':['id','duration','datetime'],
                 'SQLStackItem':['id','sql_statement_id','module','function'],
-                'FileAccess':['id','time_to_open','duration_open','data_written','datetime']}
+                'FileAccess':['id','time_to_open','duration','data_written','datetime']}
                 
 def search_filter(query, table_class, search_string):
     if search_string:
