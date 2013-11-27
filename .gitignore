@@ -2,3 +2,4 @@
 .project
 .pydevproject
 setup/build/
+/server/server_config.json
