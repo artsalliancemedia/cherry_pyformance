@@ -43,6 +43,7 @@ def decompress_json(entity):
         raise cherrypy.HTTPError(400, 'Invalid JSON document')
 
 
+
 class StatHandler(object):
     '''
     A base stat handler for incoming stats. By initialising with a given push function
@@ -86,7 +87,7 @@ def start_cherrypy(host, port):
     cherrypy.tree.mount( handler_stat_handler,  '/handler',    method_dispatch_cfg )
     cherrypy.tree.mount( sql_stat_handler,      '/database',   method_dispatch_cfg )
     cherrypy.tree.mount( file_stat_handler,     '/file',       method_dispatch_cfg )
-    
+
     cherrypy.tree.mount( Tables(),              '/tables',     front_end_config )
     cherrypy.tree.mount( JSONAPI(),             '/tables/api', {'/':{}} )
     cherrypy.tree.mount( AggregatePages(),      '/',           front_end_config )

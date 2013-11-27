@@ -10,51 +10,35 @@
     }
   </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
-  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
-<!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
   <script type="text/javascript">
     $(document).ready(function() {
-      $('#main').dataTable( {"sAjaxSource": "/tables/api/sqlstatements/${sql_statement.id}?${encoded_kwargs}",
-                             "bServerSide" : true,
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                d = new Date(aData[2]*1000);
-                                $('td:eq(2)', nRow).text(d);
-                              }
-                          });
 
-      $('#stack').dataTable({"sAjaxSource": "/tables/api/sqlstackitems?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
-                             "bServerSide" : true,
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "iDisplayLength": 20,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "aoColumns": [ null,
-                                            {"bVisible":false},
-                                            null,
-                                            null]
-                            });
-                            
-      $('#metadata').dataTable({"sAjaxSource": "/tables/api/metadata?sql_statement_id=${sql_statement.id}&${encoded_kwargs}",
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "iDisplayLength": 20,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "aoColumns": [ {"bVisible":false},
-                                            null,
-                                            null]
-                            });
+      $.getJSON('/tables/api/sqlstatements/${sql_statement.id}',function(data){
+        
+        var metaHtml = '';
+        for (var key in data) {
+          if(data.hasOwnProperty(key) && key!='stack'){
+            metaHtml += '<p>'+key+' - '+data[key]+'</p>';
+          };
+        };
+        $('#metadata').html(metaHtml);
+
+        var stackHtml = '';
+        var stack = data.stack;
+        console.log(stack);
+        for (var i=0; i<stack.length; i++) {
+
+          console.log(stack[i].module);
+          console.log(stack[i].function);
+          stackHtml += '<p>'+stack[i].module+' - '+stack[i].function+'</p>';
+        };
+        $('#stack').html(stackHtml);
+
+      });
 
     });
   </script>
   
-  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
-
 </head>
 <body>
 
@@ -62,43 +46,11 @@
     <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/sqlstatements">SQL Statements</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;SQL Statement&nbsp;${sql_statement.id}
   </div>
 
-<div class="meta">
-  <h2>SQL Statement</h2>
-  <table id="main">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Duration</th>
-        <th>Datetime</th>
-      </tr>
-    </thead>
-  </table>
-</div>
-
-<div class="meta">
-  <h2>SQL Statement Metadata:</h2>
-  <table id="metadata">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Key</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-  </table>
-</div>
+  <h2>SQL Statement:</h2>
+  <div id="metadata" class="meta"></div>
 
   <h2>SQL Statement Stack:</h2>
-  <table id="stack">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>SQL Statement ID</th>
-        <th>Module</th>
-        <th>Function</th>
-      </tr>
-    </thead>
-  </table>
+  <div id="stack" class="meta"></div>
 
 
 
