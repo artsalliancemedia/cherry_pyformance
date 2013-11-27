@@ -127,17 +127,16 @@
           val_select.append($("<option />").val(0).text('Select metadata value'));
       
           // Insert the new options from the array
-          value_list = data;
-	        $.each(value_list, function(value) {
-	          val_select.append($("<option />").val(value_list[value]).text(value_list[value]));
+	        $.each(data, function(value) {
+	          val_select.append($("<option />").val(data[value]).text(data[value]));
 	        });
 	      });
       }
       else{
         val_select.append($("<option />").val(0).text('Pick a metadata key'));
-	      oTable.fnSettings().sAjaxSource = '/api/sqlstatements?datatables=true';
-	      oTable.fnDraw();
       }
+      oTable.fnSettings().sAjaxSource = '/api/sqlstatements?datatables=true';
+      oTable.fnDraw();
     };
     
     function valueSelectChange(){

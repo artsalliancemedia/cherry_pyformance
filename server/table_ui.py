@@ -13,8 +13,14 @@ class Tables(object):
             call_stack = db.session.query(db.CallStack).get(id)
             if call_stack == None:
                 raise cherrypy.HTTPError(404)
+            metadata_list = call_stack.metadata_items
+            metadata_id = None
+            for metadata in metadata_list:
+                if metadata.key == 'full_method':
+                    metadata_id = metadata.id
+                    break
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstack.html'))
-            return mytemplate.render(callstack=call_stack, encoded_kwargs=urlencode(kwargs))
+            return mytemplate.render(call_stack=call_stack, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
         else:
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstacks.html'))
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
@@ -25,8 +31,14 @@ class Tables(object):
             sql_statement = db.session.query(db.SQLStatement).get(id)
             if sql_statement == None:
                 raise cherrypy.HTTPError(404)
+            metadata_list = sql_statement.metadata_items
+            metadata_id = None
+            for metadata in metadata_list:
+                if metadata.key == 'sql_string':
+                    metadata_id = metadata.id
+                    break
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatement.html'))
-            return mytemplate.render(sql_statement=sql_statement, encoded_kwargs=urlencode(kwargs))
+            return mytemplate.render(sql_statement=sql_statement, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
         else:
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatements.html'))
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
@@ -37,8 +49,14 @@ class Tables(object):
             file_access = db.session.query(db.FileAccess).get(id)
             if file_access == None:
                 raise cherrypy.HTTPError(404)
+            metadata_list = file_access.metadata_items
+            metadata_id = None
+            for metadata in metadata_list:
+                if metadata.key == 'filename':
+                    metadata_id = metadata.id
+                    break
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','fileaccess.html'))
-            return mytemplate.render(file_access=file_access, encoded_kwargs=urlencode(kwargs))
+            return mytemplate.render(file_access=file_access, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
         else:
             mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','fileaccesses.html'))
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
