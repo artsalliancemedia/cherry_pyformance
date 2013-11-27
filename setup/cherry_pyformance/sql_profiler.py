@@ -168,7 +168,7 @@ def decorate_connections():
         import sqlite3
         setattr(sqlite3,'connect', SqliteConnectionFactory(sqlite3.connect))
         setattr(sqlite3.dbapi2,'connect', SqliteConnectionFactory(sqlite3.dbapi2.connect))
-    if cfg['database'] == 'postgres':
+    elif cfg['database'] == 'postgres':
         import psycopg2
         setattr(psycopg2,'connect', Psycopg2ConnectionFactory(psycopg2.connect))
 

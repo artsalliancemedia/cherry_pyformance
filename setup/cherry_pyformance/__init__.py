@@ -4,6 +4,7 @@ import sys
 import time
 import logging
 import copy
+import inspect
 from urllib2 import urlopen, Request
 from shutil import copyfile
 import cherrypy
@@ -86,22 +87,20 @@ def create_output_fn():
     return push_stats_fn
 
 
-def load_config(config_file_path):
+def load_config(config_file_path=None):
+    if config_file_path is None:
+        config_file_path = os.path.join(os.path.dirname(inspect.stack()[-1][1]), "cherrypyformance_config.json")
+
     try:
         with open(config_file_path) as cfg_file:
-            cfg = json.load(cfg_file)
-            return cfg
+            return json.load(cfg_file)
     except:
-        try:
-            stat_logger.info('Failed to load stats profiling configuration. Creating from default.')
-            default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "default_config.json")
-            copyfile(default_config_file, config_file_path)
-            with open(config_file_path) as cfg_file:
-                cfg = json.load(cfg_file)
-            return cfg
-        except:
-            stat_logger.error('Failed to create config file from default')
-            sys.exit(1)
+        #stat_logger.info('Failed to load stats profiling configuration. Creating from default.')
+        default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "default_config.json")
+        copyfile(default_config_file, config_file_path)
+
+        with open(config_file_path) as cfg_file:
+            return json.load(cfg_file)
 
 def setup_logging():
     '''
@@ -115,7 +114,7 @@ def setup_logging():
     return stat_logger
 
 
-def initialise(config_file_path):
+def initialise(config_file_path=None):
     global cfg
     cfg = load_config(config_file_path)
 
@@ -126,10 +125,7 @@ def initialise(config_file_path):
     push_stats = create_output_fn()
     
     global stats_package_template
-    stats_package_template = {'flush_metadata': {'exhibitor_chain': cfg['exhibitor_chain'],
-                                                 'exhibitor_branch': cfg['exhibitor_branch'],
-                                                 'product': cfg['product'],
-                                                 'version': cfg['version']},
+    stats_package_template = {'flush_metadata': cfg['metadata'],
                               'type': 'default_type',
                               'profile': []}
 
@@ -139,17 +135,20 @@ def initialise(config_file_path):
         # then we re-wrap them again at engine start.
         decorate_functions()
         cherrypy.engine.subscribe('start', decorate_functions, 0)
+
     if cfg['handlers']:
         from handler_profiler import decorate_handlers
         # no point wrapping these now as they won't be active before
         # engine start.
         cherrypy.engine.subscribe('start', decorate_handlers, 0)
+
     if cfg['database']:
         from sql_profiler import decorate_connections
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
         decorate_connections()
         cherrypy.engine.subscribe('start', decorate_connections, 0)
+
     if cfg['files']:
         from file_profiler import decorate_open
         # this is very unlikely to be overwriten, call asap.
