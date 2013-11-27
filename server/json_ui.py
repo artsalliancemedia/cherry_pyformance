@@ -63,5 +63,19 @@ class JSONAPI(object):
             return db.session.query(db.FileAccess).get(id)._to_dict()
         else:
             results = db.session.query(db.FileAccess)
-            return [item._to_dict() for item in results.all()]
+            
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def metadata(self, id=None, **kwargs):
+        results_list = []
+        if 'get_keys' in kwargs:
+            key_list_dicts = db.session.query(db.MetaData.key).distinct().all()
+            results_list = [key_dict[0] for key_dict in key_list_dicts]
+        else:
+            metadata_list = db.session.query(db.MetaData).filter_by(**kwargs).all()
+            results_list = [metadata.__dict__['value'] for metadata in metadata_list]
+        
+        results_list.sort(key=unicode.lower)
+        return results_list
+
 

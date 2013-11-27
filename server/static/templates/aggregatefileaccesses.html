@@ -1,60 +1,212 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico">
   <title>Aggregated File Accesses</title>
-  <style type="text/css" title="currentStyle">
-    @import "/css/jquery-ui-1.10.3.custom.min.css";
+  <style type="text/css" media="screen">
+    @import "/css/jquery.dataTables.css";
+    @import "/css/all.css";
+    g{cursor: pointer;}
+    header div{float: left;}
   </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
-<!--   // <script type="text/javascript" src="/js/tables.js"></script> -->
+  <script type="text/javascript" src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
   <script type="text/javascript">
+    var oTable;
+    
     $(document).ready(function() {
       function trunc(string, numChars){
         return string.length>numChars?string.substring(0,numChars-3)+'...':string
       }
 
-      $('#main').dataTable( {"aaSorting": [[ 5, "desc" ]],
-                             "bServerSide":true,
-                             "sAjaxSource":"/_aggregatefileaccesses?datatables=true",
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "aoColumns": [{"bVisible":false},
-                                           null,
-                                           null,
-                                           null,
-                                           null,
-                                           null],
-                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/aggregatefileaccesses/'+aData[0] });
-                                $('td:eq(0)', nRow).text(trunc(aData[1],100));
-                              }
+      oTable = $('#main').dataTable( {"aaSorting": [[ 3, "desc" ]],
+				                              "bServerSide":true,
+				                              "sAjaxSource":"/api/fileaccesses?datatables=true",
+				                              "bProcessing":true,
+				                              "bDeferRender":true,
+                                      "sPaginationType":"full_numbers",
+                                      "bAutoWidth":false,
+				                              "aoColumns": [{"bVisible":false},
+				                                            null,
+				                                            null,
+				                                            null,
+				                                            null,
+				                                            null],
+				                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+				                                 $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/fileaccesses/'+aData[0] });
+				                                 $('td:eq(0)', nRow).text(trunc(aData[1],100));
+				                               }
+      });
+
+       var height=200
+       var width=500;
+       var margin=50;
+       var numBars=10;
+  
+       function draw(data, index){
+         var x_extent = d3.extent(data, function(d){return d[index]});
+         var x_scale = d3.scale.linear()
+                           .range([margin,width-margin])
+                           .domain(x_extent);
+         d3.select('div#graph'+index)
+           .append('svg')
+             .attr('class','graph'+index)
+             .attr('width',width)
+             .attr('height',height)
+           .selectAll('g')
+           .data(data)
+           .enter()
+           .append('g');
+         d3.selectAll('.graph'+index+' g')
+           .append('rect')
+             .attr('fill','skyblue')
+             .attr('width', function(d){return x_scale(d[index])})
+             .attr('height',height/numBars)
+             .attr('y',function(d,i){return height/numBars*(i)+i})
+             .attr('data-id',function(d){return d[0]});
+         d3.selectAll('.graph'+index+' g')
+           .append('text')
+             .attr('x',10)
+             .attr('y',function(d,i){return height/numBars*(i+0.5)+i+4})
+             .text(function(d){
+               if (index==3){
+                 return d[index].toFixed(4)+' - '+trunc(d[1].replace('\n',''),60)
+               }else{
+                 return d[index]+' - '+trunc(d[1].replace('\n',''),60)
+               }
+             });
+         //mouseover points
+         $('g').hover(function(e){
+             $(this).children('rect').attr({'fill':'blue'});
+           },function(e){
+             $(this).children('rect').attr({'fill':'skyblue'});
+         }).click(function(){
+           id = $(this).children('rect').attr('data-id');
+           window.location.href = '/fileaccesses/'+id;
+         });
+       };
+  
+       $.getJSON('/api/fileaccesses?sort=avg',function(data){
+         $('svg').remove();
+         //draw graph
+         draw(data[0].slice(0,numBars), 3);
+         $.getJSON('/api/fileaccesses?sort=count',function(data){
+           draw(data[0].slice(0,numBars), 2)
+         });
+       });
+      
+      $.getJSON('/tables/api/metadata?get_keys=true', function(data){
+        key_select = $('#key-select');
+        key_select.empty();
+        key_select.append($("<option />").val(0).text('Select metadata key'));
+        
+        // Insert the new ones from the array above
+        $.each(data, function(value) {
+          key_select.append($("<option />").val(data[value]).text(data[value]));
+        });
       });
     });
+    
+    function keySelectChange(){
+      var val = $('#key-select').val();
+      var kwarg = ''
+      if(val != 0){
+        kwarg = 'key=' + val;
+      }
+        
+      // Remove all options from the select list
+      val_select = $('#value-select');
+      val_select.empty();
+        
+      if(kwarg != ''){
+        $.getJSON('/tables/api/metadata?'+kwarg, function(data){
+          val_select.append($("<option />").val(0).text('Select metadata value'));
+      
+          // Insert the new options from the array
+          $.each(data, function(value) {
+            val_select.append($("<option />").val(data[value]).text(data[value]));
+          });
+        });
+      }
+      else{
+        val_select.append($("<option />").val(0).text('Pick a metadata key'));
+      }
+      oTable.fnSettings().sAjaxSource = '/api/fileaccesses?datatables=true';
+      oTable.fnDraw();
+    };
+    
+    function valueSelectChange(){
+      var val = $('#value-select').val();
+      var kwarg = ''
+      if(val != 0){
+        var key = 'key_1=' + $('#key-select').val();
+        var value = 'value_1=' + val;
+        kwarg = '&' + key + '&' + value;
+      }
+      oTable.fnSettings().sAjaxSource = '/api/fileaccesses?datatables=true' + kwarg;
+      oTable.fnDraw();
+    };
   </script>
 
-  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
-
 </head>
+
+<header class="main-container">
+  <nav> <img class="logo" src="images/logo.png"/>
+    <ul>
+      <li><a href="/" >Main Page</a></li>
+      <li><a href="/fileaccesses" class="active">Aggregated File Accesses</a></li>
+    </ul>
+  </nav>
+</header>
+
 <body>
 
-  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Aggregated&nbsp;File Accesses
+<section class="container main-container">
+  <section class="actions ac-container">
+    <section>
+      <input id="ac-1-title" name="accordion-1" type="checkbox" />
+      <label for="ac-1-title">
+      <h1>Add new filter</h1>
+      </label>
+      <ul class="ac-filter">
+        <li>
+          <label>Key</label>
+          <select id="key-select" onchange="keySelectChange()">
+            <option value="0">Select metadata key</option>
+          </select>
+          <label>Value</label>
+          <select id="value-select" onchange="valueSelectChange()">
+            <option value="0">Pick a metadata key</option>
+          </select>
+        </li> 
+      </ul>
+    </section>
+    
+  </section>
+  <section class="content">
 
-  <h1>Aggregated File Accesses</h1>
-  <table id="main">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>File Name</th>
-        <th>Count</th>
-        <th>Average</th>
-        <th>Min</th>
-        <th>Max</th>
-      </tr>
-    </thead>
-  </table>
+    <header>
+      <h1>Aggregated File Accesses</h1>
+      <div id="graph3"><h4>Top average durations</h4></div>
+      <div id="graph2"><h4>Top call counts</h4></div>
+    </header>
+    
+	  <table id="main" class="my_table">
+	    <thead>
+	      <tr>
+	        <th>ID</th>
+	        <th>File Name</th>
+	        <th>Count</th>
+	        <th>Average</th>
+	        <th>Min</th>
+	        <th>Max</th>
+	      </tr>
+	    </thead>
+	  </table>
+
+  </section>
+</section>
 
 </body>
 </html>

@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
   <title>SQL Statement</title>
   <style type="text/css" title="currentStyle">
     @import "/css/jquery-ui-1.10.3.custom.min.css";
-    .meta{
-      width:50%;
-      float:left;
-    }
+    @import "/css/all.css";
   </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript">
@@ -40,20 +38,34 @@
   </script>
   
 </head>
+
+<header class="main-container">
+  <nav> <img class="logo" src="../images/logo.png"/>
+    <ul>
+      <li><a href="/" >Main Page</a></li>
+      <li><a href="/sqlstatements">Aggregated SQL Statements</a></li>
+      <li><a href="/sqlstatements/${metadata_id}">Aggregated SQL Statement</a></li>
+      <li><a href="/tables/sqlstatements/${sql_statement.id}" class="active">SQL Statement</a></li>
+    </ul>
+  </nav>
+</header>
+
 <body>
 
-  <div class="breadcrumbs">
-    <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/sqlstatements">SQL Statements</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;SQL Statement&nbsp;${sql_statement.id}
-  </div>
+<section class="container main-container">
+  <section class="actions ac-container">
+  </section>
+  <section class="content">
 
-  <h2>SQL Statement:</h2>
-  <div id="metadata" class="meta"></div>
-
-  <h2>SQL Statement Stack:</h2>
-  <div id="stack" class="meta"></div>
-
-
-
+	  <h2>SQL Statement:</h2>
+	  <div id="metadata"></div>
+	
+	  <h2>SQL Statement Stack:</h2>
+	  <div id="stack"></div>
+  
+  </section>
+</section>
+  
 
 </body>
 </html>
