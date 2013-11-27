@@ -99,7 +99,7 @@
 	       });
 	     });
       
-      $.getJSON('/tables/api/metadata/keys', function(data){
+      $.getJSON('/tables/api/metadata?get_keys=true', function(data){
         key_select = $('#key-select');
         key_select.empty();
         key_select.append($("<option />").val(0).text('Select metadata key'));
@@ -123,7 +123,7 @@
       val_select.empty();
         
       if(kwarg != ''){
-	      $.getJSON('/tables/api/metadata/values?'+kwarg, function(data){
+	      $.getJSON('/tables/api/metadata?'+kwarg, function(data){
           val_select.append($("<option />").val(0).text('Select metadata value'));
       
           // Insert the new options from the array

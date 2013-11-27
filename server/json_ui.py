@@ -77,13 +77,3 @@ class JSONAPI(object):
         
         results_list.sort(key=unicode.lower)
         return results_list
-
-
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def metadata(self, kv=None, **kwargs):
-        if kv and kv=='keys':
-            return sorted([html_escape(str(item[0])) for item in db.session.query(db.MetaData.key).distinct().filter_by(**kwargs).all()])
-        if kv and kv=='values':
-            return sorted([html_escape(str(item[0])) for item in db.session.query(db.MetaData.value).filter_by(**kwargs).all()])
-

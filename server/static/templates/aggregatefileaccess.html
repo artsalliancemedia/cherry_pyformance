@@ -103,12 +103,13 @@
       dataHtml = '';
       dataHtml += '<tr><td>count:</td><td>'+file_access[2]+'</td></tr>';
       dataHtml += '<tr><td>avg:</td><td>'+file_access[3]+'</td></tr>';
-      dataHtml += '<tr><td>min:</td><td>'+file_access[4]+'</td></tr>';
-      dataHtml += '<tr><td>max:</td><td>'+file_access[5]+'</td></tr>';
+      dataHtml += '<tr><td>total:</td><td>'+file_access[4]+'</td></tr>';
+      dataHtml += '<tr><td>min:</td><td>'+file_access[5]+'</td></tr>';
+      dataHtml += '<tr><td>max:</td><td>'+file_access[6]+'</td></tr>';
       $('#data').html(dataHtml);
       
       //draw graph
-      draw(file_access[6]);
+      draw(file_access[7]);
     };
     
     function noDataError() {

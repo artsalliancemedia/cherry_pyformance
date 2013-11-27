@@ -29,6 +29,7 @@
                                       "bAutoWidth":false,
 				                              "aoColumns": [{"bVisible":false},
 				                                            null,
+                                                    null,
 				                                            null,
 				                                            null,
 				                                            null,
@@ -42,7 +43,7 @@
        var height=200
        var width=500;
        var margin=50;
-       var numBars=10;
+       var numBars=6;
   
        function draw(data, index){
          var x_extent = d3.extent(data, function(d){return d[index]});
@@ -87,12 +88,14 @@
          });
        };
   
-       $.getJSON('/api/fileaccesses?sort=avg',function(data){
+       $.getJSON('/api/fileaccesses?sort=avg&limit='+numBars,function(data){
          $('svg').remove();
-         //draw graph
-         draw(data[0].slice(0,numBars), 3);
-         $.getJSON('/api/fileaccesses?sort=count',function(data){
-           draw(data[0].slice(0,numBars), 2)
+         draw(data[0], 3);
+         $.getJSON('/api/fileaccesses?sort=count&limit='+numBars,function(data){
+           draw(data[0], 2);
+           $.getJSON('/api/fileaccesses?sort=total&limit='+numBars,function(data){
+             draw(data[0], 4);
+           });
          });
        });
       
@@ -150,6 +153,7 @@
   </script>
 
 </head>
+<body>
 
 <header class="main-container">
   <nav> <img class="logo" src="images/logo.png"/>
@@ -160,7 +164,6 @@
   </nav>
 </header>
 
-<body>
 
 <section class="container main-container">
   <section class="actions ac-container">
@@ -190,6 +193,7 @@
       <h1>Aggregated File Accesses</h1>
       <div id="graph3"><h4>Top average durations</h4></div>
       <div id="graph2"><h4>Top call counts</h4></div>
+      <div id="graph4"><h4>Total time</h4></div>
     </header>
     
 	  <table id="main" class="my_table">
@@ -198,7 +202,8 @@
 	        <th>ID</th>
 	        <th>File Name</th>
 	        <th>Count</th>
-	        <th>Average</th>
+          <th>Average</th>
+	        <th>Total</th>
 	        <th>Min</th>
 	        <th>Max</th>
 	      </tr>
