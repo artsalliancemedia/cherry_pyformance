@@ -9,7 +9,7 @@ import database as db
 class AggregatePages(object):
     @cherrypy.expose
     def index(self):
-        return mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','index.html')).render()
+        return self.callstacks()
 
     @cherrypy.expose
     def callstacks(self, id=None, **kwargs):
