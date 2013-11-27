@@ -102,6 +102,7 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
                              db.MetaData.value.label(column_name),
                              func.count(db.MetaData.id).label('count'),
                              func.avg(table_class.duration).label('avg'),
+                             func.sum(table_class.duration).label('total'),
                              func.min(table_class.duration).label('min'),
                              func.max(table_class.duration).label('max'))
     query = query.filter(db.MetaData.key==column_name)

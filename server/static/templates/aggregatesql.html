@@ -79,7 +79,7 @@
             .attr('class','y axis')
             .attr('transform', 'translate('+margin+', 0)')
           .call(y_axis);
-      
+
         //mouseover points
         $('.datum').hover(function(e){
             $(this).attr({'stroke':'black',
@@ -105,8 +105,9 @@
         dataHtml = '';
         dataHtml += '<tr><td>count:</td><td>'+statement[2]+'</td></tr>';
         dataHtml += '<tr><td>avg:</td><td>'+statement[3]+'</td></tr>';
-        dataHtml += '<tr><td>min:</td><td>'+statement[4]+'</td></tr>';
-        dataHtml += '<tr><td>max:</td><td>'+statement[5]+'</td></tr>';
+        dataHtml += '<tr><td>total:</td><td>'+statement[4]+'</td></tr>';
+        dataHtml += '<tr><td>min:</td><td>'+statement[5]+'</td></tr>';
+        dataHtml += '<tr><td>max:</td><td>'+statement[6]+'</td></tr>';
         $('#data').html(dataHtml);
 
         //highlight sql syntax
@@ -115,7 +116,7 @@
         //remove any graphs
         $('svg').remove();
         //draw graph
-        draw(statement[6]);
+        draw(statement[7]);
 
       };
       
