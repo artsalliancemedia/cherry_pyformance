@@ -5,9 +5,9 @@ from sqlalchemy import or_, and_
 from cgi import escape as html_escape
 
 column_order = {'CallStack':['id','duration','datetime'],
-                'CallStackItem':['id','call_stack_id','function_name','line_number','module','total_calls','native_calls','cumulative_time','total_time'],
+                'CallStackItem':['id','call_stack_id','total_calls','native_calls','cumulative_time','total_time'],
                 'SQLStatement':['id','duration','datetime'],
-                'SQLStackItem':['id','sql_statement_id','module','function'],
+                'SQLStackItem':['id','sql_statement_id'],
                 'FileAccess':['id','time_to_open','duration','data_written','datetime']}
                 
 def search_filter(query, table_class, search_string):
@@ -16,7 +16,7 @@ def search_filter(query, table_class, search_string):
         for class_attr in column_order[table_class.__name__]:
             attr = getattr(table_class, class_attr)
             if type(attr.type) == sqlalchemy.types.String:
-                string_clauses.append(attr.like('%' + search_string + '%'))
+                string_clauses.append(attr.ilike('%%' + search_string + '%%'))
         if string_clauses:
             return query.filter(or_(*string_clauses))
     return query
@@ -126,7 +126,10 @@ class JSONAPI(object):
     @cherrypy.tools.json_out()
     def metadata(self, id=None, **kwargs):
         main_table_item = None
-        if 'call_stack_id' in kwargs:
+        if 'get_keys' in kwargs:
+            key_list_dicts = db.session.query(db.MetaData.key).distinct().all()
+            return [key_dict[0] for key_dict in key_list_dicts]
+        elif 'call_stack_id' in kwargs:
             main_table_item = db.session.query(db.CallStack).get(kwargs['call_stack_id'])
         elif 'sql_statement_id' in kwargs:
             main_table_item = db.session.query(db.SQLStatement).get(kwargs['sql_statement_id'])
@@ -135,7 +138,14 @@ class JSONAPI(object):
         
         data = []
         if main_table_item:
-            for metadata_item in main_table_item.metadata_items:
-                record = [html_escape(str(metadata_item.__dict__[x])) for x in ['id','key','value']]
+            for metadata in main_table_item.metadata_items:
+                record = [html_escape(str(metadata.__dict__[x])) for x in ['id','key','value']]
                 data.append(record)
+        else:
+            metadata_list = db.session.query(db.MetaData).filter_by(**kwargs).all()
+            for metadata in metadata_list:
+                value = html_escape(str(metadata.__dict__['value']))
+                data.append(value)
+            data.sort(key=str.lower)
+        
         return {'aaData':data}

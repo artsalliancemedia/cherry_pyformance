@@ -15,9 +15,6 @@ def is_datatables_key(key):
     return False
 
 def parse_kwargs(kwargs):
-    # remove _
-    # kwargs.pop('_')
-
     # move datatables keys to another dict
     table_kwargs = {}
     for key in kwargs.keys():
@@ -30,16 +27,16 @@ def parse_kwargs(kwargs):
             del(kwargs[k])
 
     # move filters to another dict
-    filter_kwargs = {}
+    filter_kwargs = kwargs
     for key in ['start_date','end_date','start','limit']:
-        if key in kwargs:
-            filter_kwargs[key] = int(kwargs.pop(key))
+        if key in filter_kwargs:
+            filter_kwargs[key] = int(filter_kwargs[key])
 
-    if 'sort' in kwargs:
-        if type(kwargs['sort'])==unicode:
-            filter_kwargs['sort']=[(str(kwargs.pop('sort')),'DESC')]
-        elif type(kwargs['sort'])==list:
-            filter_kwargs['sort']=kwargs.pop('sort')
+    if 'sort' in filter_kwargs:
+        if type(filter_kwargs['sort'])==unicode:
+            filter_kwargs['sort'] = [(str(filter_kwargs['sort']),'DESC')]
+        elif type(filter_kwargs['sort'])==list:
+            filter_kwargs['sort'] = filter_kwargs['sort']
 
     return table_kwargs, filter_kwargs
 
@@ -63,27 +60,26 @@ def datatables(query_func):
             start_date = filter_kwargs.get('start_date',None)
             end_date = filter_kwargs.get('end_date',None)
 
-            results, total_num_items, filtered_num_items = query_func(table_class,
+            data, total_num_items, filtered_num_items = query_func(table_class,
                                                                       id=id,
+                                                                      filter_kwargs=filter_kwargs,
                                                                       search=search,
                                                                       start_date=start_date,
                                                                       end_date=end_date,
                                                                       sort=sort,
                                                                       start=start,
                                                                       limit=limit)
-            data = [list(result) for result in results] # convert to lists from keyedTuples
             return {'aaData':data,
                     "sEcho": int(table_kwargs['sEcho']),
                     "iTotalRecords": total_num_items,
                     "iTotalDisplayRecords": filtered_num_items}
         else:
             filter_kwargs['id']=id
-            result, total_num_items, filtered_num_items = query_func(table_class, **filter_kwargs)
-            return list(result), total_num_items, filtered_num_items
+            return query_func(table_class, **filter_kwargs)
     return dt_wrapped
 
 @datatables
-def json_aggregate(table_class, id=None, search=None, start_date=None, end_date=None, sort=[('avg','DESC')], start=None, limit=None):
+def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_date=None, end_date=None, sort=[('avg','DESC')], start=None, limit=None):
     column_name = column_name_dict[table_class]
     if id:
         total_num_items = 1
@@ -110,11 +106,18 @@ def json_aggregate(table_class, id=None, search=None, start_date=None, end_date=
                              func.max(table_class.duration).label('max'))
     query = query.filter(db.MetaData.key==column_name)
     query = query.join(table_class.metadata_items)
+    
+    if filter_kwargs:
+        for k in filter_kwargs:
+            if 'key_' in k:
+                v = k.replace('key','value')
+                query = query.filter(table_class.metadata_items.any(and_(db.MetaData.key==filter_kwargs[k], db.MetaData.value==filter_kwargs[v])))
+    
     query = query.group_by(db.MetaData.id)
     if id:          query = query.filter(db.MetaData.id==id)
     if start_date:  query = query.filter(table_class.datetime>start_date)
     if end_date:    query = query.filter(table_class.datetime<end_date)
-    if search:      query = query.filter(and_(db.MetaData.key==column_name, db.MetaData.value.like('%%%s%%'%search)))
+    if search:      query = query.filter(and_(db.MetaData.key==column_name, db.MetaData.value.ilike('%%%s%%'%search)))
     for sorter in sort:
         query = query.order_by('%s %s'%sorter)
     filtered_num_items = query.count()
@@ -129,7 +132,8 @@ def json_aggregate(table_class, id=None, search=None, start_date=None, end_date=
             raise cherrypy.HTTPError(404)
 
     else:
-        return query.all(), total_num_items, filtered_num_items
+        results = [list(result) for result in query.all()] # convert to lists from keyedTuples
+        return results, total_num_items, filtered_num_items
 
 class AggregateAPI(object):
     
