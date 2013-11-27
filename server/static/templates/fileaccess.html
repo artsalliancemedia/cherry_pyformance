@@ -31,10 +31,9 @@
 <header class="main-container">
   <nav> <img class="logo" src="../images/logo.png"/>
     <ul>
-      <li><a href="/" >Main Page</a></li>
-      <li><a href="/fileaccesses">Aggregated File Accesss</a></li>
-      <li><a href="/fileaccesses/${metadata_id}">Aggregated File Access</a></li>
-      <li><a href="/tables/fileaccesses/${file_access.id}" class="active">File Access</a></li>
+      <li><a href="/callstacks">Call Stacks</a></li>
+      <li><a href="/sqlstatements">SQL Statements</a></li>
+      <li><a href="/fileaccesses" class="active">File Accesses</a></li>
     </ul>
   </nav>
 </header>
@@ -45,8 +44,9 @@
   <section class="actions ac-container">
   </section>
   <section class="content">
+  
+    <a href="/fileaccesses">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/fileaccesses/${metadata_id}">Aggregation Item</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;File Access Item
 
-    <h2>File Access:</h2>
     <div id="metadata"></div>
   
   </section>

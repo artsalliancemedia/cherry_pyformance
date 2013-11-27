@@ -188,9 +188,9 @@
 <header class="main-container">
   <nav> <img class="logo" src="../images/logo.png"/>
     <ul>
-      <li><a href="/" >Main Page</a></li>
-      <li><a href="/fileaccesses">Aggregated File Accesses</a></li>
-      <li><a href="/fileaccesses/${file_access[0]}" class="active">Aggregated File Access</a></li>
+      <li><a href="/callstacks">Call Stacks</a></li>
+      <li><a href="/sqlstatements">SQL Statements</a></li>
+      <li><a href="/fileaccesses" class="active">File Accesses</a></li>
     </ul>
   </nav>
 </header>
@@ -220,6 +220,8 @@
     
   </section>
   <section class="content">
+  
+    <a href="/fileaccesses">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Aggregation Item
 
 	  <div>
 	    <pre>${file_access[1]}</pre>
