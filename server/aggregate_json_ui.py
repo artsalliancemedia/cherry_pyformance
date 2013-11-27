@@ -93,6 +93,13 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
                                        table_class.datetime)
         times_query = times_query.filter(db.MetaData.id==id)
         times_query = times_query.join(table_class.metadata_items)
+        
+        if filter_kwargs:
+            for k in filter_kwargs:
+                if 'key_' in k:
+                    v = k.replace('key','value')
+                    times_query = times_query.filter(table_class.metadata_items.any(and_(db.MetaData.key==filter_kwargs[k], db.MetaData.value==filter_kwargs[v])))
+                
         if start_date:  times_query = times_query.filter(table_class.datetime>start_date)
         if end_date:    times_query = times_query.filter(table_class.datetime<end_date)
         times = times_query.all()

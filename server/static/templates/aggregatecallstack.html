@@ -161,9 +161,8 @@
           val_select.append($("<option />").val(0).text('Select metadata value'));
       
           // Insert the new options from the array
-          value_list = data['aaData'];
-          $.each(value_list, function(value) {
-            val_select.append($("<option />").val(value_list[value]).text(value_list[value]));
+          $.each(data, function(value) {
+            val_select.append($("<option />").val(data[value]).text(data[value]));
           });
         });
       }
@@ -179,7 +178,7 @@
       if(val != 0){
         var key = 'key_1=' + $('#key-select').val();
         var value = 'value_1=' + val;
-        kwarg = '&' + key + '&' + value;
+        kwarg = key + '&' + value;
       }
       $.getJSON('/api/callstacks/${call_stack[0]}?${encoded_kwargs}&' + kwarg, parseJSON, noDataError);
     };
