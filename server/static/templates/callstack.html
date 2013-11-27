@@ -1,118 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
   <title>Call Stack</title>
   <style type="text/css" title="currentStyle">
     @import "/css/jquery-ui-1.10.3.custom.min.css";
-    .meta{
-      width:50%;
-      float:left;
-    }
+    @import "/css/all.css";
   </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
-  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
   <script type="text/javascript">
     $(document).ready(function() {
 
-      var kwargs = "${encoded_kwargs}";
-      console.log(kwargs);
-      
-      $('#main').dataTable( {"sAjaxSource": "/_callstacks/${callstack.id}?${encoded_kwargs}",
-                             "bServerSide" : true,
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                d = new Date(aData[2]*1000);
-                                $('td:eq(2)', nRow).text(d);
-                              }
-                            });
+      $.getJSON('/tables/api/callstacks/${call_stack.id}',function(data){
+        
+        var metaHtml = '';
+        for (var key in data) {
+          if(data.hasOwnProperty(key) && key!='stack'){
+            metaHtml += '<p>'+key+' - '+data[key]+'</p>';
+          };
+        };
+        $('#metadata').html(metaHtml);
 
-      $('#callstackitems').dataTable({"sAjaxSource": "/_callstackitems?call_stack_id=${callstack.id}&${encoded_kwargs}",
-                             "bServerSide" : true,
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "iDisplayLength": 20,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "aoColumns": [ null,
-                                            {"bVisible":false},
-                                            null,
-                                            null,
-                                            null,
-                                            null,
-                                            null,
-                                            null,
-                                            null]
-                            });
+        var stackHtml = '';
+        var stack = data.stack;
+        console.log(stack);
+        for (var i=0; i<stack.length; i++) {
 
-      $('#metadata').dataTable({"sAjaxSource": "/_metadata?call_stack_id=${callstack.id}&${encoded_kwargs}",
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "iDisplayLength": 20,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "aoColumns": [ {"bVisible":false},
-                                            null,
-                                            null]
-                            });
+          console.log(stack[i].module);
+          console.log(stack[i].function);
+          stackHtml += '<p>'+stack[i].module+' - '+stack[i].function+'</p>';
+        };
+        $('#stack').html(stackHtml);
+
+      });
+
     });
   </script>
-  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
-
+  
 </head>
+
+<header class="main-container">
+  <nav> <img class="logo" src="../images/logo.png"/>
+    <ul>
+      <li><a href="/" >Main Page</a></li>
+      <li><a href="/callstacks">Aggregated Call Stacks</a></li>
+      <li><a href="/callstacks/${metadata_id}">Aggregated Call Stack</a></li>
+      <li><a href="/tables/callstacks/${call_stack.id}" class="active">Call Stack</a></li>
+    </ul>
+  </nav>
+</header>
 
 <body>
 
-<div class="breadcrumbs">
-  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/callstacks">Callstacks</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Callstack&nbsp;${callstack.id}
-</div>
+<section class="container main-container">
+  <section class="actions ac-container">
+  </section>
+  <section class="content">
 
-
-<div class="meta">
-  <h2>Call Stack</h2>
-  <table id="main">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Total Time</th>
-        <th>Datetime</th>
-      </tr>
-    </thead>
-  </table>
-</div>
-
-<div class="meta">
-  <h2>Call Stack Metadata:</h2>
-  <table id="metadata">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Key</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-  </table>
-</div>
-
-  <h2>Call Stack Data:</h2>
-  <table id="callstackitems">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Call Stack</th>
-        <th>Function</th>
-        <th>Line Number</th>
-        <th>Module</th>
-        <th>Total Calls</th>
-        <th>Native Calls</th>
-        <th>Cumulative Time</th>
-        <th>Total Time<th>
-      </tr>
-    </thead>
-  </table>
-
+    <h2>Call Stack:</h2>
+    <div id="metadata"></div>
+  
+    <h2>Call Stack Items:</h2>
+    <div id="stack"></div>
+  
+  </section>
+</section>
+  
 
 </body>
 </html>

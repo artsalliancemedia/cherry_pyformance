@@ -1,85 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
   <title>File Access</title>
   <style type="text/css" title="currentStyle">
     @import "/css/jquery-ui-1.10.3.custom.min.css";
-    .meta{
-      width:50%;
-      float:left;
-    }
+    @import "/css/all.css";
   </style>
   <script type="text/javascript" src="/js/jquery.js"></script>
-  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
   <script type="text/javascript">
     $(document).ready(function() {
 
-      var kwargs = "${encoded_kwargs}";
-      console.log(kwargs);
-      
-      $('#main').dataTable( {"sAjaxSource": "/_fileaccesses/${file_access.id}?${encoded_kwargs}",
-                             "bServerSide" : true,
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                d = new Date(aData[4]*1000);
-                                $('td:eq(4)', nRow).text(d);
-                              }
-                            });
+      $.getJSON('/tables/api/fileaccesses/${file_access.id}',function(data){
+        
+        var metaHtml = '';
+        for (var key in data) {
+          if(data.hasOwnProperty(key) && key!='stack'){
+            metaHtml += '<p>'+key+' - '+data[key]+'</p>';
+          };
+        };
+        $('#metadata').html(metaHtml);
 
-      $('#metadata').dataTable({"sAjaxSource": "/_metadata?file_access_id=${file_access.id}&${encoded_kwargs}",
-                             "bProcessing":true,
-                             "bDeferRender":true,
-                             "iDisplayLength": 20,
-                             "bAutoWidth":false,
-                             "bJQueryUI": true,
-                             "aoColumns": [ {"bVisible":false},
-                                            null,
-                                            null]
-                            });
+      });
+
     });
   </script>
-  <link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
-
+  
 </head>
+
+<header class="main-container">
+  <nav> <img class="logo" src="../images/logo.png"/>
+    <ul>
+      <li><a href="/" >Main Page</a></li>
+      <li><a href="/fileaccesses">Aggregated File Accesss</a></li>
+      <li><a href="/fileaccesses/${metadata_id}">Aggregated File Access</a></li>
+      <li><a href="/tables/fileaccesses/${file_access.id}" class="active">File Access</a></li>
+    </ul>
+  </nav>
+</header>
 
 <body>
 
-<div class="breadcrumbs">
-  <a href="/">Home</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/fileaccesses">File Accesses</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;File Access&nbsp;${file_access.id}
-</div>
+<section class="container main-container">
+  <section class="actions ac-container">
+  </section>
+  <section class="content">
 
-
-<div class="meta">
-  <h2>File Access</h2>
-  <table id="main">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Time to Open</th>
-        <th>Duration Open</th>
-        <th>Bytes Written</th>
-        <th>Datetime</th>
-      </tr>
-    </thead>
-  </table>
-</div>
-
-<div class="meta">
-  <h2>File Access Metadata:</h2>
-  <table id="metadata">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Key</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-  </table>
-</div>
-
+    <h2>File Access:</h2>
+    <div id="metadata"></div>
+  
+  </section>
+</section>
+  
 
 </body>
 </html>

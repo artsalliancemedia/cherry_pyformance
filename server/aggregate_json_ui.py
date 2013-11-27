@@ -74,8 +74,11 @@ def datatables(query_func):
                     "iTotalRecords": total_num_items,
                     "iTotalDisplayRecords": filtered_num_items}
         else:
-            filter_kwargs['id']=id
-            return query_func(table_class, **filter_kwargs)
+            sort = [('avg','DESC')]
+            if 'sort' in filter_kwargs:
+                sort = filter_kwargs['sort']
+                del(filter_kwargs['sort'])
+            return query_func(table_class, id=id, filter_kwargs=filter_kwargs, sort=sort)
     return dt_wrapped
 
 @datatables
@@ -90,6 +93,13 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
                                        table_class.datetime)
         times_query = times_query.filter(db.MetaData.id==id)
         times_query = times_query.join(table_class.metadata_items)
+        
+        if filter_kwargs:
+            for k in filter_kwargs:
+                if 'key_' in k:
+                    v = k.replace('key','value')
+                    times_query = times_query.filter(table_class.metadata_items.any(and_(db.MetaData.key==filter_kwargs[k], db.MetaData.value==filter_kwargs[v])))
+                
         if start_date:  times_query = times_query.filter(table_class.datetime>start_date)
         if end_date:    times_query = times_query.filter(table_class.datetime<end_date)
         times = times_query.all()
@@ -129,14 +139,12 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
             result.append(times)
             return result,1,1
         except:
-            raise cherrypy.HTTPError(404)
-
+            return [],0,0
     else:
         results = [list(result) for result in query.all()] # convert to lists from keyedTuples
         return results, total_num_items, filtered_num_items
 
 class AggregateAPI(object):
-    
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def callstacks(self, id=None, **kwargs):
