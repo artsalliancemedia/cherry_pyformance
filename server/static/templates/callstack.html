@@ -42,10 +42,9 @@
 <header class="main-container">
   <nav> <img class="logo" src="../images/logo.png"/>
     <ul>
-      <li><a href="/" >Main Page</a></li>
-      <li><a href="/callstacks">Aggregated Call Stacks</a></li>
-      <li><a href="/callstacks/${metadata_id}">Aggregated Call Stack</a></li>
-      <li><a href="/tables/callstacks/${call_stack.id}" class="active">Call Stack</a></li>
+      <li><a href="/callstacks" class="active">Call Stacks</a></li>
+      <li><a href="/sqlstatements">SQL Statements</a></li>
+      <li><a href="/fileaccesses">File Accesses</a></li>
     </ul>
   </nav>
 </header>
@@ -56,8 +55,9 @@
   <section class="actions ac-container">
   </section>
   <section class="content">
+  
+    <a href="/callstacks">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/callstacks/${metadata_id}">Aggregation Item</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Call Stack Item
 
-    <h2>Call Stack:</h2>
     <div id="metadata"></div>
   
     <h2>Call Stack Items:</h2>
