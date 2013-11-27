@@ -92,6 +92,12 @@ def start_cherrypy(host, port):
     cherrypy.tree.mount( JSONAPI(),             '/tables/api', {'/':{}} )
     cherrypy.tree.mount( AggregatePages(),      '/',           front_end_config )
     cherrypy.tree.mount( AggregateAPI(),        '/api',        {'/':{}} )
+
+    # Attach the signal handlers to detect keyboard interrupt
+    if hasattr(cherrypy.engine, 'signal_handler'):
+        cherrypy.engine.signal_handler.subscribe()
+    if hasattr(cherrypy.engine, 'console_control_handler'):
+        cherrypy.engine.console_control_handler.subscribe()
     
     cherrypy.log('Starting CherryPy')
     try:
