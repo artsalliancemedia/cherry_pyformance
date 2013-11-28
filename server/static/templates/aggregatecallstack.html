@@ -103,12 +103,13 @@
       dataHtml = '';
       dataHtml += '<tr><td>count:</td><td>'+call_stack[2]+'</td></tr>';
       dataHtml += '<tr><td>avg:</td><td>'+call_stack[3]+'</td></tr>';
-      dataHtml += '<tr><td>min:</td><td>'+call_stack[4]+'</td></tr>';
-      dataHtml += '<tr><td>max:</td><td>'+call_stack[5]+'</td></tr>';
+      dataHtml += '<tr><td>total:</td><td>'+call_stack[4]+'</td></tr>';
+      dataHtml += '<tr><td>min:</td><td>'+call_stack[5]+'</td></tr>';
+      dataHtml += '<tr><td>max:</td><td>'+call_stack[6]+'</td></tr>';
       $('#data').html(dataHtml);
       
       //draw graph
-      draw(call_stack[6]);
+      draw(call_stack[7]);
     };
     
     function noDataError() {

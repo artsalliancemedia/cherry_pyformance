@@ -2,7 +2,7 @@
 import database as db
 import cherrypy
 # from sqlalchemy import or_, and_
-# from cgi import escape as html_escape
+from cgi import escape as html_escape
 
 
 class JSONAPI(object):
@@ -77,5 +77,3 @@ class JSONAPI(object):
         
         results_list.sort(key=unicode.lower)
         return results_list
-
-

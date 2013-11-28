@@ -106,15 +106,16 @@
       dataHtml = '';
       dataHtml += '<tr><td>count:</td><td>'+statement[2]+'</td></tr>';
       dataHtml += '<tr><td>avg:</td><td>'+statement[3]+'</td></tr>';
-      dataHtml += '<tr><td>min:</td><td>'+statement[4]+'</td></tr>';
-      dataHtml += '<tr><td>max:</td><td>'+statement[5]+'</td></tr>';
+      dataHtml += '<tr><td>total:</td><td>'+statement[4]+'</td></tr>';
+      dataHtml += '<tr><td>min:</td><td>'+statement[5]+'</td></tr>';
+      dataHtml += '<tr><td>max:</td><td>'+statement[6]+'</td></tr>';
       $('#data').html(dataHtml);
 
       //highlight sql syntax
       sh_highlightDocument();
       
       //draw graph
-      draw(statement[6]);
+      draw(statement[7]);
 
     };
     
@@ -193,6 +194,8 @@
   </script>
 </head>
 
+<body>
+
 <header class="main-container">
   <nav> <img class="logo" src="../images/logo.png"/>
     <ul>
@@ -202,8 +205,6 @@
     </ul>
   </nav>
 </header>
-
-<body>
 
 <section class="container main-container">
   <section class="actions ac-container">

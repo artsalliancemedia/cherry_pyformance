@@ -31,6 +31,7 @@
 				                                            null,
 				                                            null,
 				                                            null,
+                                                    null,
 				                                            null,
 				                                            null],
 				                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
@@ -42,7 +43,7 @@
 	     var height=200
 	     var width=500;
 	     var margin=50;
-	     var numBars=10;
+	     var numBars=6;
 	
 	     function draw(data, index){
 	       var x_extent = d3.extent(data, function(d){return d[index]});
@@ -87,12 +88,14 @@
 	       });
 	     };
 	
-	     $.getJSON('/api/sqlstatements?sort=avg',function(data){
-	       $('svg').remove();
-	       //draw graph
-	       draw(data[0].slice(0,numBars), 3);
-	       $.getJSON('/api/sqlstatements?sort=count',function(data){
-	         draw(data[0].slice(0,numBars), 2)
+	      $.getJSON('/api/sqlstatements?sort=avg&limit='+numBars,function(data){
+	        $('svg').remove();
+	        draw(data[0], 3);
+	        $.getJSON('/api/sqlstatements?sort=count&limit='+numBars,function(data){
+	          draw(data[0], 2);
+            $.getJSON('/api/sqlstatements?sort=total&limit='+numBars,function(data){
+              draw(data[0], 4);
+            });
 	       });
 	     });
       
@@ -190,23 +193,26 @@
 
     <div>Aggregation</div>
   
-	  <header>
-	    <div id="graph3"><h4>Top average durations</h4></div>
-	    <div id="graph2"><h4>Top call counts</h4></div>
-	  </header>
-	
-	  <table id="main" class="my_table">
-	    <thead>
-	      <tr>
-	        <th>ID</th>
-	        <th>SQL</th>
-	        <th>Count</th>
-	        <th>Average</th>
-	        <th>Min</th>
-	        <th>Max</th>
-	      </tr>
-	    </thead>
-	  </table>
+  <header>
+    <h1>Aggregated SQL</h1>
+    <div id="graph3"><h4>Top average durations</h4></div>
+    <div id="graph2"><h4>Top call counts</h4></div>
+    <div id="graph4"><h4>Total duration</h4></div>
+  </header>
+
+  <table id="main" class="my_table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>SQL</th>
+        <th>Count</th>
+        <th>Average</th>
+        <th>Total</th>
+        <th>Min</th>
+        <th>Max</th>
+      </tr>
+    </thead>
+  </table>
   
   </section>
 </section>
