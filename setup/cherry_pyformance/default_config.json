@@ -1,9 +1,8 @@
 {
-    "exhibitor_chain":"default_chain",
-    "exhibitor_branch":"default_branch",
-    "product":"default_production",
-    "version":"0.0.1",
-
+    "metadata":{"exhibitor_chain":"default_chain",
+                "exhibitor_branch":"default_branch",
+                "product":"default_production",
+                "version":"0.0.1"},
     "output":{
                 "type":"server",
                 "location":"localhost:8888",
