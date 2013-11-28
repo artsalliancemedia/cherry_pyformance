@@ -69,7 +69,6 @@
 
     function drawBarGraphs(kwargs){
      $.getJSON('/api/callstacks?sort=avg&limit='+numBars+'&'+kwargs,function(data){
-       console.log('!!!')
        $('svg').remove();
        draw(data[0], 3);
        $.getJSON('/api/callstacks?sort=count&limit='+numBars+'&'+kwargs,function(data){

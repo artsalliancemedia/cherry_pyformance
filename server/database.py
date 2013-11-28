@@ -8,18 +8,18 @@ from sqlparse import tokens as sql_tokens, parse as parse_sql
 Base = declarative_base()
 
 call_stack_metadata_association_table = Table('call_stack_metadata_association', Base.metadata,
-    Column('call_stack_id', Integer, ForeignKey('call_stacks.id')), 
-    Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
+    Column('call_stack_id', Integer, ForeignKey('call_stacks.id'), primary_key=True), 
+    Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
 )
 
 sql_statement_metadata_association_table = Table('sql_statement_metadata_association', Base.metadata,
-    Column('sql_statement_id', Integer, ForeignKey('sql_statements.id')), 
-    Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
+    Column('sql_statement_id', Integer, ForeignKey('sql_statements.id'), primary_key=True), 
+    Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
 )
 
 file_access_metadata_association_table = Table('file_access_metadata_association', Base.metadata,
-    Column('file_access_id', Integer, ForeignKey('file_accesses.id')), 
-    Column('metadata_id', Integer, ForeignKey('metadata_items.id'))
+    Column('file_access_id', Integer, ForeignKey('file_accesses.id'), primary_key=True), 
+    Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
 )
 
 class CallStack(Base):
