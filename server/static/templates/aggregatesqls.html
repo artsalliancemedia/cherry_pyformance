@@ -14,90 +14,94 @@
   <script type="text/javascript" src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
   <script type="text/javascript">
     var oTable;
+
+    var height=200
+    var width=500;
+    var margin=50;
+    var numBars=6;
+    
+    function trunc(string, numChars){
+      return string.length>numChars?string.substring(0,numChars-3)+'...':string
+    }
+    
+    function draw(data, index){
+      var x_extent = d3.extent(data, function(d){return d[index]});
+      var x_scale = d3.scale.linear()
+                        .range([margin,width-margin])
+                        .domain(x_extent);
+      d3.select('div#graph'+index)
+        .append('svg')
+          .attr('class','graph'+index)
+          .attr('width',width)
+          .attr('height',height)
+        .selectAll('g')
+        .data(data)
+        .enter()
+        .append('g');
+      d3.selectAll('.graph'+index+' g')
+        .append('rect')
+          .attr('fill','skyblue')
+          .attr('width', function(d){return x_scale(d[index])})
+          .attr('height',height/numBars)
+          .attr('y',function(d,i){return height/numBars*(i)+i})
+          .attr('data-id',function(d){return d[0]});
+      d3.selectAll('.graph'+index+' g')
+        .append('text')
+          .attr('x',10)
+          .attr('y',function(d,i){return height/numBars*(i+0.5)+i+4})
+          .text(function(d){
+            if (index==3){
+              return d[index].toFixed(4)+' - '+trunc(d[1].replace('\n',''),60)
+            }else{
+              return d[index]+' - '+trunc(d[1].replace('\n',''),60)
+            }
+          });
+      //mouseover points
+      $('g').hover(function(e){
+          $(this).children('rect').attr({'fill':'blue'});
+        },function(e){
+          $(this).children('rect').attr({'fill':'skyblue'});
+      }).click(function(){
+        id = $(this).children('rect').attr('data-id');
+        window.location.href = '/sqlstatements/'+id;
+      });
+    };
+
+    function drawBarGraphs(kwargs){
+      $.getJSON('/api/sqlstatements?sort=avg&limit='+numBars+'&'+kwargs,function(data){
+        $('svg').remove();
+        draw(data[0], 3);
+        $.getJSON('/api/sqlstatements?sort=count&limit='+numBars+'&'+kwargs,function(data){
+          draw(data[0], 2);
+          $.getJSON('/api/sqlstatements?sort=total&limit='+numBars+'&'+kwargs,function(data){
+            draw(data[0], 4);
+          });
+        });
+      });
+    };
     
     $(document).ready(function() {
-      function trunc(string, numChars){
-        return string.length>numChars?string.substring(0,numChars-3)+'...':string
-      }
-
       oTable = $('#main').dataTable( {"aaSorting": [[ 3, "desc" ]],
-				                              "bServerSide":true,
-				                              "sAjaxSource":"/api/sqlstatements?datatables=true",
-				                              "bProcessing":true,
-				                              "bDeferRender":true,
+                                      "bServerSide":true,
+                                      "sAjaxSource":"/api/sqlstatements?datatables=true",
+                                      "bProcessing":true,
+                                      "bDeferRender":true,
                                       "sPaginationType":"full_numbers",
-				                              "bAutoWidth":false,
-				                              "aoColumns": [{"bVisible":false},
-				                                            null,
-				                                            null,
-				                                            null,
+                                      "bAutoWidth":false,
+                                      "aoColumns": [{"bVisible":false},
                                                     null,
-				                                            null,
-				                                            null],
-				                              "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-				                                 $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/sqlstatements/'+aData[0] });
-				                                 $('td:eq(0)', nRow).text(trunc(aData[1],100));
-				                               }
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null],
+                                      "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                                         $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/sqlstatements/'+aData[0] });
+                                         $('td:eq(0)', nRow).text(trunc(aData[1],100));
+                                       }
       });
-
-	     var height=200
-	     var width=500;
-	     var margin=50;
-	     var numBars=6;
-	
-	     function draw(data, index){
-	       var x_extent = d3.extent(data, function(d){return d[index]});
-	       var x_scale = d3.scale.linear()
-	                         .range([margin,width-margin])
-	                         .domain(x_extent);
-	       d3.select('div#graph'+index)
-	         .append('svg')
-	           .attr('class','graph'+index)
-	           .attr('width',width)
-	           .attr('height',height)
-	         .selectAll('g')
-	         .data(data)
-	         .enter()
-	         .append('g');
-	       d3.selectAll('.graph'+index+' g')
-	         .append('rect')
-	           .attr('fill','skyblue')
-	           .attr('width', function(d){return x_scale(d[index])})
-	           .attr('height',height/numBars)
-	           .attr('y',function(d,i){return height/numBars*(i)+i})
-	           .attr('data-id',function(d){return d[0]});
-	       d3.selectAll('.graph'+index+' g')
-	         .append('text')
-	           .attr('x',10)
-	           .attr('y',function(d,i){return height/numBars*(i+0.5)+i+4})
-	           .text(function(d){
-	             if (index==3){
-	               return d[index].toFixed(4)+' - '+trunc(d[1].replace('\n',''),60)
-	             }else{
-	               return d[index]+' - '+trunc(d[1].replace('\n',''),60)
-	             }
-	           });
-	       //mouseover points
-	       $('g').hover(function(e){
-	           $(this).children('rect').attr({'fill':'blue'});
-	         },function(e){
-	           $(this).children('rect').attr({'fill':'skyblue'});
-	       }).click(function(){
-	         id = $(this).children('rect').attr('data-id');
-	         window.location.href = '/sqlstatements/'+id;
-	       });
-	     };
-	
-	      $.getJSON('/api/sqlstatements?sort=avg&limit='+numBars,function(data){
-	        $('svg').remove();
-	        draw(data[0], 3);
-	        $.getJSON('/api/sqlstatements?sort=count&limit='+numBars,function(data){
-	          draw(data[0], 2);
-            $.getJSON('/api/sqlstatements?sort=total&limit='+numBars,function(data){
-              draw(data[0], 4);
-            });
-	       });
-	     });
+      
+      drawBarGraphs('');
       
       $.getJSON('/tables/api/metadata?get_keys=true', function(data){
         key_select = $('#key-select');
@@ -123,14 +127,14 @@
       val_select.empty();
         
       if(kwarg != ''){
-	      $.getJSON('/tables/api/metadata?'+kwarg, function(data){
+        $.getJSON('/tables/api/metadata?'+kwarg, function(data){
           val_select.append($("<option />").val(0).text('Select metadata value'));
       
           // Insert the new options from the array
-	        $.each(data, function(value) {
-	          val_select.append($("<option />").val(data[value]).text(data[value]));
-	        });
-	      });
+          $.each(data, function(value) {
+            val_select.append($("<option />").val(data[value]).text(data[value]));
+          });
+        });
       }
       else{
         val_select.append($("<option />").val(0).text('Pick a metadata key'));
@@ -143,12 +147,13 @@
       var val = $('#value-select').val();
       var kwarg = ''
       if(val != 0){
-	      var key = 'key_1=' + $('#key-select').val();
-	      var value = 'value_1=' + val;
+        var key = 'key_1=' + $('#key-select').val();
+        var value = 'value_1=' + val;
         kwarg = '&' + key + '&' + value;
       }
       oTable.fnSettings().sAjaxSource = '/api/sqlstatements?datatables=true' + kwarg;
       oTable.fnDraw();
+      drawBarGraphs(kwarg);
     };
       
   </script>
