@@ -125,9 +125,9 @@ def initialise(config_file_path=None):
     push_stats = create_output_fn()
     
     global stats_package_template
-    stats_package_template = {'flush_metadata': cfg['metadata'],
+    stats_package_template = {'metadata': cfg['metadata'],
                               'type': 'default_type',
-                              'profile': []}
+                              'stats': []}
 
     if cfg['functions']:
         from function_profiler import decorate_functions
