@@ -15,7 +15,12 @@ import copy
 import time
 import cPickle
 
-from cherry_pyformance import cfg, get_stat, stat_logger, handler_stats_buffer
+from cherry_pyformance import cfg, get_stat, stat_logger
+
+
+
+handler_stats_buffer = {}
+
 
 #=====================================================#
 

@@ -1,5 +1,8 @@
 from cherry_pyformance import stat_logger, push_stats, stats_package_template, cfg
-from cherry_pyformance import handler_stats_buffer, function_stats_buffer, sql_stats_buffer, file_stats_buffer
+from handler_profiler import handler_stats_buffer
+from function_profiler import function_stats_buffer
+from sql_profiler import sql_stats_buffer
+from file_profiler import file_stats_buffer
 
 
 def _flush_stats(stats_buffer, stat_type):
@@ -9,8 +12,9 @@ def _flush_stats(stats_buffer, stat_type):
     for _id in stats_buffer.keys():
         # sometimes stat has already gone by this point.
         try:
-            stats_to_push.append(stats_buffer[_id])
-            del stats_buffer[_id]
+            if type(stats_buffer[_id]['profile'])==str:
+                stats_to_push.append(stats_buffer[_id])
+                del stats_buffer[_id]
         except KeyError:
             # if does not exist, assume a flusher on another thread has taken care of it
             pass

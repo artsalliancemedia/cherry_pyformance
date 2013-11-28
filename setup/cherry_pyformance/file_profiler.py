@@ -1,7 +1,12 @@
 import __builtin__
 import time
-from cherry_pyformance import cfg, stat_logger, file_stats_buffer
+from cherry_pyformance import cfg, stat_logger
 import os
+
+
+
+file_stats_buffer = {}
+
 
 class FileWrapper(object):
 

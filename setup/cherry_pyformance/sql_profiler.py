@@ -1,6 +1,12 @@
 import time
 import inspect
-from cherry_pyformance import cfg, stat_logger, sql_stats_buffer
+from cherry_pyformance import cfg, stat_logger
+
+
+
+
+sql_stats_buffer = {}
+
 
 ###============================================================###
 

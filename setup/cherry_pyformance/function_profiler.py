@@ -13,8 +13,13 @@ import inspect
 import time
 import sys
 from threading import Thread
+import cPickle
 
-from cherry_pyformance import cfg, get_stat, stat_logger, function_stats_buffer
+from cherry_pyformance import cfg, get_stat, stat_logger
+
+
+
+function_stats_buffer = {}
 
 #=====================================================#
 
@@ -26,15 +31,18 @@ class StatWrapper(object):
     version of inner_func), the inner_func's details (module name etc.) are used
     on the stat record, but the decorated version is used for profiling.
     """
+    func_closure = None
+    
     def __init__(self, function, inner_func=None):
         self._function = function
         # If there is an inner_func, get some metadata from there
         # otherwise, use function's metadata
         self._inner_func = inner_func if inner_func else function
 
-        self._name = self._inner_func.__name__
+        self.__name__ = self._inner_func.__name__
         self._module_name = inspect.getmodule(self._inner_func).__name__
         self._class_name = self._inner_func.__class__.__name__
+
 
     def __call__(self, *args, **kwargs):
         _id = id(time.time())
@@ -42,7 +50,7 @@ class StatWrapper(object):
         function_stats_buffer[_id] = {'datetime': float(time.time()),
                                       'profile': cProfile.Profile()}
         output = function_stats_buffer[_id]['profile'].runcall(self._function, *args, **kwargs)
-        Thread(target=self._after(), args=(_id,)).start()
+        Thread(target=self._after, args=(_id,)).start()
         return output
 
     def _after(self, _id):
@@ -50,27 +58,18 @@ class StatWrapper(object):
         Pushes the stats collected to the buffer.
         """
         if _id in function_stats_buffer:
-            function_stats_buffer[_id]['metadata'] = {'function': _name,
-                                                      'class': _class_name,
-                                                      'module': _module_name}
-            stats = function_stats_buffer[req_id]['profile']
+            function_stats_buffer[_id]['metadata'] = {'function': self.__name__,
+                                                      'class': self._class_name,
+                                                      'module': self._module_name}
+            stats = function_stats_buffer[_id]['profile']
             stats.create_stats()
             # pickle stats and put back on the buffer for flushing
             pickled_stats = cPickle.dumps(stats.stats)
-            function_stats_buffer[req_id]['profile'] = pickled_stats
+            function_stats_buffer[_id]['profile'] = pickled_stats
 
 #=====================================================#
 
-def get_importer():
-    module = sys._getframe(1).f_globals.get('__name__')
-    if module != '__main__':
-        return module
-    else:
-        return os.path.basename(sys.argv[0])[:-3]
-
-
 def get_wrapped(function):
-    # at this point we need to test if the function is wrapped
     inner_func = function
     # recursively look through the func_closure items and look for callables.
     while inner_func.func_closure is not None:
@@ -87,7 +86,7 @@ def get_wrapped(function):
     return function, inner_func
 
 
-def decorate_function(path):
+def decorate_function(module_str,func_str):
     """
     Takes the string of a module, i.e. "serv.core.some_module.some_function"
     and acquires the actual function (or method) object. It does this by splitting
@@ -111,46 +110,30 @@ def decorate_function(path):
     "import a.b.c as d"
     calling decorate_function on d will not work, only a.b.c will work.
     """
-    # split on the '.'
-    full_string = path
-    try:
-        split_string = path.rsplit('.', 1)
-        if len(split_string)==1:
-            importer = get_importer()
-            __import__(importer)
-            importer = sys.modules[importer]
 
+    # try:
+    # import the root
+    __import__(module_str)
+    module =  sys.modules[module_str]
 
+    path = func_str.split('.')
 
-        module = __import__()
-        while not inspect.ismodule(path[module_index]):
-            module_index -= 1
-            
-        module = path[0:module_index+1]
-        attribute = path[module_index+1:]
-    except:
-        raise Exception('There was an issue finding module and function {0}'.format(path_string))
+    attribute = path[0]
+    function = getattr(module, attribute)
+    # loop through the submodules to get their instances
+    for attribute in path[1:]:
+        module = function
+        function = getattr(function, attribute)
 
-    try:
-        # import the root
-        __import__(module)
-        module = sys.modules[module]
-
-        parent = module
-        original = getattr(parent, attribute)
-        # loop through the submodules to get their instances
-        for attribute in path[2:]:
-            parent = original
-            original = getattr(original, attribute)
-
-
-        outer_func, inner_func = get_wrapped(original)
-        # replace the function instance with a wrapped one.
-        setattr(parent, attribute, StatWrapper(outer_func, inner_func))
-        print '\nWRAPPED\n'
-    except Exception as e:
-        raise e
-        stat_logger.warning('Failed to wrap function %s for stats profiling. Check configuration and importation method. The function will not be profiled.' % path_string)
+    # at this point we need to test if the function is wrapped
+    outer_func, inner_func = get_wrapped(function)
+    
+    # replace the function instance with a wrapped one.
+    setattr(module, attribute, StatWrapper(outer_func, inner_func))
+    print 'WRAPPED FUNCTION: '+module_str+'.'+func_str
+    # except Exception as e:
+        # stat_logger.warning('Failed to wrap function {0} for stats profiling'.format('.'.join([module_str,func_str])))
+        # raise e
 
 #=====================================================#
 
@@ -168,4 +151,4 @@ def decorate_functions():
     # decorate all functions supplied in config
     stat_logger.info('Wrapping functions for stats gathering')
     for function in cfg['functions']:
-        decorate_function(function)
+        decorate_function(function[0],function[1])

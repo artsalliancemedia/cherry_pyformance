@@ -10,11 +10,6 @@ from shutil import copyfile
 import cherrypy
 from cherrypy.process.plugins import Monitor
 
-# initialise 3 buffers
-function_stats_buffer = {}
-handler_stats_buffer = {}
-sql_stats_buffer = {}
-file_stats_buffer = {}
 
 def get_stat(item, stat):
     """
