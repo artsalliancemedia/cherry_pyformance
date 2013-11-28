@@ -1,4 +1,5 @@
-import mako.template
+from mako.template import Template
+from mako.lookup import TemplateLookup
 import cherrypy
 from aggregate_json_ui import json_aggregate, parse_kwargs
 import os
@@ -10,6 +11,9 @@ class AggregatePages(object):
     @cherrypy.expose
     def index(self):
         return self.callstacks()
+    
+    templates_dir = os.path.join(os.getcwd(),'static','templates')
+    template_lookup = TemplateLookup(directories=[templates_dir,])
 
     @cherrypy.expose
     def callstacks(self, id=None, **kwargs):
@@ -20,11 +24,12 @@ class AggregatePages(object):
                 raise cherrypy.HTTPError(404)
             call_stack[1]=str(call_stack[1]) #unicode throws off template when casting dict as js obj
             call_stack[2]=int(call_stack[2]) #convert long to int
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatecallstack.html'))
             if 'id' in filter_kwargs: filter_kwargs.pop('id')
+            
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatecallstack.html'), lookup=self.template_lookup)
             return mytemplate.render(call_stack=call_stack, encoded_kwargs=urlencode(filter_kwargs))
         else:
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatecallstacks.html'))
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatecallstacks.html'), lookup=self.template_lookup)
             return mytemplate.render()
 
     @cherrypy.expose
@@ -36,11 +41,12 @@ class AggregatePages(object):
                 raise cherrypy.HTTPError(404)
             statement[1]=str(statement[1]) #unicode throws off template when casting dict as js obj
             statement[2]=int(statement[2]) #convert long to int
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatesql.html'))
             if 'id' in filter_kwargs: filter_kwargs.pop('id')
+            
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatesql.html'), lookup=self.template_lookup)
             return mytemplate.render(statement=statement, encoded_kwargs=urlencode(filter_kwargs))
         else:
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatesqls.html'))
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatesqls.html'), lookup=self.template_lookup)
             return mytemplate.render()
 
     @cherrypy.expose
@@ -52,9 +58,10 @@ class AggregatePages(object):
                 raise cherrypy.HTTPError(404)
             file_access[1]=str(file_access[1]) #unicode throws off template when casting dict as js obj
             file_access[2]=int(file_access[2]) #convert long to int
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatefileaccess.html'))
             if 'id' in filter_kwargs: filter_kwargs.pop('id')
+            
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatefileaccess.html'), lookup=self.template_lookup)
             return mytemplate.render(file_access=file_access, encoded_kwargs=urlencode(filter_kwargs))
         else:
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','aggregatefileaccesses.html'))
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatefileaccesses.html'), lookup=self.template_lookup)
             return mytemplate.render()

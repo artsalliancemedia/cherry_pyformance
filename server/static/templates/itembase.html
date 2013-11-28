@@ -1,0 +1,31 @@
+<%inherit file="/base.html"/>
+
+<%block name="base_style">
+    @import "/css/jquery-ui-1.10.3.custom.min.css";
+</%block>
+
+<%block name="head">
+  <script type="text/javascript">
+    $(document).ready(function() {
+    
+      $.getJSON('/tables/api/<%block name="url_name"/>/<%block name="mako_item_id"/>',function(data){
+        var metaHtml = '';
+        for (var key in data) {
+          if(data.hasOwnProperty(key) && key!='stack'){
+            metaHtml += '<p>'+key+' - '+data[key]+'</p>';
+          };
+        };
+        $('#metadata').html(metaHtml);
+        
+        <%block name="extra_script"/>
+      });
+      
+    });
+  </script>
+</%block>
+
+<%block name="base">
+  <%block name="breadcrumbs"/>
+  <div id="metadata"></div>
+  <%block name="extra_base"/>
+</%block>
