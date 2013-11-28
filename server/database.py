@@ -226,7 +226,7 @@ def get_metadata_list(metadata_dictionary, db_session):
                 db_session.commit()
             else:
                 metadata_list.append(metadata_query.first())
-    return metadata_list
+    return list(set(metadata_list))
 
 def push_fn_stats_new_thread(stats_packet):
     db_session = Session()
