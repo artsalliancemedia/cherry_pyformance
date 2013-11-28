@@ -1,4 +1,5 @@
-import mako.template
+from mako.template import Template
+from mako.lookup import TemplateLookup
 import sqlalchemy
 import database as db
 import cherrypy
@@ -6,6 +7,9 @@ import os
 from urllib import urlencode
 
 class Tables(object):
+    
+    templates_dir = os.path.join(os.getcwd(),'static','templates')
+    template_lookup = TemplateLookup(directories=[templates_dir,])
 
     @cherrypy.expose
     def callstacks(self, id=None, **kwargs):
@@ -19,10 +23,10 @@ class Tables(object):
                 if metadata.key == 'full_method':
                     metadata_id = metadata.id
                     break
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstack.html'))
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'callstack.html'), lookup=self.template_lookup)
             return mytemplate.render(call_stack=call_stack, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
         else:
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','callstacks.html'))
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'callstacks.html'), lookup=self.template_lookup)
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
     @cherrypy.expose
@@ -37,10 +41,10 @@ class Tables(object):
                 if metadata.key == 'sql_string':
                     metadata_id = metadata.id
                     break
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatement.html'))
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'sqlstatement.html'), lookup=self.template_lookup)
             return mytemplate.render(sql_statement=sql_statement, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
         else:
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','sqlstatements.html'))
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'sqlstatements.html'), lookup=self.template_lookup)
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
     @cherrypy.expose
@@ -55,8 +59,8 @@ class Tables(object):
                 if metadata.key == 'filename':
                     metadata_id = metadata.id
                     break
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','fileaccess.html'))
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'fileaccess.html'), lookup=self.template_lookup)
             return mytemplate.render(file_access=file_access, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
         else:
-            mytemplate = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','fileaccesses.html'))
+            mytemplate = Template(filename=os.path.join(self.templates_dir,'fileaccesses.html'), lookup=self.template_lookup)
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))

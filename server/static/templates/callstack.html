@@ -1,71 +1,33 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
+<%inherit file="/itembase.html"/>
+
+<%block name="title">
   <title>Call Stack</title>
-  <style type="text/css" title="currentStyle">
-    @import "/css/jquery-ui-1.10.3.custom.min.css";
-    @import "/css/all.css";
-  </style>
-  <script type="text/javascript" src="/js/jquery.js"></script>
-  <script type="text/javascript">
-    $(document).ready(function() {
+</%block>
 
-      $.getJSON('/tables/api/callstacks/${call_stack.id}',function(data){
-        
-        var metaHtml = '';
-        for (var key in data) {
-          if(data.hasOwnProperty(key) && key!='stack'){
-            metaHtml += '<p>'+key+' - '+data[key]+'</p>';
-          };
-        };
-        $('#metadata').html(metaHtml);
+<%block name="url_name">callstacks</%block>
 
-        var stackHtml = '';
-        var stack = data.stack;
-        console.log(stack);
-        for (var i=0; i<stack.length; i++) {
+<%block name="mako_item_id">${call_stack.id}</%block>
+ 
+<%block name="extra_script">
+   var stackHtml = '';
+   var stack = data.stack;
+   for (var i=0; i<stack.length; i++) {
+     stackHtml += '<p>'+stack[i].module+' - '+stack[i].function+'</p>';
+   };
+   $('#stack').html(stackHtml);
+</%block>
 
-          console.log(stack[i].module);
-          console.log(stack[i].function);
-          stackHtml += '<p>'+stack[i].module+' - '+stack[i].function+'</p>';
-        };
-        $('#stack').html(stackHtml);
+<%block name="header_list">
+  <li><a href="/callstacks" class="active">Call Stacks</a></li>
+  <li><a href="/sqlstatements">SQL Statements</a></li>
+  <li><a href="/fileaccesses">File Accesses</a></li>
+</%block>
 
-      });
+<%block name="breadcrumbs">
+  <a href="/callstacks">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/callstacks/${metadata_id}">Aggregation Item</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Call Stack
+</%block>
 
-    });
-  </script>
-  
-</head>
-
-<header class="main-container">
-  <nav> <img class="logo" src="../images/logo.png"/>
-    <ul>
-      <li><a href="/callstacks" class="active">Call Stacks</a></li>
-      <li><a href="/sqlstatements">SQL Statements</a></li>
-      <li><a href="/fileaccesses">File Accesses</a></li>
-    </ul>
-  </nav>
-</header>
-
-<body>
-
-<section class="container main-container">
-  <section class="actions ac-container">
-  </section>
-  <section class="content">
-  
-    <a href="/callstacks">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/callstacks/${metadata_id}">Aggregation Item</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Call Stack Item
-
-    <div id="metadata"></div>
-  
-    <h2>Call Stack Items:</h2>
-    <div id="stack"></div>
-  
-  </section>
-</section>
-  
-
-</body>
-</html>
+<%block name="extra_base">
+  <h2>Call Stack Items:</h2>
+  <div id="stack"></div>
+</%block>
