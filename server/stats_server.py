@@ -1,9 +1,7 @@
 import ConfigParser
 import cherrypy
-from cherrypy._cpcompat import ntou, json_decode
 import sys
 import database as db
-import zlib
 import os
 import mako.template
 
@@ -12,54 +10,16 @@ from table_ui import Tables
 from aggregate_json_ui import AggregateAPI
 from aggregate_table_ui import AggregatePages
 
+from stat_handlers import function_stat_handler, handler_stat_handler, sql_stat_handler, file_stat_handler
+
+
 # add gzip to allowed content types for decompressing JSON if compressed.
-allowed_content_types = [ntou('application/json'),
-                         ntou('text/javascript'),
-                         ntou('application/gzip')]
 
 def handle_error():
     cherrypy.response.status = 500
     cherrypy.response.body = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','500.html'))\
                                           .render(error_str=cherrypy._cperror.format_exc())
 
-
-def decompress_json(entity):
-    """Try decompressing json before parsing, incase compressed
-    content was sent to the server"""
-
-    if not entity.headers.get(ntou("Content-Length"), ntou("")):
-        raise cherrypy.HTTPError(411)
-    
-    body = entity.fp.read()
-    # decompress if gzip content type
-    if entity.headers.get(ntou("Content-Type")) == ntou("application/gzip"):
-        try:
-            body = zlib.decompress(body)
-        except:
-            raise cherrypy.HTTPError(500, 'Invalid gzip data')
-    try:
-        cherrypy.serving.request.json = json_decode(body.decode('utf-8'))
-    except ValueError:
-        raise cherrypy.HTTPError(400, 'Invalid JSON document')
-
-
-
-class StatHandler(object):
-    '''
-    A base stat handler for incoming stats. By initialising with a given push function
-    the various handlers can be created for different stat types.
-    '''
-    exposed = True
-
-    def __init__(self, push_fn):
-        self.push_fn = push_fn
-
-    @cherrypy.tools.json_in(content_type=allowed_content_types, processor=decompress_json)
-    def POST(self):
-        # Add sender's ip to flush metadata
-        cherrypy.serving.request.json['flush_metadata']['ip_address'] = cherrypy.request.remote.ip
-        self.push_fn(cherrypy.serving.request.json)
-        return 'Hello, World.'
 
 def start_cherrypy(host, port):
     cherrypy.server.socket_host = host
@@ -78,10 +38,6 @@ def start_cherrypy(host, port):
     cherrypy.config.update({'error_page.404': os.path.join(os.getcwd(),'static','templates','404.html')})
 
 
-    function_stat_handler = StatHandler(db.push_fn_stats)
-    handler_stat_handler = StatHandler(db.push_fn_stats)
-    sql_stat_handler = StatHandler(db.push_sql_stats)
-    file_stat_handler = StatHandler(db.push_file_stats)
 
     cherrypy.tree.mount( function_stat_handler, '/function',   method_dispatch_cfg )
     cherrypy.tree.mount( handler_stat_handler,  '/handler',    method_dispatch_cfg )
@@ -103,7 +59,7 @@ def start_cherrypy(host, port):
     try:
         cherrypy.engine.start()
     except IOError:
-        logging.error('Unable to bind to address (%s, %d)' % (cfg.cherry_host(), cfg.cherry_port()))
+        logging.error('Unable to bind to address ({0}, {1})',format(cfg['server_host'], cfg['server_port']))
         sys.exit(1)
 
     cherrypy.engine.wait(cherrypy.process.wspbus.states.STARTED)
@@ -113,9 +69,9 @@ def start_cherrypy(host, port):
 def load_config():
     config = ConfigParser.ConfigParser()
     
-    config.read('server_config.json')
+    config.read('server_config.cfg')
     if config.sections() == []:
-        print 'Failed to load config file (server_config.json)'
+        print 'Failed to load config file (server_config.cfg)'
         sys.exit(1)
     
     config_dict = config._sections['global']
@@ -129,7 +85,7 @@ if __name__ == '__main__':
     password = cfg['database_password']
     host = cfg['server_host']
     port = cfg['server_port']
-    
+
     try:
         db.setup_profile_database(username, password)
         start_cherrypy(host, port)

@@ -11,11 +11,6 @@ from shutil import copyfile
 import cherrypy
 from cherrypy.process.plugins import Monitor
 
-# initialise 3 buffers
-function_stats_buffer = {}
-handler_stats_buffer = {}
-sql_stats_buffer = {}
-file_stats_buffer = {}
 
 def get_stat(item, stat):
     """
@@ -127,11 +122,11 @@ def initialise():
     push_stats = create_output_fn()
     
     global stats_package_template
-    stats_package_template = {'flush_metadata': cfg['metadata'],
+    stats_package_template = {'metadata': cfg['metadata'],
                               'type': 'default_type',
-                              'profile': []}
+                              'stats': []}
 
-    if cfg['global']['functions']:
+    if cfg['functions']:
         from function_profiler import decorate_functions
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
