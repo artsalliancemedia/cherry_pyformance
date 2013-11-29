@@ -126,7 +126,7 @@ def initialise():
                               'type': 'default_type',
                               'stats': []}
 
-    if cfg['global']['functions']:
+    if cfg['functions']:
         from function_profiler import decorate_functions
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.

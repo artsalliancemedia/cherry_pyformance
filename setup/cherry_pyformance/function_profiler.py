@@ -14,6 +14,7 @@ import time
 import sys
 from threading import Thread
 import cPickle
+import traceback
 
 from cherry_pyformance import cfg, get_stat, stat_logger
 
@@ -111,29 +112,29 @@ def decorate_function(module_str,func_str):
     calling decorate_function on d will not work, only a.b.c will work.
     """
 
-    # try:
-    # import the root
-    __import__(module_str)
-    module =  sys.modules[module_str]
+    try:
+        # import the root
+        __import__(module_str)
+        module =  sys.modules[module_str]
 
-    path = func_str.split('.')
+        path = func_str.split('.')
 
-    attribute = path[0]
-    function = getattr(module, attribute)
-    # loop through the submodules to get their instances
-    for attribute in path[1:]:
-        module = function
-        function = getattr(function, attribute)
+        attribute = path[0]
+        function = getattr(module, attribute)
+        # loop through the submodules to get their instances
+        for attribute in path[1:]:
+            module = function
+            function = getattr(function, attribute)
 
-    # at this point we need to test if the function is wrapped
-    outer_func, inner_func = get_wrapped(function)
-    
-    # replace the function instance with a wrapped one.
-    setattr(module, attribute, StatWrapper(outer_func, inner_func))
-    print 'WRAPPED FUNCTION: '+module_str+'.'+func_str
-    # except Exception as e:
-        # stat_logger.warning('Failed to wrap function {0} for stats profiling'.format('.'.join([module_str,func_str])))
-        # raise e
+        # at this point we need to test if the function is wrapped
+        outer_func, inner_func = get_wrapped(function)
+        
+        # replace the function instance with a wrapped one.
+        setattr(module, attribute, StatWrapper(outer_func, inner_func))
+        print 'Wrapped : '+module_str+'.'+func_str
+    except Exception as e:
+        stat_logger.warning('Failed to wrap function {0} for stats profiling'.format('.'.join([module_str,func_str])))
+        print traceback.print_exc()
 
 #=====================================================#
 
@@ -150,8 +151,13 @@ def decorate_functions():
 
     # decorate all functions supplied in config
     stat_logger.info('Wrapping functions for stats gathering')
-    function_string = cfg['global']['functions']
-    if function_string:
-        function_list = function_string.split(',')
-        for function in function_list:
-            decorate_function(function)
+    function_dict = cfg['functions']
+    if function_dict:
+        module_list = function_dict.keys()
+        for module in module_list:
+            function_string = function_dict[module]
+            if function_string:
+                function_list = function_string.split('.')
+                for function in function_list:
+                    decorate_function(module,function)
+
