@@ -7,5 +7,5 @@ for scheme in INSTALL_SCHEMES.values():
 setup(name='cherry_pyformance',
       version='0.1',
       packages=['cherry_pyformance'],
-      data_files=[('cherry_pyformance', ['cherry_pyformance/default_config.json'])]
+      data_files=[('cherry_pyformance', ['cherry_pyformance/default_config.cfg'])]
      )

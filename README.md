@@ -15,7 +15,7 @@ Run the setup of the client by running the following in the shell/cmd terminal:
 Then configure the configuration JSON file to suit your application and insert the following lines into your application:
 ```
 import cherry_pyformance
-cherry_pyformance.initialise('path/to/config.json')
+cherry_pyformance.initialise()
 ```
 
 ### Client Requirements
@@ -27,13 +27,15 @@ cherry_pyformance.initialise('path/to/config.json')
 The server is a CherryPy application which accepts stats pushed by the cherry_pyformance client storing them for analysis and browsing.
 
 ### Server Instructions
-Go to the server directory and run
+Go to the server directory.
+Copy server_config.json.template to server_config.json.
+Enter your database and server details into the config file.
+Then run
 ```
-python stats_server.py <db_username> <db_password> <server_host> [<server_port>]
+python stats_server.py
 ```
-(`server_port` defaults to 8888)
 
-The server UI then runs on `http://server_host:server_port/`.
+The server UI then runs on the host and port specified in the config.
 
 ### Server Requirements
 * Python 2.6/7

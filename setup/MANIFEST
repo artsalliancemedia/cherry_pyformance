@@ -3,5 +3,5 @@ cherry_pyformance/handler_profiler.py
 cherry_pyformance/function_profiler.py
 cherry_pyformance/sql_profiler.py
 cherry_pyformance/stats_flushers.py
-cherry_pyformance/default_config.json
+cherry_pyformance/default_config.cfg
 setup.py

@@ -1,4 +1,4 @@
-import json
+import ConfigParser
 import cherrypy
 from cherrypy._cpcompat import ntou, json_decode
 import sys
@@ -111,13 +111,16 @@ def start_cherrypy(host, port):
     cherrypy.engine.block()
 
 def load_config():
-    try:
-        with open('server_config.json') as cfg_file:
-            cfg = json.load(cfg_file)
-            return cfg
-    except:
+    config = ConfigParser.ConfigParser()
+    
+    config.read('server_config.json')
+    if config.sections() == []:
         print 'Failed to load config file (server_config.json)'
         sys.exit(1)
+    
+    config_dict = config._sections['global']
+    config_dict.pop('__name__')
+    return config_dict
 
 if __name__ == '__main__':
     cfg = load_config()

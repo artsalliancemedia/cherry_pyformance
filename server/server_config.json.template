@@ -1,6 +1,5 @@
-{
-    "database_username":"username",
-    "database_password":"password",
-    "server_host":"localhost",
-    "server_port":"8888"
-}
+[global]
+database_username = username
+database_password = password
+server_host = localhost
+server_port = 8888
