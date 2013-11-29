@@ -83,8 +83,6 @@ def parse_fn_packet(packet):
         while os.path.isfile(os.path.join(os.getcwd(),'pstats',_id)):
             _id = str(uuid.uuid4())
         profile['pstat_uuid'] = _id
-        if not os.path.exists('pstats'):
-            os.makedirs('pstats')
         stats.dump_stats('pstats\\'+_id)
 
         # Get function metadata
