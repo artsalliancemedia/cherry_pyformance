@@ -9,12 +9,18 @@ flushed out to json on the filesystem or pushed to the
 stats server where the data will be analysed and displayed.
 """
 import cProfile
-import pstats
 import inspect
 import time
 import sys
+from threading import Thread
+import cPickle
+import traceback
 
-from cherry_pyformance import cfg, get_stat, stat_logger, function_stats_buffer
+from cherry_pyformance import cfg, get_stat, stat_logger
+
+
+
+function_stats_buffer = {}
 
 #=====================================================#
 
@@ -25,62 +31,74 @@ class StatWrapper(object):
     If an inner_func is supplied (implying the function is actually a decorated
     version of inner_func), the inner_func's details (module name etc.) are used
     on the stat record, but the decorated version is used for profiling.
-
-    Currently the _after method (which adds stats to the buffer) is called before
-    the functions output is returned. TODO: Put this in another thread so the result
-    is seamlessly returned without waiting on the push to the buffer.
     """
-
-    def __init__(self, function, sort, num_results, inner_func=None):
+    
+    def __init__(self, function, inner_func=None):
         self._function = function
-        self._profile = cProfile.Profile()
-        self._sort = sort
-        self._num_results = num_results
-
+        # hide the wrapper from itself if there is recursive profiling 
+        self.func_closure = [function]
         # If there is an inner_func, get some metadata from there
         # otherwise, use function's metadata
         self._inner_func = inner_func if inner_func else function
-        self._name = self._inner_func.__name__
+
+        self.__name__ = self._inner_func.__name__
         self._module_name = inspect.getmodule(self._inner_func).__name__
         self._class_name = self._inner_func.__class__.__name__
 
+
     def __call__(self, *args, **kwargs):
-        output = self._profile.runcall(self._function, *args, **kwargs)
-        self._after()
+        _id = id(time.time())
+        # initialise the item on the buffer
+        function_stats_buffer[_id] = {'datetime': float(time.time()),
+                                      'profile': cProfile.Profile()}
+        output = function_stats_buffer[_id]['profile'].runcall(self._function, *args, **kwargs)
+        Thread(target=self._after, args=(_id,)).start()
         return output
 
-    def _after(self):
+    def _after(self, _id):
         """
         Pushes the stats collected to the buffer.
         """
-        global function_stats_buffer
-        self._profile = pstats.Stats(self._profile)
-        stats = sorted(self._profile.stats.items(), key=lambda x: get_stat(x,self._sort), reverse=True)[:self._num_results]
-        # Take the id of the current time as a unique identifier.
-        # This is inkeeping with the request ids seen on the stat records seen on the tool.
-        req_id = id(time.time())
-        full_method_name = self._module_name + ' - ' + self._class_name + ' - ' + self._name
-        function_stats_buffer[req_id] = {'stats_buffer': {'id': req_id,
-                                                       'datetime': time.time(),
-                                                       'total_time': self._profile.total_tt,
-                                                       'pstats': stats},
-                                         'metadata_buffer': {'function': self._name,
-                                                             'class': self._class_name,
-                                                             'module': self._module_name,
-                                                             'full_method': full_method_name}
-                                        }
-        # reset the profiler for new function calls.
-        ################### TODO TEST IF MULTIPLE FUNCTION CALLS OVERLAP. 
-        ###### Currently only one profiler exists for each function instance
-        ###### This could cause problems if the function is called on multiple
-        ###### threads. Would need to implement a system similar to the tool
-        ###### where the stats record is initialised and a placeholder is put
-        ###### on the buffer before the stats are recorded.
-        self._profile = cProfile.Profile()
+        if _id in function_stats_buffer:
+            if self._class_name == 'function':
+                function_stats_buffer[_id]['metadata'] = {'full_name': '{0}.{1}'.format(self._module_name,
+                                                                                        self.__name__)}
+            else:
+                function_stats_buffer[_id]['metadata'] = {'full_name': '{0}.{1}.{2}'.format(self._module_name,
+                                                                                            self._class_name,
+                                                                                            self.__name__)}
+            stats = function_stats_buffer[_id]['profile']
+            stats.create_stats()
+            # pickle stats and put back on the buffer for flushing
+            pickled_stats = cPickle.dumps(stats.stats)
+            function_stats_buffer[_id]['profile'] = pickled_stats
 
 #=====================================================#
 
-def decorate_function(path):
+def get_wrapped(function):
+    inner_func = function
+    # recursively look through the func_closure items and look for callables.
+    while inner_func.func_closure is not None:
+        for item in inner_func.func_closure:
+            # have to test if it's a function first as that's how we trick ourself
+            # by putting the function in a func_closure attr. See StatWrapper __init__.
+            # After test for the default: cell objects
+            if hasattr(item,'__call__'):
+                inner_func = item
+                break
+            if hasattr(item.cell_contents,'__call__'):
+                inner_func = item.cell_contents
+                # break the for loop if one is found. Not a perfect solution, but will work 99% of cases
+                # seldom will decorators have multiple callables in the closure items - I hope
+                break
+
+    # if nothing changes, don't bother passing both functions to the StatWrapper __init__
+    if inner_func is function:
+        inner_func = None
+    return function, inner_func
+
+
+def decorate_function(module_str,func_str):
     """
     Takes the string of a module, i.e. "serv.core.some_module.some_function"
     and acquires the actual function (or method) object. It does this by splitting
@@ -104,44 +122,29 @@ def decorate_function(path):
     "import a.b.c as d"
     calling decorate_function on d will not work, only a.b.c will work.
     """
-    # split on the '.'
-    path_string = path
-    path = path.split('.')
-    module = path[0]
-    attribute = path[1]
 
     try:
         # import the root
-        __import__(module)
-        module = sys.modules[module]
+        __import__(module_str)
+        module =  sys.modules[module_str]
 
-        parent = module
-        original = getattr(parent, attribute)
+        path = func_str.split('.')
+
+        attribute = path[0]
+        function = getattr(module, attribute)
         # loop through the submodules to get their instances
-        for attribute in path[2:]:
-            parent = original
-            original = getattr(original, attribute)
+        for attribute in path[1:]:
+            module = function
+            function = getattr(function, attribute)
 
         # at this point we need to test if the function is wrapped
-        outer_func = inner_func = original
-
-        # recursively look through the func_closure items and look for callables.
-        while inner_func.func_closure is not None:
-            for item in inner_func.func_closure:
-                if hasattr(item.cell_contents,'__call__'):
-                    inner_func = item.cell_contents
-                    # break the for loop if one is found. Not a perfect solution, but will work 99% of cases
-                    # seldom will decorators have multiple callables in the closure items - I hope
-                    break
-
-        # if nothing changes, don't bother passing both functions to the StatWrapper __init__
-        if outer_func == inner_func:
-            inner_func = None
-
+        outer_func, inner_func = get_wrapped(function)
+        
         # replace the function instance with a wrapped one.
-        setattr(parent, attribute, StatWrapper(outer_func, sort=cfg['global']['sort_on'], num_results=int(cfg['global']['num_results']), inner_func=inner_func))
+        setattr(module, attribute, StatWrapper(outer_func, inner_func))
     except Exception as e:
-        stat_logger.warning('Failed to wrap function %s for stats profiling. Check configuration and importation method. The function will not be profiled.' % path_string)
+        stat_logger.warning('Failed to wrap function {0} for stats profiling'.format('.'.join([module_str,func_str])))
+        print traceback.print_exc()
 
 #=====================================================#
 
@@ -158,8 +161,13 @@ def decorate_functions():
 
     # decorate all functions supplied in config
     stat_logger.info('Wrapping functions for stats gathering')
-    function_string = cfg['global']['functions']
-    if function_string:
-        function_list = function_string.split(',')
-        for function in function_list:
-            decorate_function(function)
+    function_dict = cfg['functions']
+    if function_dict:
+        module_list = function_dict.keys()
+        for module in module_list:
+            function_string = function_dict[module]
+            if function_string:
+                function_list = function_string.split(',')
+                for function in function_list:
+                    decorate_function(module,function)
+

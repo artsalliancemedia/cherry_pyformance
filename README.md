@@ -28,7 +28,7 @@ The server is a CherryPy application which accepts stats pushed by the cherry_py
 
 ### Server Instructions
 Go to the server directory.
-Copy 'server_config.json.template' to 'server_config.json'.
+Copy 'server_config.cfg.template' to 'server_config.cfg'.
 Enter your database and server details into the config file.
 Then run
 ```

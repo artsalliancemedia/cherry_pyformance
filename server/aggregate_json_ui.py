@@ -40,7 +40,7 @@ def parse_kwargs(kwargs):
 
     return table_kwargs, filter_kwargs
 
-column_name_dict = {db.CallStack: 'full_method',
+column_name_dict = {db.CallStack: 'full_name',
                     db.SQLStatement: 'sql_string',
                     db.FileAccess: 'filename'}
 

@@ -13,24 +13,13 @@ class JSONAPI(object):
         if id:
             item = db.session.query(db.CallStack).get(id)
             if item:
-                response = item._to_dict()
-                response['stack'] = item._stack()
-                return response
+                return item._to_dict()
             else:
                 raise cherrypy.NotFound
         else:
             results = db.session.query(db.CallStack)
             return [item._to_dict() for item in results.all()]
 
-
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def callstackitems(self, id=None, **kwargs):
-        if id:
-            return db.session.query(db.CallStackItem).get(id)._to_dict()
-        else:
-            results = db.session.query(db.CallStackItem)
-            return [item._to_dict() for item in results.all()]
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
