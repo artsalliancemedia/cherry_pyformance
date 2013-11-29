@@ -12,6 +12,7 @@ def _flush_stats(stats_buffer, stat_type):
     for _id in stats_buffer.keys():
         # sometimes stat has already gone by this point.
         try:
+            # only push pickled items from the buffer
             if type(stats_buffer[_id]['profile'])==str:
                 stats_to_push.append(stats_buffer[_id])
                 del stats_buffer[_id]
