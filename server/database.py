@@ -58,6 +58,7 @@ class SQLStatement(Base):
     duration = Column(Float)
 
     sql_stack_items = relationship('SQLStackItem', cascade='all', backref='sql_statements')
+    arguements = relationship('SQLArg', cascade='all', backref='sql_statements')
     metadata_items = relationship('MetaData', secondary=sql_statement_metadata_association_table, cascade='all', backref='sql_statements')
 
     def __init__(self, profile):
@@ -75,6 +76,9 @@ class SQLStatement(Base):
     
     def _stack(self):
         return [stack._to_dict() for stack in self.sql_stack_items]
+
+    def _args(self):
+        return [arg.value for arg in self.arguements]
 
     def __repr__(self):
         sql = self._metadata['sql_string']
@@ -135,6 +139,19 @@ class SQLStackItem(Base):
 
     def __repr__(self):
         return 'SQLStackItem({0})'.format(self.id)
+
+
+class SQLArg(Base):
+    __tablename__ = 'sql_arguements'
+    id = Column(Integer, primary_key=True)
+    sql_statement_id = Column(Integer, ForeignKey('sql_statements.id'))
+    value = Column(String)
+
+    def __init__(self, value):
+        self.value = str(value)
+
+    def __repr__(self):
+        return 'SQLArg({0})'.format(self.value)
     
 
 

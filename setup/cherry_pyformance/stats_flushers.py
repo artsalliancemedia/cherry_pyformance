@@ -16,7 +16,7 @@ def _flush_stats(stats_buffer, stat_type):
                 # only push pickled items from the buffer
                 if type(stats_buffer[_id]['profile'])==str:
                     stats_to_push.append(stats_buffer[_id])
-                    del stats_buffer[_id]
+                    del stats_buffer[_id]  
             else:
                 stats_to_push.append(stats_buffer[_id])
                 del stats_buffer[_id]

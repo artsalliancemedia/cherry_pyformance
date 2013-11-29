@@ -125,10 +125,17 @@ def parse_sql_packet(packet):
             sql_stack_item = db.SQLStackItem(sql_stack_stat)
             sql_stack_item_list.append(sql_stack_item)
 
+        # Create arguments list
+        sql_arguments_list = []
+        for argument in profile['args']:
+            sql_arg = db.SQLArg(argument)
+            sql_arguments_list.append(sql_arg)
+
         # Add sql statement
         sql_statement = db.SQLStatement(profile)
         sql_statement.metadata_items = metadata_list
         sql_statement.sql_stack_items = sql_stack_item_list
+        sql_statement.arguments = sql_arguments_list
         db_session.add(sql_statement)
     db_session.commit()
 

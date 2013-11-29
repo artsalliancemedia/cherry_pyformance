@@ -38,7 +38,7 @@ def create_output_fn():
         compress = cfg['output']['compress']
         if output_type == 'disk':
             stat_logger.info('Writing collected stats to %s' % location)
-            if compress:
+            if compress == 'true': ### Should really use getBool
                 import gzip
                 def push_stats_fn(stats, location=location):
                     """A function to write the compressed json to disk"""

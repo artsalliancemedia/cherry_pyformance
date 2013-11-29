@@ -60,13 +60,16 @@ class StatWrapper(object):
         Pushes the stats collected to the buffer.
         """
         if _id in function_stats_buffer:
+            function_stats_buffer[_id]['metadata'] = {'module':self._module_name,
+                                                      'class':self._class_name,
+                                                      'function':self.__name__}
             if self._class_name == 'function':
-                function_stats_buffer[_id]['metadata'] = {'full_name': '{0}.{1}'.format(self._module_name,
-                                                                                        self.__name__)}
+                function_stats_buffer[_id]['metadata']['full_name'] = '{0}.{1}'.format(self._module_name,
+                                                                                       self.__name__)
             else:
-                function_stats_buffer[_id]['metadata'] = {'full_name': '{0}.{1}.{2}'.format(self._module_name,
-                                                                                            self._class_name,
-                                                                                            self.__name__)}
+                function_stats_buffer[_id]['metadata']['full_name'] = '{0}.{1}.{2}'.format(self._module_name,
+                                                                                           self._class_name,
+                                                                                           self.__name__)
             stats = function_stats_buffer[_id]['profile']
             stats.create_stats()
             # pickle stats and put back on the buffer for flushing
