@@ -51,9 +51,9 @@ def _flush_stats(stats_buffer, stat_type, pre_push_fn=lambda x,y:None):
 def flush_stats():
     if cfg['handlers']:
         _flush_stats(handler_stats_buffer, 'handler', pre_push_fn=fn_and_hdlr_pre_push)
-    if cfg['functions']:
+    if cfg['global']['functions']:
         _flush_stats(function_stats_buffer, 'function', pre_push_fn=fn_and_hdlr_pre_push)
-    if cfg['database']:
+    if cfg['global']['database']:
         _flush_stats(sql_stats_buffer, 'database')
-    if cfg['files']:
+    if cfg['global']['files']:
         _flush_stats(file_stats_buffer, 'file')

@@ -117,17 +117,19 @@ def decorate_handlers():
     'start' call on the cherrypy bus with a high priority.
     """
 
-    cherrypy.tools.stats = StatsTool( sort=cfg['sort_on'], num_results=cfg['num_results'] )
+    cherrypy.tools.stats = StatsTool(sort=cfg['global']['sort_on'], num_results=int(cfg['global']['num_results']))
 
     # decorate all handlers supplied in config
     stat_logger.info('Wrapping cherrypy handers for stats gathering.')
     try:
         for root in cfg['handlers'].keys():
-            for handler in cfg['handlers'][root]:
-                cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':True}})
+            if cfg['handlers'][root]:
+                for handler in cfg['handlers'][root].split(','):
+                    cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':True}})
         for root in cfg['ignored_handlers'].keys():
-            for handler in cfg['ignored_handlers'][root]:
-                cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':False}})
+            if cfg['ignored_handlers'][root]:
+                for handler in cfg['ignored_handlers'][root].split(','):
+                    cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':False}})
     except KeyError:
         stat_logger.warning('Stats configuration incorrect. Could not obtain handlers to wrap.')
     except Exception as e:

@@ -139,7 +139,7 @@ def decorate_function(path):
             inner_func = None
 
         # replace the function instance with a wrapped one.
-        setattr(parent, attribute, StatWrapper(outer_func, sort=cfg['sort_on'], num_results=cfg['num_results'], inner_func=inner_func))
+        setattr(parent, attribute, StatWrapper(outer_func, sort=cfg['global']['sort_on'], num_results=int(cfg['global']['num_results']), inner_func=inner_func))
     except Exception as e:
         stat_logger.warning('Failed to wrap function %s for stats profiling. Check configuration and importation method. The function will not be profiled.' % path_string)
 
@@ -158,5 +158,8 @@ def decorate_functions():
 
     # decorate all functions supplied in config
     stat_logger.info('Wrapping functions for stats gathering')
-    for function in cfg['functions']:
-        decorate_function(function)
+    function_string = cfg['global']['functions']
+    if function_string:
+        function_list = function_string.split(',')
+        for function in function_list:
+            decorate_function(function)
