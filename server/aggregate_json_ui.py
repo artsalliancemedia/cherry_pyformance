@@ -84,7 +84,7 @@ def datatables(query_func):
 @datatables
 def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_date=None, end_date=None, sort=[('avg','DESC')], start=None, limit=None):
     column_name = column_name_dict[table_class]
-    if id:
+    if id: # Grabbing information for a specific method, sql statement or filename
         total_num_items = 1
 
         times_query = db.session.query(db.MetaData.id,
@@ -105,7 +105,7 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
         times = times_query.all()
         times = [(time[2],time[3],time[1]) for time in times]
         times = sorted(times, key=itemgetter(1))
-    else:
+    else: # Grab all known information
         total_num_items = db.session.query(db.MetaData).filter(db.MetaData.key==column_name).count()
     
     query = db.session.query(db.MetaData.id,
@@ -115,9 +115,11 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
                              func.avg(table_class.duration).label('avg'),
                              func.min(table_class.duration).label('min'),
                              func.max(table_class.duration).label('max'))
+    # Only get information for current tab (e.g. Call Stacks)
     query = query.filter(db.MetaData.key==column_name)
     query = query.join(table_class.metadata_items)
     
+    # Filter data based on the key/value pairs picked in the side bar
     if filter_kwargs:
         for k in filter_kwargs:
             if 'key_' in k:

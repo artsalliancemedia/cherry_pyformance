@@ -132,7 +132,7 @@ input[type="file"] {
 .ac-container input + label:hover{
 	color:#666;
 }
-#ac-1, #ac-2, #ac-3, #ac-4, #ac-1-title, #ac-2-title {
+#ac-1-title, #ac-2-title {
 	display: none;
 }
 .ac-container ul {
@@ -149,7 +149,7 @@ input[type="file"] {
 	-webkit-transition: height 0.5s ease-in-out;
 }
 .ac-container input:checked ~ ul.ac-filter {
-	height: 460px;
+	height: 250px;
 }
 
 /* = Main content section
