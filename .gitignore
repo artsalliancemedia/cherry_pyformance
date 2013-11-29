@@ -1,5 +1,6 @@
 *.py[co]
 .project
 .pydevproject
-setup/build/
+/setup/build/
 /server/server_config.cfg
+/server/pstats
