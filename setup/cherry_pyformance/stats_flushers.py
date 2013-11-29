@@ -12,8 +12,12 @@ def _flush_stats(stats_buffer, stat_type):
     for _id in stats_buffer.keys():
         # sometimes stat has already gone by this point.
         try:
-            # only push pickled items from the buffer
-            if type(stats_buffer[_id]['profile'])==str:
+            if stat_type in ('function','handler'):
+                # only push pickled items from the buffer
+                if type(stats_buffer[_id]['profile'])==str:
+                    stats_to_push.append(stats_buffer[_id])
+                    del stats_buffer[_id]
+            else:
                 stats_to_push.append(stats_buffer[_id])
                 del stats_buffer[_id]
         except KeyError:
@@ -33,7 +37,7 @@ def _flush_stats(stats_buffer, stat_type):
 def flush_stats():
     if cfg['handlers']:
         _flush_stats(handler_stats_buffer, 'handler')
-    if cfg['global']['functions']:
+    if cfg['functions']:
         _flush_stats(function_stats_buffer, 'function')
     if cfg['global']['database']:
         _flush_stats(sql_stats_buffer, 'database')

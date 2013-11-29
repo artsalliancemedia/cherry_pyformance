@@ -158,13 +158,13 @@ def profile_sql(action, sql, *args, **kwargs):
         for i in range(len(stack)):
             stack[i] = {'module': stack[i][1], 'function': stack[i][3]}
         
-        _id = id(sql+str(start_time))
+        _id = id(start_time)
         global sql_stats_buffer
-        sql_stats_buffer[_id] = {'stats_buffer': {'datetime':start_time,
-                                                  'duration':time_diff,
-                                                  'stack':stack},
-                                 'metadata_buffer': {'sql_string':sql,
-                                                     'statement_type':sql.split()[0]}
+        sql_stats_buffer[_id] = {'datetime':start_time,
+                                 'duration':time_diff,
+                                 'stack':stack,
+                                 'metadata': {'sql_string':sql,
+                                              'statement_type':sql.split()[0]}
                                 }
         del stack
     return output

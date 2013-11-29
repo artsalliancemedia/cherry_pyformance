@@ -32,10 +32,11 @@ class StatWrapper(object):
     version of inner_func), the inner_func's details (module name etc.) are used
     on the stat record, but the decorated version is used for profiling.
     """
-    func_closure = None
     
     def __init__(self, function, inner_func=None):
         self._function = function
+        # hide the wrapper from itself if there is recursive profiling 
+        self.func_closure = [function]
         # If there is an inner_func, get some metadata from there
         # otherwise, use function's metadata
         self._inner_func = inner_func if inner_func else function
@@ -59,9 +60,13 @@ class StatWrapper(object):
         Pushes the stats collected to the buffer.
         """
         if _id in function_stats_buffer:
-            function_stats_buffer[_id]['metadata'] = {'function': self.__name__,
-                                                      'class': self._class_name,
-                                                      'module': self._module_name}
+            if self._class_name == 'function':
+                function_stats_buffer[_id]['metadata'] = {'full_name': '{0}.{1}'.format(self._module_name,
+                                                                                        self.__name__)}
+            else:
+                function_stats_buffer[_id]['metadata'] = {'full_name': '{0}.{1}.{2}'.format(self._module_name,
+                                                                                            self._class_name,
+                                                                                            self.__name__)}
             stats = function_stats_buffer[_id]['profile']
             stats.create_stats()
             # pickle stats and put back on the buffer for flushing
@@ -75,6 +80,12 @@ def get_wrapped(function):
     # recursively look through the func_closure items and look for callables.
     while inner_func.func_closure is not None:
         for item in inner_func.func_closure:
+            # have to test if it's a function first as that's how we trick ourself
+            # by putting the function in a func_closure attr. See StatWrapper __init__.
+            # After test for the default: cell objects
+            if hasattr(item,'__call__'):
+                inner_func = item
+                break
             if hasattr(item.cell_contents,'__call__'):
                 inner_func = item.cell_contents
                 # break the for loop if one is found. Not a perfect solution, but will work 99% of cases
@@ -131,7 +142,6 @@ def decorate_function(module_str,func_str):
         
         # replace the function instance with a wrapped one.
         setattr(module, attribute, StatWrapper(outer_func, inner_func))
-        print 'Wrapped : '+module_str+'.'+func_str
     except Exception as e:
         stat_logger.warning('Failed to wrap function {0} for stats profiling'.format('.'.join([module_str,func_str])))
         print traceback.print_exc()
@@ -157,7 +167,7 @@ def decorate_functions():
         for module in module_list:
             function_string = function_dict[module]
             if function_string:
-                function_list = function_string.split('.')
+                function_list = function_string.split(',')
                 for function in function_list:
                     decorate_function(module,function)
 

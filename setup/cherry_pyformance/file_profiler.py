@@ -73,12 +73,12 @@ class FileWrapper(object):
             for file_path in cfg['global']['ignored_directories'].split(','):
                 if file_path in self.fullname.replace('\\','/'):
                     return
-        file_stats_buffer[id(self)] = {'stats_buffer': {'datetime':self.datetime,
-                                                        'time_to_open':self.time_to_open,
-                                                        'duration_open':self.close_time-self.open_time,
-                                                        'data_written':self.written},
-                                       'metadata_buffer': {'filename':self.fullname,
-                                                           'mode':self.mode}}
+        file_stats_buffer[id(self)] = {'datetime':self.datetime,
+                                       'duration':self.close_time-self.open_time,
+                                       'time_to_open':self.time_to_open,
+                                       'data_written':self.written,
+                                       'metadata': {'filename':self.fullname,
+                                                    'mode':self.mode}}
 
 
 class OpenFn(object):

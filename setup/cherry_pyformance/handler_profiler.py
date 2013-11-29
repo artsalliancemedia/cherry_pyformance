@@ -77,12 +77,15 @@ class StatsTool(cherrypy.Tool):
         request = cherrypy.serving.request
         req_id = id(request)
         if req_id in handler_stats_buffer:
-            _method = request.path_info
-            _class = request.app.root.__class__.__name__
             _module = inspect.getmodule(request.app.root.__class__).__name__
-            handler_stats_buffer[req_id]['metadata'] = {'function': _method,
-                                                        'class': _class,
-                                                        'module': _module}
+            _class = request.app.root.__class__.__name__
+            _method = request.path_info
+            handler_stats_buffer[req_id]['metadata'] = {'module':_module,
+                                                        'class':_class,
+                                                        'function':_method,
+                                                        'full_name': '{0}.{1}.{2}'.format(_module,
+                                                                                          _class,
+                                                                                          _method)}
             stats = handler_stats_buffer[req_id]['profile']
             stats.create_stats()
             # pickle stats and put back on the buffer for flushing

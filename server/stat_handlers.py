@@ -2,7 +2,9 @@ import cherrypy
 from cherrypy._cpcompat import ntou, json_decode
 import zlib
 import database as db
+import os
 import cPickle
+import pstats
 import uuid
 from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
@@ -71,24 +73,24 @@ def parse_fn_packet(packet):
     
     for profile in packet['stats']:
         # pull and unpickle pstats
-        stats = cPickle.loads(profile['profile'])
+        stats = cPickle.loads(str(profile['profile']))
         # need to make it a bogus stats object for it to initialise
         # (needs a create_stats method and stats attr)
         stats = BogusStats(stats)
         stats = pstats.Stats(stats)
-        packet['duration'] = stats.total_tt
+        profile['duration'] = stats.total_tt
         _id = str(uuid.uuid4())
-        while not os.path.isfile(os.path.join(os.getcwd(),'pstats',_id)):
-            packet['uuid'] = _id
-            stats.dump_stats('pstats\\'+_id)
-            break
+        while os.path.isfile(os.path.join(os.getcwd(),'pstats',_id)):
+            _id = str(uuid.uuid4())
+        profile['pstat_uuid'] = _id
+        stats.dump_stats('pstats\\'+_id)
 
         # Get function metadata
         function_metadata_list = get_metadata_list(profile['metadata'], db_session)
-        metadata_list = flush_metadata_list + function_metadata_list
+        metadata_list = global_metadata_list + function_metadata_list
 
         # Add call stack
-        call_stack = CallStack(profile)
+        call_stack = db.CallStack(profile)
         call_stack.metadata_items = metadata_list
         db_session.add(call_stack)
     db_session.commit()
@@ -101,9 +103,9 @@ def parse_sql_packet(packet):
     db_session = db.Session()
                     
     # Get flush metadata
-    flush_metadata_list = get_metadata_list(packet['metadata'], db_session)
+    global_metadata_list = get_metadata_list(packet['metadata'], db_session)
     
-    for profile in packet['profile']:
+    for profile in packet['stats']:
         # Parse SQL statement
         parsed_sql = parse_sql(profile['metadata']['sql_string'])[0]
         sql_identifiers = []
@@ -115,16 +117,16 @@ def parse_sql_packet(packet):
                     
         # Get SQL metadata
         sql_metadata_list = get_metadata_list(profile['metadata'], db_session)
-        metadata_list = flush_metadata_list + sql_metadata_list
+        metadata_list = global_metadata_list + sql_metadata_list
         
         # Create sql stack items
         sql_stack_item_list = []
         for sql_stack_stat in profile['stack']:
-            sql_stack_item = SQLStackItem(sql_stack_stat)
+            sql_stack_item = db.SQLStackItem(sql_stack_stat)
             sql_stack_item_list.append(sql_stack_item)
 
         # Add sql statement
-        sql_statement = SQLStatement(profile)
+        sql_statement = db.SQLStatement(profile)
         sql_statement.metadata_items = metadata_list
         sql_statement.sql_stack_items = sql_stack_item_list
         db_session.add(sql_statement)
@@ -134,25 +136,25 @@ def push_sql_stats(packet):
     Thread(target=parse_sql_packet, args=(packet,)).start()
 
 
-def parse_file_stats(packet):
+def parse_file_packet(packet):
     db_session = db.Session()
                     
     # Get flush metadata
-    flush_metadata_list = get_metadata_list(packet['metadata'], db_session)
+    global_metadata_list = get_metadata_list(packet['metadata'], db_session)
     
-    for profile in packet['profile']:
+    for profile in packet['stats']:
         # Get file metadata
         file_metadata_list = get_metadata_list(profile['metadata'], db_session)
-        metadata_list = flush_metadata_list + file_metadata_list
+        metadata_list = global_metadata_list + file_metadata_list
 
         # Add file access row
-        file_access = FileAccess(profile)
+        file_access = db.FileAccess(profile)
         file_access.metadata_items = metadata_list
         db_session.add(file_access)
     db_session.commit()
     
 def push_file_stats(packet):
-    Thread(target=parse_file_stats, args=(packet,)).start()
+    Thread(target=parse_file_packet, args=(packet,)).start()
 
 
 
@@ -162,16 +164,16 @@ def get_metadata_list(metadata_dictionary, db_session):
         if not isinstance(metadata_dictionary[metadata_key], list):
             metadata_dictionary[metadata_key] = [metadata_dictionary[metadata_key]]
         for dict_value in metadata_dictionary[metadata_key]:
-            metadata_query = db_session.query(MetaData).filter_by(key=metadata_key, value=dict_value)
+            metadata_query = db_session.query(db.MetaData).filter_by(key=metadata_key, value=dict_value)
             if metadata_query.count() == 0:
                 # Add new metadata if does not exist
-                metadata = MetaData(metadata_key, dict_value)
+                metadata = db.MetaData(metadata_key, dict_value)
                 metadata_list.append(metadata)
                 db_session.add(metadata)
                 db_session.commit()
             else:
                 metadata_list.append(metadata_query.first())
-    return metadata_list
+    return list(set(metadata_list))
 
 
 

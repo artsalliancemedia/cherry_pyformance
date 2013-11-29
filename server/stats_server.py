@@ -69,9 +69,9 @@ def start_cherrypy(host, port):
 def load_config():
     config = ConfigParser.ConfigParser()
     
-    config.read('server_config.json')
+    config.read('server_config.cfg')
     if config.sections() == []:
-        print 'Failed to load config file (server_config.json)'
+        print 'Failed to load config file (server_config.cfg)'
         sys.exit(1)
     
     config_dict = config._sections['global']
