@@ -15,7 +15,7 @@
     var oTable;
 
     var height=200
-    var width=500;
+    var width=1000;
     var margin=50;
     var numBars=6;
     
@@ -50,9 +50,9 @@
           .attr('y',function(d,i){return height/numBars*(i+0.5)+i+4})
           .text(function(d){
             if (index==3){
-              return d[index].toFixed(4)+' - '+trunc(d[1].replace('\n',''),60)
+              return d[index].toFixed(4)+' - '+trunc(d[1].replace('\n',''),100)
             }else{
-              return d[index]+' - '+trunc(d[1].replace('\n',''),60)
+              return d[index]+' - '+trunc(d[1].replace('\n',''),100)
             }
           });
       //mouseover points
@@ -161,7 +161,7 @@
 
 <%block name="left_panel">
   <section>
-    <input id="ac-1-title" name="accordion-1" type="checkbox" />
+    <input id="ac-1-title" name="accordion-1" type="checkbox">
     <label for="ac-1-title">
     <h1>Add new filter</h1>
     </label>
