@@ -2,5 +2,6 @@
 .project
 .pydevproject
 setup/build/
-/server/server_config.cfg
-/server/pstats/*
+server/server_config.cfg
+server/pstats/*
+server/alembic.ini

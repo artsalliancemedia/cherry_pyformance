@@ -16,7 +16,14 @@ def _flush_stats(stats_buffer, stat_type):
                 # only push pickled items from the buffer
                 if type(stats_buffer[_id]['profile'])==str:
                     stats_to_push.append(stats_buffer[_id])
-                    del stats_buffer[_id]  
+                    del stats_buffer[_id] 
+            elif stat_type == 'database':
+                # convert all args to strings, allows for eaier filtering when single instancing
+                # having a mix of numbers and strings is not ideal
+                # if you have a better solution please let me know!
+                stats_buffer[_id]['args'] = [str(arg) for arg in stats_buffer[_id]['args']]
+                stats_to_push.append(stats_buffer[_id])
+                del stats_buffer[_id]
             else:
                 stats_to_push.append(stats_buffer[_id])
                 del stats_buffer[_id]

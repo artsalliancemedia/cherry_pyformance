@@ -8,6 +8,7 @@ import pstats
 import uuid
 from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
+from sqlalchemy import and_
 
 
 allowed_content_types = [ntou('application/json'),
@@ -120,22 +121,17 @@ def parse_sql_packet(packet):
         metadata_list = global_metadata_list + sql_metadata_list
         
         # Create sql stack items
-        sql_stack_item_list = []
-        for sql_stack_stat in profile['stack']:
-            sql_stack_item = db.SQLStackItem(sql_stack_stat)
-            sql_stack_item_list.append(sql_stack_item)
+        sql_stack_item_list = get_stack_list(profile['stack'], db_session)
 
         # Create arguments list
-        sql_arguments_list = []
-        for argument in profile['args']:
-            sql_arg = db.SQLArg(argument)
-            sql_arguments_list.append(sql_arg)
+        sql_arguments_list = get_arg_list(profile['args'], db_session)
 
         # Add sql statement
         sql_statement = db.SQLStatement(profile)
         sql_statement.metadata_items = metadata_list
         sql_statement.sql_stack_items = sql_stack_item_list
         sql_statement.arguments = sql_arguments_list
+
         db_session.add(sql_statement)
     db_session.commit()
 
@@ -182,6 +178,41 @@ def get_metadata_list(metadata_dictionary, db_session):
                 metadata_list.append(metadata_query.first())
     return list(set(metadata_list))
 
+
+def get_arg_list(args, db_session):
+    arg_list = []
+    for arg in args:
+        arg_query = db_session.query(db.SQLArg).filter(db.SQLArg.value==arg)
+        if arg_query.count()==0:
+            arg_obj = db.SQLArg(arg)
+            arg_list.append(arg_obj)
+            db_session.add(arg_obj)
+            db_session.commit()
+        else:
+            arg_list.append(arg_query.first())
+    return single_instance_list(arg_list)
+
+def get_stack_list(stack, db_session):
+    stack_list = []
+    for stack_item in stack:
+        query = db_session.query(db.SQLStackItem).filter(and_(db.SQLStackItem.function==stack_item['function'],
+                                                              db.SQLStackItem.module==stack_item['module']))
+        if query.count()==0:
+            stack_item_obj = db.SQLStackItem(stack_item)
+            stack_list.append(stack_item_obj)
+            db_session.add(stack_item_obj)
+            db_session.commit()
+        else:
+            stack_list.append(query.first())
+    return single_instance_list(stack_list)
+
+
+def single_instance_list(in_list):
+    out_list = []
+    for item in in_list:
+        if not item in out_list:
+            out_list.append(item)
+    return out_list
 
 
 function_stat_handler = StatHandler(push_fn_stats)
