@@ -1,4 +1,5 @@
 import json
+import ConfigParser
 import os.path
 import sys
 import time
@@ -82,20 +83,21 @@ def create_output_fn():
     return push_stats_fn
 
 
-def load_config(config_file_path=None):
-    if config_file_path is None:
-        config_file_path = os.path.join(os.path.dirname(inspect.stack()[-1][1]), "cherrypyformance_config.json")
-
-    try:
-        with open(config_file_path) as cfg_file:
-            return json.load(cfg_file)
-    except:
+def load_config():
+    config_file_path = os.path.join(os.path.dirname(inspect.stack()[-1][1]), "cherrypyformance_config.cfg")
+    config = ConfigParser.ConfigParser()
+    
+    config.read(config_file_path)
+    if config.sections() == []:
         #stat_logger.info('Failed to load stats profiling configuration. Creating from default.')
-        default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "default_config.json")
+        default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "default_config.cfg")
         copyfile(default_config_file, config_file_path)
-
-        with open(config_file_path) as cfg_file:
-            return json.load(cfg_file)
+        config.read(config_file_path)
+    
+    config_dict = config._sections
+    for section in config_dict.values():
+        section.pop('__name__')
+    return config_dict
 
 def setup_logging():
     '''
@@ -109,9 +111,9 @@ def setup_logging():
     return stat_logger
 
 
-def initialise(config_file_path=None):
+def initialise():
     global cfg
-    cfg = load_config(config_file_path)
+    cfg = load_config()
 
     global stat_logger
     stat_logger = setup_logging()
@@ -124,7 +126,7 @@ def initialise(config_file_path=None):
                               'type': 'default_type',
                               'stats': []}
 
-    if cfg['functions']:
+    if cfg['global']['functions']:
         from function_profiler import decorate_functions
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
@@ -137,23 +139,23 @@ def initialise(config_file_path=None):
         # engine start.
         cherrypy.engine.subscribe('start', decorate_handlers, 0)
 
-    if cfg['database']:
+    if cfg['global']['database']:
         from sql_profiler import decorate_connections
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
         decorate_connections()
         cherrypy.engine.subscribe('start', decorate_connections, 0)
 
-    if cfg['files']:
+    if cfg['global']['files']:
         from file_profiler import decorate_open
-        # this is very unlikely to be overwriten, call asap.
+        # this is very unlikely to be overwritten, call asap.
         decorate_open()
 
     from stats_flushers import flush_stats
 
     # create a monitor to periodically flush the stats buffers at the flush_interval
     Monitor(cherrypy.engine, flush_stats,
-        frequency=cfg['flush_interval'],
+        frequency=int(cfg['global']['flush_interval']),
         name='Flush stats buffers').subscribe()
 
     # when the engine stops, flush any stats.

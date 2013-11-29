@@ -150,5 +150,8 @@ def decorate_functions():
 
     # decorate all functions supplied in config
     stat_logger.info('Wrapping functions for stats gathering')
-    for function in cfg['functions']:
-        decorate_function(function[0],function[1])
+    function_string = cfg['global']['functions']
+    if function_string:
+        function_list = function_string.split(',')
+        for function in function_list:
+            decorate_function(function)

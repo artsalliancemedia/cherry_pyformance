@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
+  <%block name="title"/>
+  <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+  <style type="text/css" media="screen">
+    @import "/css/all.css";
+    <%block name="base_style"/>
+  </style>
+  <%block name="head"/>
+</head>
+
+<header class="main-container">
+  <nav> <img class="logo" src="../images/logo.png"/>
+    <ul>
+      <%block name="header_list"/>
+    </ul>
+  </nav>
+</header>
+
+<body>
+<section class="container main-container">
+  <section class="actions ac-container">
+    <%block name="left_panel"/>
+  </section>
+  <section class="content">
+    <%block name="base"/>
+  </section>
+</section>
+</body>
