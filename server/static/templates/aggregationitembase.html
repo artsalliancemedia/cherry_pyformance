@@ -1,8 +1,8 @@
 <%inherit file="/base.html"/>
 
 <%block name="base_style">
-    @import "/css/jquery-ui-1.10.3.custom.min.css";
     @import "/css/jquery.dataTables.css";
+    @import "/css/sh_acid.min.css";
     pre{font-size: 12pt;
         margin: 0 auto;
         width: 800px;}
@@ -16,8 +16,8 @@
 <%block name="head">
   <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
   <script type="text/javascript" src="/js/jquery-ui-1.10.3.custom.min.js"></script>
-  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
   <script type="text/javascript" src="/js/sh_main.min.js"></script>
+  <%block name="sh_sql_import"/>
   <script type="text/javascript" src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
   <script type="text/javascript">
     var height=400;
@@ -95,7 +95,7 @@
                         'r':7});
         },function(e){
           $(this).attr({'fill':'black',
-                       'r':5});
+                       'r':4});
       }).click(function(){
         id = $(this).attr('data-id');
         window.location.href = '/tables/<%block name="url_name"/>/'+id;
@@ -117,6 +117,9 @@
       dataHtml += '<tr><td>min:</td><td>'+item[5]+'</td></tr>';
       dataHtml += '<tr><td>max:</td><td>'+item[6]+'</td></tr>';
       $('#data').html(dataHtml);
+      
+      //highlight sql syntax
+      sh_highlightDocument();
       
       //draw graph
       draw(item[7]);
@@ -221,7 +224,7 @@
   <a href="/${self.url_name()}">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Aggregation Item
 
   <div>
-    <pre><%block name="mako_item_string"/></pre>
+    <%block name="mako_item_string"/>
   </div>
   <form>
     <p>From:<input type="text" id="datepick1">   To:<input type="text" id="datepick2"></p>
