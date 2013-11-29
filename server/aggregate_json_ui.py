@@ -50,7 +50,7 @@ def datatables(query_func):
             # parse datatables kwargs
             search = table_kwargs['sSearch']
             sort = []
-            cols = ('id',column_name_dict[table_class],'count','avg','min','max')
+            cols = ('id',column_name_dict[table_class],'count','total','avg','min','max')
             for i in range(int(table_kwargs['iSortingCols'])):
                 sort_col = cols[int(table_kwargs['iSortCol_' + str(i)])]
                 sort_dir = 'DESC' if table_kwargs['sSortDir_' + str(i)]=='desc' else 'ASC'
@@ -111,8 +111,8 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
     query = db.session.query(db.MetaData.id,
                              db.MetaData.value.label(column_name),
                              func.count(db.MetaData.id).label('count'),
-                             func.avg(table_class.duration).label('avg'),
                              func.sum(table_class.duration).label('total'),
+                             func.avg(table_class.duration).label('avg'),
                              func.min(table_class.duration).label('min'),
                              func.max(table_class.duration).label('max'))
     query = query.filter(db.MetaData.key==column_name)
