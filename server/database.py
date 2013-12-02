@@ -197,8 +197,12 @@ def setup_profile_database(username, password):
         conn.execute('create database profile_stats')
         conn.close()
         db = create_db_and_connect(postgres_string)
-        
-    Base.metadata.create_all(db)
+        Base.metadata.create_all(db)
+        # Stamp table with current version for Alembic upgrades
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config("alembic.ini")
+        command.stamp(alembic_cfg, "head")
     global Session
     global session
     Session = sessionmaker(bind=db)
