@@ -15,6 +15,13 @@
      stackHtml += '<p>'+stack[i].module+' - '+stack[i].function+'</p>';
    };
    $('#stack').html(stackHtml);
+   
+   var argsHtml = '';
+   var args = data.args;
+   for (var i=0; i<args.length; i++) {
+     argsHtml += '<p>'+args[i]+'</p>';
+   };
+   $('#args').html(argsHtml);
 </%block>
 
 <%block name="header_list">
@@ -28,6 +35,8 @@
 </%block>
 
 <%block name="extra_base">
-  <h2>SQL Stack Items:</h2>
+  <br><h1>SQL Stack Items:</h1>
   <div id="stack"></div>
+  <br><h1>SQL Args:</h1>
+  <div id="args"></div>
 </%block>
