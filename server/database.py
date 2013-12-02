@@ -5,6 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
 import os
+from collections import defaultdict
 
 Base = declarative_base()
 
@@ -49,7 +50,10 @@ class CallStack(Base):
         return dict(response.items() + self._metadata().items())
                 
     def _metadata(self):
-        return dict([meta._to_tuple() for meta in self.metadata_items])
+        list_dict = defaultdict(list)
+        for key, value in [meta._to_tuple() for meta in self.metadata_items]:
+            list_dict[key].append(value)
+        return list_dict
 
     def __repr__(self):
         return 'Callstack({0}, {1!s})'.format(self._metadata()['full_name'],int(self.datetime))
@@ -77,7 +81,10 @@ class SQLStatement(Base):
         return dict(response.items() + self._metadata().items())
 
     def _metadata(self):
-        return dict([meta._to_tuple() for meta in self.metadata_items])
+        list_dict = defaultdict(list)
+        for key, value in [meta._to_tuple() for meta in self.metadata_items]:
+            list_dict[key].append(value)
+        return list_dict
     
     def _stack(self):
         return [stack._to_dict() for stack in self.sql_stack_items]
@@ -116,7 +123,10 @@ class FileAccess(Base):
         return dict(response.items() + self._metadata().items())
                 
     def _metadata(self):
-        return dict([meta._to_tuple() for meta in self.metadata_items])
+        list_dict = defaultdict(list)
+        for key, value in [meta._to_tuple() for meta in self.metadata_items]:
+            list_dict[key].append(value)
+        return list_dict
     
     def __repr__(self):
         return 'FileAccess({0}, {1!s})'.format(self._metadata()['filename'],int(self.datetime))
