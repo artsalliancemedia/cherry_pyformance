@@ -14,6 +14,7 @@ import inspect
 import copy
 import time
 import cPickle
+import traceback
 
 from cherry_pyformance import cfg, get_stat, stat_logger
 
@@ -120,5 +121,7 @@ def decorate_handlers():
                     cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':False}})
     except KeyError:
         stat_logger.warning('Stats configuration incorrect. Could not obtain handlers to wrap.')
-    except Exception as e:
+        print traceback.print_exc()
+    except Exception:
         stat_logger.warning('Failed to wrap cherrypy handler for stats profiling.')
+        print traceback.print_exc()
