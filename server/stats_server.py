@@ -88,6 +88,8 @@ if __name__ == '__main__':
 
     try:
         db.setup_profile_database(username, password)
+        if not os.path.exists('pstats'):
+            os.makedirs('pstats')
         start_cherrypy(host, port)
     except Exception, ex:
         print str(ex)
