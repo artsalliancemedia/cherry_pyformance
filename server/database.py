@@ -160,9 +160,11 @@ class SQLArg(Base):
     __tablename__ = 'sql_arguements'
     id = Column(Integer, primary_key=True)
     value = Column(String)
+    index = Column(Integer)
 
-    def __init__(self, value):
+    def __init__(self, value, index):
         self.value = value
+        self.index = index
 
     def __repr__(self):
         return 'SQLArg({0})'.format(self.value)

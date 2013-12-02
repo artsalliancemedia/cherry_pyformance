@@ -30,6 +30,16 @@ class JSONAPI(object):
                 response = item._to_dict()
                 response['stack'] = item._stack()
                 response['args'] = item._args()
+                sql_string = response['sql_string'][0]
+                i = 0
+                while unicode.find(sql_string, '?') != -1:
+                    index = unicode.find(sql_string, '?')
+                    if index+1 >= len(sql_string):
+                        sql_string = sql_string[:index] + response['args'][i]
+                    else:
+                        sql_string = sql_string[:index] + response['args'][i] + sql_string[index+1:]
+                    i += 1
+                response['sql_string'] = sql_string
                 return response
             else:
                 raise cherrypy.NotFound
