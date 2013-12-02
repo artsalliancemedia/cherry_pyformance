@@ -3,73 +3,12 @@ import inspect
 from cherry_pyformance import cfg, stat_logger
 
 
-
-
 sql_stats_buffer = {}
 
 
 ###============================================================###
 
-
-class Psycopg2CursorWrapper(object):
-
-    def __init__(self, cursor, connect_params=None, cursor_params=None):
-        object.__setattr__(self, '_cursor', cursor)
-        object.__setattr__(self, '_connect_params', connect_params)
-        object.__setattr__(self, '_cursor_params', cursor_params)
-        object.__setattr__(self, 'fetchone', cursor.fetchone)
-        object.__setattr__(self, 'fetchmany', cursor.fetchmany)
-        object.__setattr__(self, 'fetchall', cursor.fetchall)
-
-    def __setattr__(self, name, value):
-        setattr(self._cursor, name, value)
-
-    def __getattr__(self, name):
-        return getattr(self._cursor, name)
-
-    def __iter__(self):
-        return iter(self._cursor)
-
-    def execute(self, sql, *args, **kwargs):
-        return profile_sql(self._cursor.execute, sql, *args, **kwargs)
-
-    def executemany(self, sql, *args, **kwargs):
-        return profile_sql(self._cursor.executemany, sql, *args, **kwargs)
-
-    def callproc(self, procname, *args, **kwargs):
-        return self._cursor.callproc(procname, *args, **kwargs)
-
-class Psycopg2ConnectionWrapper(object):
-
-    def __init__(self, connection, connect_params=None):
-        self._connection = connection
-        self._connect_params = connect_params
-
-    def cursor(self, *args, **kwargs):
-        return Psycopg2CursorWrapper(self._connection.cursor(*args, **kwargs), self._connect_params, (args, kwargs))
-
-    def commit(self):
-        return self._connection.commit()
-
-    def rollback(self):
-        return self._connection.rollback()
-
-class Psycopg2ConnectionFactory(object):
-    def __init__(self, connect):
-        self.__connect = connect
-
-    def __call__(self, *args, **kwargs):
-        return Psycopg2ConnectionWrapper(self.__connect(*args, **kwargs), (args, kwargs))
-
-###============================================================###
-
-class SqliteCursorWrapper(object):
-
-    def __init__(self, cursor):
-        object.__setattr__(self, '_cursor', cursor)
-        object.__setattr__(self, 'fetchone', cursor.fetchone)
-        object.__setattr__(self, 'fetchmany', cursor.fetchmany)
-        object.__setattr__(self, 'fetchall', cursor.fetchall)
+class CursorWrapper(object):
 
     def __setattr__(self, name, value):
         setattr(self._cursor, name, value)
@@ -92,16 +31,7 @@ class SqliteCursorWrapper(object):
         else:
             return self._cursor.executemany(sql, *args, **kwargs)
 
-    def executescript(self, script, *args, **kwargs):
-        if not script.startswith('PRAGMA'):
-            return profile_sql(self._cursor.executescript, script, *args, **kwargs)
-        else:
-            return self._cursor.executescript(script, *args, **kwargs)
-
-class SqliteConnectionWrapper(object):
-
-    def __init__(self, connection):
-        self._connection = connection
+class ConnectionWrapper(object):
 
     def __enter__(self):
         self._connection.__enter__()
@@ -111,13 +41,72 @@ class SqliteConnectionWrapper(object):
         return self._connection.__exit__(*args, **kwargs)
 
     def cursor(self, *args, **kwargs):
-        return SqliteCursorWrapper(self._connection.cursor(*args, **kwargs))
+        return Psycopg2CursorWrapper(self._connection.cursor(*args, **kwargs), self._connect_params, (args, kwargs))
 
     def commit(self):
         return self._connection.commit()
 
     def rollback(self):
         return self._connection.rollback()
+
+###============================================================###
+
+class Psycopg2CursorWrapper(CursorWrapper):
+
+    def __init__(self, cursor, connect_params=None, cursor_params=None):
+        object.__setattr__(self, '_cursor', cursor)
+        object.__setattr__(self, '_connect_params', connect_params)
+        object.__setattr__(self, '_cursor_params', cursor_params)
+        object.__setattr__(self, 'fetchone', cursor.fetchone)
+        object.__setattr__(self, 'fetchmany', cursor.fetchmany)
+        object.__setattr__(self, 'fetchall', cursor.fetchall)
+
+    def callproc(self, procname, *args, **kwargs):
+        if not script.startswith('PRAGMA'):
+            return profile_sql(self._cursor.executescript, script, *args, **kwargs)
+        else:
+            return self._cursor.executescript(script, *args, **kwargs)
+
+class Psycopg2ConnectionWrapper(ConnectionWrapper):
+
+    def __init__(self, connection, connect_params=None):
+        self._connection = connection
+        self._connect_params = connect_params
+
+    def cursor(self, *args, **kwargs):
+        return Psycopg2CursorWrapper(self._connection.cursor(*args, **kwargs), self._connect_params, (args, kwargs))
+
+class Psycopg2ConnectionFactory(object):
+
+    def __init__(self, connect):
+        self.__connect = connect
+
+    def __call__(self, *args, **kwargs):
+        return Psycopg2ConnectionWrapper(self.__connect(*args, **kwargs), (args, kwargs))
+
+###============================================================###
+
+class SqliteCursorWrapper(CursorWrapper):
+
+    def __init__(self, cursor):
+        object.__setattr__(self, '_cursor', cursor)
+        object.__setattr__(self, 'fetchone', cursor.fetchone)
+        object.__setattr__(self, 'fetchmany', cursor.fetchmany)
+        object.__setattr__(self, 'fetchall', cursor.fetchall)
+
+    def executescript(self, script, *args, **kwargs):
+        if not script.startswith('PRAGMA'):
+            return profile_sql(self._cursor.executescript, script, *args, **kwargs)
+        else:
+            return self._cursor.executescript(script, *args, **kwargs)
+
+class SqliteConnectionWrapper(ConnectionWrapper):
+
+    def __init__(self, connection):
+        self._connection = connection
+
+    def cursor(self, *args, **kwargs):
+        return SqliteCursorWrapper(self._connection.cursor(*args, **kwargs))
 
     def execute(self, sql, *args, **kwargs):
         if not sql.startswith('PRAGMA'):
@@ -157,14 +146,13 @@ def profile_sql(action, sql, *args, **kwargs):
         stack = inspect.stack()
         for i in range(len(stack)):
             stack[i] = {'module': stack[i][1], 'function': stack[i][3]}
-        
         _id = id(start_time)
-        global sql_stats_buffer
         sql_stats_buffer[_id] = {'datetime':start_time,
                                  'duration':time_diff,
                                  'stack':stack,
                                  'metadata': {'sql_string':sql,
-                                              'statement_type':sql.split()[0]}
+                                              'statement_type':sql.split()[0]},
+                                 'args':args[0] if len(args)>0 else []
                                 }
         del stack
     return output

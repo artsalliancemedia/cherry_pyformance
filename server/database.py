@@ -17,6 +17,10 @@ sql_statement_metadata_association_table = Table('sql_statement_metadata_associa
     Column('sql_statement_id', Integer, ForeignKey('sql_statements.id'), primary_key=True), 
     Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
 )
+sql_statement_argument_association_table = Table('sql_statement_argument_association', Base.metadata,
+    Column('sql_statement_id', Integer, ForeignKey('sql_statements.id'), primary_key=True), 
+    Column('argument_id', Integer, ForeignKey('sql_arguements.id'), primary_key=True)
+)
 
 file_access_metadata_association_table = Table('file_access_metadata_association', Base.metadata,
     Column('file_access_id', Integer, ForeignKey('file_accesses.id'), primary_key=True), 
@@ -48,7 +52,7 @@ class CallStack(Base):
         return dict([meta._to_tuple() for meta in self.metadata_items])
 
     def __repr__(self):
-        return 'Callstack({0}, {1!s})'.format(self._metadata['full_name'],int(self.datetime))
+        return 'Callstack({0}, {1!s})'.format(self._metadata()['full_name'],int(self.datetime))
 
 
 class SQLStatement(Base):
@@ -58,6 +62,7 @@ class SQLStatement(Base):
     duration = Column(Float)
 
     sql_stack_items = relationship('SQLStackItem', cascade='all', backref='sql_statements')
+    arguments = relationship('SQLArg', secondary=sql_statement_argument_association_table, cascade='all', backref='sql_statements')
     metadata_items = relationship('MetaData', secondary=sql_statement_metadata_association_table, cascade='all', backref='sql_statements')
 
     def __init__(self, profile):
@@ -67,7 +72,8 @@ class SQLStatement(Base):
     def _to_dict(self):
         response = {'id':self.id,
                     'datetime':self.datetime,
-                    'duration':self.duration}
+                    'duration':self.duration,
+                    'args':self._args()}
         return dict(response.items() + self._metadata().items())
 
     def _metadata(self):
@@ -76,8 +82,11 @@ class SQLStatement(Base):
     def _stack(self):
         return [stack._to_dict() for stack in self.sql_stack_items]
 
+    def _args(self):
+        return [arg.value for arg in self.arguments]
+
     def __repr__(self):
-        sql = self._metadata['sql_string']
+        sql = self._metadata()['sql_string']
         if len(sql)>20:
             sql = sql[0:17]+'...'
         return 'SqlStatement({0}, {1!s})'.format(sql,int(self.datetime))
@@ -110,7 +119,7 @@ class FileAccess(Base):
         return dict([meta._to_tuple() for meta in self.metadata_items])
     
     def __repr__(self):
-        return 'FileAccess({0}, {1!s})'.format(self._metadata['filename'],int(self.datetime))
+        return 'FileAccess({0}, {1!s})'.format(self._metadata()['filename'],int(self.datetime))
 
 #========================================#
 
@@ -135,6 +144,18 @@ class SQLStackItem(Base):
 
     def __repr__(self):
         return 'SQLStackItem({0})'.format(self.id)
+
+
+class SQLArg(Base):
+    __tablename__ = 'sql_arguements'
+    id = Column(Integer, primary_key=True)
+    value = Column(String)
+
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return 'SQLArg({0})'.format(self.value)
     
 
 
