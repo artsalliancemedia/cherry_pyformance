@@ -182,14 +182,16 @@ def get_metadata_list(metadata_dictionary, db_session):
 def get_arg_list(args, db_session):
     arg_list = []
     for arg in args:
-        arg_query = db_session.query(db.SQLArg).filter(db.SQLArg.value==arg)
+        arg_index = args.index(arg)
+        arg_query = db_session.query(db.SQLArg).filter(db.SQLArg.value==arg, db.SQLArg.index==arg_index)
         if arg_query.count()==0:
-            arg_obj = db.SQLArg(arg)
+            arg_obj = db.SQLArg(arg, arg_index)
             arg_list.append(arg_obj)
             db_session.add(arg_obj)
             db_session.commit()
         else:
             arg_list.append(arg_query.first())
+    arg_list.sort(key=lambda arg: arg.index)
     return single_instance_list(arg_list)
 
 def get_stack_list(stack, db_session):
