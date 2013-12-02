@@ -29,6 +29,7 @@ class JSONAPI(object):
             if item:
                 response = item._to_dict()
                 response['stack'] = item._stack()
+                response['args'] = item._args()
                 return response
             else:
                 raise cherrypy.NotFound

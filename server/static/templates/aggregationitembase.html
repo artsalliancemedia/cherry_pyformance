@@ -2,7 +2,7 @@
 
 <%block name="base_style">
     @import "/css/jquery.dataTables.css";
-    @import "/css/sh_acid.min.css";
+    <%block name="sh_acid_import"/>
     pre{font-size: 12pt;
         margin: 0 auto;
         width: 800px;}
@@ -118,8 +118,7 @@
       dataHtml += '<tr><td>max:</td><td>'+item[6]+'</td></tr>';
       $('#data').html(dataHtml);
       
-      //highlight sql syntax
-      sh_highlightDocument();
+      <%block name="sh_sql_highlight"/>
       
       //draw graph
       draw(item[7]);
