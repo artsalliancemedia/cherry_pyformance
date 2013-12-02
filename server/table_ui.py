@@ -20,7 +20,7 @@ class Tables(object):
             metadata_list = call_stack.metadata_items
             metadata_id = None
             for metadata in metadata_list:
-                if metadata.key == 'full_method':
+                if metadata.key == 'full_name':
                     metadata_id = metadata.id
                     break
             mytemplate = Template(filename=os.path.join(self.templates_dir,'callstack.html'), lookup=self.template_lookup)
