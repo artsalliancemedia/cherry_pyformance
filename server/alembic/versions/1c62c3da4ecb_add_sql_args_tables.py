@@ -16,14 +16,14 @@ import sqlalchemy as sa
 
 def upgrade():
     op.create_table(
-                    'sql_statement_argument_association',
-                    sa.Column('sql_statement_id', sa.Integer, sa.ForeignKey('sql_statements.id'), primary_key=True), 
-                    sa.Column('argument_id', sa.Integer, sa.ForeignKey('sql_arguements.id'), primary_key=True)
-                    )
-    op.create_table(
                     'sql_arguements',
                     sa.Column('id', sa.Integer, primary_key=True),
                     sa.Column('value',sa.String)
+                    )
+    op.create_table(
+                    'sql_statement_argument_association',
+                    sa.Column('sql_statement_id', sa.Integer, sa.ForeignKey('sql_statements.id'), primary_key=True), 
+                    sa.Column('argument_id', sa.Integer, sa.ForeignKey('sql_arguements.id'), primary_key=True)
                     )
 
 def downgrade():
