@@ -42,14 +42,14 @@ class StatHandler(object):
     '''
     exposed = True
 
-    def __init__(self, push_fn):
-        self.push_fn = push_fn
+    def __init__(self, parse_fn):
+        self.parse_fn = parse_fn
 
     @cherrypy.tools.json_in(content_type=allowed_content_types, processor=decompress_json)
     def POST(self):
         # Add sender's ip to flush metadata
         cherrypy.serving.request.json['metadata']['ip_address'] = cherrypy.request.remote.ip
-        self.push_fn(cherrypy.serving.request.json)
+        Thread(target=self.parse_fn, args=(cherrypy.serving.request.json,)).start()
         return 'Hello, World.'
 
 
@@ -95,10 +95,7 @@ def parse_fn_packet(packet):
         call_stack.metadata_items = metadata_list
         db_session.add(call_stack)
     db_session.commit()
-
-def push_fn_stats(packet):
-    Thread(target=parse_fn_packet, args=(packet,)).start()
-   
+ 
 
 def parse_sql_packet(packet):
     db_session = db.Session()
@@ -135,9 +132,6 @@ def parse_sql_packet(packet):
         db_session.add(sql_statement)
     db_session.commit()
 
-def push_sql_stats(packet):
-    Thread(target=parse_sql_packet, args=(packet,)).start()
-
 
 def parse_file_packet(packet):
     db_session = db.Session()
@@ -156,10 +150,6 @@ def parse_file_packet(packet):
         db_session.add(file_access)
     db_session.commit()
     
-def push_file_stats(packet):
-    Thread(target=parse_file_packet, args=(packet,)).start()
-
-
 
 def get_metadata_list(metadata_dictionary, db_session):
     metadata_list = []
@@ -217,7 +207,7 @@ def single_instance_list(in_list):
     return out_list
 
 
-function_stat_handler = StatHandler(push_fn_stats)
-handler_stat_handler = StatHandler(push_fn_stats)
-sql_stat_handler = StatHandler(push_sql_stats)
-file_stat_handler = StatHandler(push_file_stats)
+function_stat_handler = StatHandler(parse_fn_packet)
+handler_stat_handler = StatHandler(parse_fn_packet)
+sql_stat_handler = StatHandler(parse_sql_packet)
+file_stat_handler = StatHandler(parse_file_packet)
