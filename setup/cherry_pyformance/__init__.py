@@ -52,8 +52,10 @@ def create_output_fn():
     return push_stats_fn
 
 
-def load_config():
-    config_file_path = os.path.join(os.path.dirname(inspect.stack()[-1][1]), "cherrypyformance_config.cfg")
+def load_config(config_file_path=None):
+    if config_file_path is None:
+        # Get the directory where the executing script lives in and copy the default config in there if nothing is supplied.
+        config_file_path = os.path.join(os.path.dirname(inspect.stack()[-1][1]), "cherrypyformance_config.cfg")
     config = ConfigParser.ConfigParser()
     
     config.read(config_file_path)
@@ -80,9 +82,9 @@ def setup_logging():
     return stat_logger
 
 
-def initialise():
+def initialise(config_file_path=None):
     global cfg
-    cfg = load_config()
+    cfg = load_config(config_file_path)
 
     global stat_logger
     stat_logger = setup_logging()
@@ -108,14 +110,14 @@ def initialise():
         # engine start.
         cherrypy.engine.subscribe('start', decorate_handlers, 0)
 
-    if cfg['global']['database']:
+    if cfg['sql']['sql_enabled']:
         from sql_profiler import decorate_connections
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
         decorate_connections()
         cherrypy.engine.subscribe('start', decorate_connections, 0)
 
-    if cfg['global']['files']:
+    if cfg['files']['files_enabled']:
         from file_profiler import decorate_open
         # this is very unlikely to be overwritten, call asap.
         decorate_open()
@@ -124,7 +126,7 @@ def initialise():
 
     # create a monitor to periodically flush the stats buffers at the flush_interval
     Monitor(cherrypy.engine, flush_stats,
-        frequency=int(cfg['global']['flush_interval']),
+        frequency=int(cfg['output']['flush_interval']),
         name='Flush stats buffers').subscribe()
 
     # when the engine stops, flush any stats.

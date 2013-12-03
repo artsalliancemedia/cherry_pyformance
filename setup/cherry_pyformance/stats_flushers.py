@@ -46,7 +46,7 @@ def flush_stats():
         _flush_stats(handler_stats_buffer, 'handler')
     if cfg['functions']:
         _flush_stats(function_stats_buffer, 'function')
-    if cfg['global']['database']:
+    if cfg['sql']['database']:
         _flush_stats(sql_stats_buffer, 'database')
-    if cfg['global']['files']:
+    if cfg['files']['files_enabled']:
         _flush_stats(file_stats_buffer, 'file')
