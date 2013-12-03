@@ -215,8 +215,7 @@ def setup_profile_database(username, password):
         conn.close()
         db = create_db_and_connect(postgres_string)
         Base.metadata.create_all(db)
-        import time
-        time.sleep(5)
+        
         # Stamp table with current version for Alembic upgrades
         from alembic.config import Config
         from alembic import command
