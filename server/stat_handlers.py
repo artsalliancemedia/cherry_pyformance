@@ -9,6 +9,7 @@ import uuid
 from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
 from sqlalchemy import and_
+from operator import attrgetter
 
 
 allowed_content_types = [ntou('application/json'),
@@ -70,7 +71,7 @@ def parse_fn_packet(packet):
     db_session = db.Session()
     
     # Get global metadata
-    global_metadata_list = get_metadata_list(packet['metadata'], db_session)
+    metadata_list = get_metadata_list(packet['metadata'], db_session)
     
     for profile in packet['stats']:
         # pull and unpickle pstats
@@ -86,12 +87,16 @@ def parse_fn_packet(packet):
         profile['pstat_uuid'] = _id
         stats.dump_stats('pstats\\'+_id)
 
-        # Get function metadata
-        function_metadata_list = get_metadata_list(profile['metadata'], db_session)
-        metadata_list = global_metadata_list + function_metadata_list
+        # callstack metadata
+        call_stack_name = get_or_create(db_session,
+                                       db.CallStackMetadata,
+                                       module_name = profile['module'],
+                                       class_name = profile['class'],
+                                       fn_name = profile['function']))
 
         # Add call stack
         call_stack = db.CallStack(profile)
+        call_stack.name = call_stack_name
         call_stack.metadata_items = metadata_list
         db_session.add(call_stack)
     db_session.commit()
@@ -105,17 +110,19 @@ def parse_sql_packet(packet):
     
     for profile in packet['stats']:
         # Parse SQL statement
-        parsed_sql = parse_sql(profile['metadata']['sql_string'])[0]
+        parsed_sql = parse_sql(profile['sql_string'])[0]
         sql_identifiers = []
         for token in parsed_sql.tokens:
             for item in token.flatten():
                 if item.ttype == sql_tokens.Name:
                     sql_identifiers.append(item.value)
-        profile['metadata']['statement_identifiers'] = sql_identifiers
-                    
+        statement_type = profile['sql_string'].split()[0]
+                            
         # Get SQL metadata
-        sql_metadata_list = get_metadata_list(profile['metadata'], db_session)
-        metadata_list = global_metadata_list + sql_metadata_list
+        sql_identifiers = get_metadata_list({'statement_identifiers':sql_identifiers
+                                             'statement_type':statement_type},
+                                            db_session)
+        metadata_list = global_metadata_list + sql_identifiers
         
         # Create sql stack items
         sql_stack_item_list = get_stack_list(profile['stack'], db_session)
@@ -137,13 +144,9 @@ def parse_file_packet(packet):
     db_session = db.Session()
                     
     # Get flush metadata
-    global_metadata_list = get_metadata_list(packet['metadata'], db_session)
+    metadata_list = get_metadata_list(packet['metadata'], db_session)
     
     for profile in packet['stats']:
-        # Get file metadata
-        file_metadata_list = get_metadata_list(profile['metadata'], db_session)
-        metadata_list = global_metadata_list + file_metadata_list
-
         # Add file access row
         file_access = db.FileAccess(profile)
         file_access.metadata_items = metadata_list
@@ -154,49 +157,45 @@ def parse_file_packet(packet):
 def get_metadata_list(metadata_dictionary, db_session):
     metadata_list = []
     for metadata_key in metadata_dictionary.keys():
+        # make each value in the dictionary a list, even if only one value
         if not isinstance(metadata_dictionary[metadata_key], list):
             metadata_dictionary[metadata_key] = [metadata_dictionary[metadata_key]]
         for dict_value in metadata_dictionary[metadata_key]:
-            metadata_query = db_session.query(db.MetaData).filter_by(key=metadata_key, value=dict_value)
-            if metadata_query.count() == 0:
-                # Add new metadata if does not exist
-                metadata = db.MetaData(metadata_key, dict_value)
-                metadata_list.append(metadata)
-                db_session.add(metadata)
-                db_session.commit()
-            else:
-                metadata_list.append(metadata_query.first())
+            metadata_list.append(get_or_create(db_session,
+                                                db.MetaData,
+                                                key=metadata_key,
+                                                value=dict_value))
     return list(set(metadata_list))
 
 
 def get_arg_list(args, db_session):
     arg_list = []
-    for arg in args:
-        arg_index = args.index(arg)
-        arg_query = db_session.query(db.SQLArg).filter(db.SQLArg.value==arg, db.SQLArg.index==arg_index)
-        if arg_query.count()==0:
-            arg_obj = db.SQLArg(arg, arg_index)
-            arg_list.append(arg_obj)
-            db_session.add(arg_obj)
-            db_session.commit()
-        else:
-            arg_list.append(arg_query.first())
-    arg_list.sort(key=lambda arg: arg.index)
-    return single_instance_list(arg_list)
+    for i in range(len(args)):
+        arg = args[i]
+        arg_list.append(get_or_create(db_session,
+                                      db.SQLArg,
+                                      value=arg,
+                                      index=i))
+    arg_list.sort(key=attrgetter(index))
+    return arg_list
 
 def get_stack_list(stack, db_session):
     stack_list = []
     for stack_item in stack:
-        query = db_session.query(db.SQLStackItem).filter(and_(db.SQLStackItem.function==stack_item['function'],
-                                                              db.SQLStackItem.module==stack_item['module']))
-        if query.count()==0:
-            stack_item_obj = db.SQLStackItem(stack_item)
-            stack_list.append(stack_item_obj)
-            db_session.add(stack_item_obj)
-            db_session.commit()
-        else:
-            stack_list.append(query.first())
-    return single_instance_list(stack_list)
+        stack_list.append(get_or_create(db_session,
+                                        db.SQLStackItem,
+                                        function=stack_item['function'],
+                                        module=stack_item['module']))
+    return stack_list
+
+
+
+def get_or_create(session, model, **kwargs):
+    instance = session.query(model).filter_by(**kwargs).first()
+    if not instance:
+        instance = model(**kwargs)
+        session.add(instance)
+    return instance
 
 
 def single_instance_list(in_list):
