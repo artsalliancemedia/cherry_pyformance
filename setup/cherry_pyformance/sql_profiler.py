@@ -158,11 +158,13 @@ def profile_sql(action, sql, *args, **kwargs):
     return output
 
 def decorate_connections():
-    if cfg['global']['database'] == 'sqlite':
+    if cfg['sql']['database'] == 'sqlite':
         import sqlite3
         setattr(sqlite3,'connect', SqliteConnectionFactory(sqlite3.connect))
         setattr(sqlite3.dbapi2,'connect', SqliteConnectionFactory(sqlite3.dbapi2.connect))
-    elif cfg['global']['database'] == 'postgres':
+    elif cfg['sql']['database'] == 'postgres':
         import psycopg2
         setattr(psycopg2,'connect', Psycopg2ConnectionFactory(psycopg2.connect))
+    else:
+        raise Exception('Unknown/Unsupported database profile type.')
 
