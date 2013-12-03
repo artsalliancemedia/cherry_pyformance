@@ -13,7 +13,12 @@ class JSONAPI(object):
         if id:
             item = db.session.query(db.CallStack).get(id)
             if item:
-                return item._to_dict()
+                response = item._to_dict()
+                stats_object = item._stats()
+                stats = stats_object.stats
+                response['stats_keys'] = [str(key) for key in stats.keys()]
+                response['stats_values'] = [str(val) for val in stats.values()]
+                return response
             else:
                 raise cherrypy.NotFound
         else:
