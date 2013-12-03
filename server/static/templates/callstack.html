@@ -9,12 +9,13 @@
 <%block name="mako_item_id">${call_stack.id}</%block>
  
 <%block name="extra_script">
-   var stackHtml = '';
-   var stack = data.stack;
-   for (var i=0; i<stack.length; i++) {
-     stackHtml += '<p>'+stack[i].module+' - '+stack[i].function+'</p>';
+   var statsHtml = '';
+   var stats_keys = data.stats_keys;
+   var stats_values = data.stats_values;
+   for (var i=0; i<stats_keys.length; i++) {
+     statsHtml += '<p>'+stats_keys[i]+' = '+stats_values[i]+'</p>';
    };
-   $('#stack').html(stackHtml);
+   $('#stats').html(statsHtml);
 </%block>
 
 <%block name="header_list">
@@ -28,6 +29,6 @@
 </%block>
 
 <%block name="extra_base">
-  <br><h1>Call Stack Items:</h1>
-  <div id="stack"></div>
+  <br><h1>Call Stack Stats:</h1>
+  <div id="stats"></div>
 </%block>

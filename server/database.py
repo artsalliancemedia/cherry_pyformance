@@ -6,6 +6,7 @@ from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
 import os
 from collections import defaultdict
+import pstats
 
 Base = declarative_base()
 
@@ -48,6 +49,9 @@ class CallStack(Base):
                     'duration':self.duration,
                     'pstat_uuid':self.pstat_uuid}
         return dict(response.items() + self._metadata().items())
+    
+    def _stats(self):
+        return pstats.Stats(os.path.join(os.getcwd(),'pstats',self.pstat_uuid))
                 
     def _metadata(self):
         list_dict = defaultdict(list)
@@ -201,6 +205,7 @@ session = None
 def setup_profile_database(username, password):
     postgres_string = 'postgresql://' + username + ':' + password + '@localhost'
     try:
+        #print os.system('alembic upgrade head')
         db = create_db_and_connect(postgres_string)
     except:
         postgres = sqlalchemy.create_engine(postgres_string + '/postgres')
@@ -210,6 +215,7 @@ def setup_profile_database(username, password):
         conn.close()
         db = create_db_and_connect(postgres_string)
         Base.metadata.create_all(db)
+        
         # Stamp table with current version for Alembic upgrades
         from alembic.config import Config
         from alembic import command
