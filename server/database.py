@@ -7,6 +7,8 @@ from sqlparse import tokens as sql_tokens, parse as parse_sql
 import os
 from collections import defaultdict
 import pstats
+from alembic.config import Config
+from alembic import command as al_command
 
 Base = declarative_base()
 
@@ -204,13 +206,12 @@ session = None
 
 def setup_profile_database(username, password):
     postgres_string = 'postgresql://' + username + ':' + password + '@localhost'
+    alembic_cfg = Config("alembic.ini")
     try:
         db = create_db_and_connect(postgres_string)
         
         # Upgrade db to latest revision
-        if os.system('alembic upgrade head') != 0:
-            print 'Error upgrading Alembic to head, check current Alembic version'
-            sys.exit(1)
+        al_command.upgrade(alembic_cfg, "head")
     except:
         postgres = sqlalchemy.create_engine(postgres_string + '/postgres')
         conn = postgres.connect()
@@ -221,9 +222,7 @@ def setup_profile_database(username, password):
         Base.metadata.create_all(db)
         
         # Stamp table with current version for Alembic upgrades
-        if os.system('alembic stamp head') != 0:
-            print 'Error stamping Alembic to head, try dropping database and rerunning server'
-            sys.exit(1)
+        al_command.stamp(alembic_cfg, "head")
     global Session
     global session
     Session = sessionmaker(bind=db)
