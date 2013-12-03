@@ -30,20 +30,14 @@ The server is a CherryPy application which accepts stats pushed by the cherry_py
 Go to the server directory.
 Copy 'server_config.cfg.template' to 'server_config.cfg'.
 Enter your database and server details into the config file.
+Copy 'alembic.ini.template' to 'alembic.ini'.
+Change the 'sqlalchemy.url' line, modifying the argument to have your database's username/password where it says 'username' and 'password'. 
 Then run
 ```
 python stats_server.py
 ```
 
-The server UI then runs on the host and port specified in the config.
-
-### Upgrading Server
-
-When you recieve a new version of the server side of cherry pyformance, you may need to update your database if you wish to keep your old data. To do this, you will need to use Alembic to migrate your database. First, copy the 'alembic.ini.template' file to 'alembic.ini' and change the 'sqlalchemy.url' line modifying the argument to have your database's username/password where it says 'username' and 'password'. This simply run
-```
-alembic upgrade head
-```
-from the command line to upgrade your database to the latest version.
+The server UI then runs on the host and port specified in the config. Your server should upgrade the database automatically using Alembic.
 
 ### Server Requirements
 * Python 2.6/7

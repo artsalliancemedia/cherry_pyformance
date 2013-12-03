@@ -6,7 +6,7 @@ import time
 import logging
 import copy
 import inspect
-from urllib2 import urlopen, Request
+from urllib2 import urlopen, Request, URLError
 from shutil import copyfile
 import cherrypy
 from cherrypy.process.plugins import Monitor
@@ -48,7 +48,10 @@ def create_output_fn():
 
         ############# TODO MAKE THIS HTTPS
         stat_logger.info('Sending collected stats to %s' % address)
-        urlopen(Request('%s/%s'%(address, stats['type']), output, headers=headers))
+        try:
+            urlopen(Request('%s/%s'%(address, stats['type']), output, headers=headers))
+        except URLError as e:
+            print e
     return push_stats_fn
 
 
