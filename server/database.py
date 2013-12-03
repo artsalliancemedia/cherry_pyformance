@@ -205,8 +205,12 @@ session = None
 def setup_profile_database(username, password):
     postgres_string = 'postgresql://' + username + ':' + password + '@localhost'
     try:
-        #print os.system('alembic upgrade head')
         db = create_db_and_connect(postgres_string)
+        
+        # Upgrade db to latest revision
+        if os.system('alembic upgrade head') != 0:
+            print 'Error upgrading Alembic to head, check current Alembic version'
+            sys.exit(1)
     except:
         postgres = sqlalchemy.create_engine(postgres_string + '/postgres')
         conn = postgres.connect()
@@ -217,10 +221,9 @@ def setup_profile_database(username, password):
         Base.metadata.create_all(db)
         
         # Stamp table with current version for Alembic upgrades
-        from alembic.config import Config
-        from alembic import command
-        alembic_cfg = Config("alembic.ini")
-        command.stamp(alembic_cfg, "head")
+        if os.system('alembic stamp head') != 0:
+            print 'Error stamping Alembic to head, try dropping database and rerunning server'
+            sys.exit(1)
     global Session
     global session
     Session = sessionmaker(bind=db)
