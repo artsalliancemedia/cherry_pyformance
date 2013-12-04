@@ -24,6 +24,7 @@ def handle_error():
 def start_cherrypy(host, port):
     cherrypy.server.socket_host = host
     cherrypy.server.socket_port = int(port)
+    cherrypy.log.screen = False
     cherrypy.log('Mounting the handlers')
     method_dispatch_cfg = {'/': {'request.dispatch': cherrypy.dispatch.MethodDispatcher()} }
     front_end_config = {'/': {'tools.staticdir.on': True,
