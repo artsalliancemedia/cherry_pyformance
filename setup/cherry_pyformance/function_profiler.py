@@ -34,7 +34,7 @@ class StatWrapper(object):
     """
     
     def __init__(self, function, inner_func=None):
-        self._function = function
+        self.function = function
         # hide the wrapper from itself if there is recursive profiling 
         self.func_closure = [function]
         # If there is an inner_func, get some metadata from there
@@ -42,16 +42,16 @@ class StatWrapper(object):
         self._inner_func = inner_func if inner_func else function
 
         self.__name__ = self._inner_func.__name__
-        self._module_name = inspect.getmodule(self._inner_func).__name__
-        self._class_name = self._inner_func.__class__.__name__
-
+        self.module_name = inspect.getmodule(self._inner_func).__name__
+        class_name = self._inner_func.__class__.__name__
+        self.class_name = class_name if class_name != 'function' else None
 
     def __call__(self, *args, **kwargs):
         _id = id(time.time())
         # initialise the item on the buffer
         function_stats_buffer[_id] = {'datetime': float(time.time()),
                                       'profile': cProfile.Profile()}
-        output = function_stats_buffer[_id]['profile'].runcall(self._function, *args, **kwargs)
+        output = function_stats_buffer[_id]['profile'].runcall(self.function, *args, **kwargs)
         Thread(target=self._after, args=(_id,)).start()
         return output
 
@@ -60,16 +60,10 @@ class StatWrapper(object):
         Pushes the stats collected to the buffer.
         """
         if _id in function_stats_buffer:
-            function_stats_buffer[_id]['metadata'] = {'module':self._module_name,
-                                                      'class':self._class_name,
-                                                      'function':self.__name__}
-            if self._class_name == 'function':
-                function_stats_buffer[_id]['metadata']['full_name'] = '{0}.{1}'.format(self._module_name,
-                                                                                       self.__name__)
-            else:
-                function_stats_buffer[_id]['metadata']['full_name'] = '{0}.{1}.{2}'.format(self._module_name,
-                                                                                           self._class_name,
-                                                                                           self.__name__)
+            function_stats_buffer[_id]['module'] = self.module_name
+            function_stats_buffer[_id]['class'] = self.class_name
+            function_stats_buffer[_id]['function'] = self.__name__
+            
             stats = function_stats_buffer[_id]['profile']
             stats.create_stats()
             # pickle stats and put back on the buffer for flushing

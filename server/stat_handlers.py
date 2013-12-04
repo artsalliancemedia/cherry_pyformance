@@ -9,6 +9,7 @@ import uuid
 from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
 from sqlalchemy import and_
+from operator import attrgetter
 
 
 allowed_content_types = [ntou('application/json'),
@@ -42,14 +43,14 @@ class StatHandler(object):
     '''
     exposed = True
 
-    def __init__(self, push_fn):
-        self.push_fn = push_fn
+    def __init__(self, parse_fn):
+        self.parse_fn = parse_fn
 
     @cherrypy.tools.json_in(content_type=allowed_content_types, processor=decompress_json)
     def POST(self):
         # Add sender's ip to flush metadata
         cherrypy.serving.request.json['metadata']['ip_address'] = cherrypy.request.remote.ip
-        self.push_fn(cherrypy.serving.request.json)
+        Thread(target=self.parse_fn, args=(cherrypy.serving.request.json,)).start()
         return 'Hello, World.'
 
 
@@ -70,7 +71,7 @@ def parse_fn_packet(packet):
     db_session = db.Session()
     
     # Get global metadata
-    global_metadata_list = get_metadata_list(packet['metadata'], db_session)
+    metadata_list = get_metadata_list(packet['metadata'], db_session)
     
     for profile in packet['stats']:
         # pull and unpickle pstats
@@ -86,19 +87,22 @@ def parse_fn_packet(packet):
         profile['pstat_uuid'] = _id
         stats.dump_stats('pstats\\'+_id)
 
-        # Get function metadata
-        function_metadata_list = get_metadata_list(profile['metadata'], db_session)
-        metadata_list = global_metadata_list + function_metadata_list
-
+        # callstack names
+        call_stack_name = get_or_create(db_session,
+                                       db.CallStackName,
+                                       module_name = profile['module'],
+                                       class_name = profile['class'],
+                                       fn_name = profile['function'])
+        
         # Add call stack
         call_stack = db.CallStack(profile)
+        call_stack.name = call_stack_name
         call_stack.metadata_items = metadata_list
+        # add to session
         db_session.add(call_stack)
-    db_session.commit()
 
-def push_fn_stats(packet):
-    Thread(target=parse_fn_packet, args=(packet,)).start()
-   
+    db_session.commit()
+ 
 
 def parse_sql_packet(packet):
     db_session = db.Session()
@@ -107,106 +111,120 @@ def parse_sql_packet(packet):
     global_metadata_list = get_metadata_list(packet['metadata'], db_session)
     
     for profile in packet['stats']:
-        # Parse SQL statement
-        parsed_sql = parse_sql(profile['metadata']['sql_string'])[0]
+        
+        # get-or-set all arguments (do not map relationship yet)
+        sql_arg_list = get_arg_list(db_session, profile['args'])
+
+        # get-or-set all stack items (do not map relationship yet)
+        sql_stack_item_list = get_stack_list(db_session, profile['stack'])
+
+        # Parse SQL string
+        parsed_sql = parse_sql(profile['sql_string'])[0]
         sql_identifiers = []
         for token in parsed_sql.tokens:
             for item in token.flatten():
                 if item.ttype == sql_tokens.Name:
                     sql_identifiers.append(item.value)
-        profile['metadata']['statement_identifiers'] = sql_identifiers
-                    
-        # Get SQL metadata
-        sql_metadata_list = get_metadata_list(profile['metadata'], db_session)
-        metadata_list = global_metadata_list + sql_metadata_list
+        statement_type = profile['sql_string'].split()[0]
+
+        # get-or-set the metadata
+        sql_identifiers = get_metadata_list({'statement_identifiers':sql_identifiers,
+                                             'statement_type':statement_type},
+                                            db_session)
+        metadata_list = global_metadata_list + sql_identifiers
+
+        # get-or-set the sql string
+        sql_string = get_or_create(db_session,
+                                   db.SQLString,
+                                   sql=profile['sql_string'])
         
-        # Create sql stack items
-        sql_stack_item_list = get_stack_list(profile['stack'], db_session)
-
-        # Create arguments list
-        sql_arguments_list = get_arg_list(profile['args'], db_session)
-
-        # Add sql statement
+        # create the statement object
         sql_statement = db.SQLStatement(profile)
+
+        # add the arg asssociatons
+        for i, arg in enumerate(sql_arg_list):
+            sql_arg_assoc = db.SQLArgAssociation(index=i)
+            sql_arg_assoc.arg = arg
+            sql_statement.arguments.append(sql_arg_assoc)
+
+        # add the stack asssociatons
+        for i, stack_item in enumerate(sql_stack_item_list):
+            sql_stack_item_assoc = db.SQLStackAssociation(index=i)
+            sql_stack_item_assoc.stack_item = stack_item
+            sql_statement.sql_stack_items.append(sql_stack_item_assoc)
+
+        # add the metadata
         sql_statement.metadata_items = metadata_list
-        sql_statement.sql_stack_items = sql_stack_item_list
-        sql_statement.arguments = sql_arguments_list
 
+        # add the sql string
+        sql_statement.sql_string = sql_string
+
+        # Add sql statement to session
         db_session.add(sql_statement)
+    
     db_session.commit()
-
-def push_sql_stats(packet):
-    Thread(target=parse_sql_packet, args=(packet,)).start()
 
 
 def parse_file_packet(packet):
     db_session = db.Session()
                     
     # Get flush metadata
-    global_metadata_list = get_metadata_list(packet['metadata'], db_session)
+    metadata_list = get_metadata_list(packet['metadata'], db_session)
     
     for profile in packet['stats']:
-        # Get file metadata
-        file_metadata_list = get_metadata_list(profile['metadata'], db_session)
-        metadata_list = global_metadata_list + file_metadata_list
-
+        # Add filename
+        filename = get_or_create(db_session,
+                                 db.FileName,
+                                 filename=profile['filename'])
         # Add file access row
         file_access = db.FileAccess(profile)
+        file_access.filename = filename
         file_access.metadata_items = metadata_list
+        # add to session
         db_session.add(file_access)
+
     db_session.commit()
     
-def push_file_stats(packet):
-    Thread(target=parse_file_packet, args=(packet,)).start()
-
-
 
 def get_metadata_list(metadata_dictionary, db_session):
     metadata_list = []
     for metadata_key in metadata_dictionary.keys():
+        # make each value in the dictionary a list, even if only one value
         if not isinstance(metadata_dictionary[metadata_key], list):
             metadata_dictionary[metadata_key] = [metadata_dictionary[metadata_key]]
         for dict_value in metadata_dictionary[metadata_key]:
-            metadata_query = db_session.query(db.MetaData).filter_by(key=metadata_key, value=dict_value)
-            if metadata_query.count() == 0:
-                # Add new metadata if does not exist
-                metadata = db.MetaData(metadata_key, dict_value)
-                metadata_list.append(metadata)
-                db_session.add(metadata)
-                db_session.commit()
-            else:
-                metadata_list.append(metadata_query.first())
+            metadata_list.append(get_or_create(db_session,
+                                                db.MetaData,
+                                                key=metadata_key,
+                                                value=dict_value))
     return list(set(metadata_list))
 
 
-def get_arg_list(args, db_session):
+def get_arg_list(db_session, args):
     arg_list = []
     for arg in args:
-        arg_index = args.index(arg)
-        arg_query = db_session.query(db.SQLArg).filter(db.SQLArg.value==arg, db.SQLArg.index==arg_index)
-        if arg_query.count()==0:
-            arg_obj = db.SQLArg(arg, arg_index)
-            arg_list.append(arg_obj)
-            db_session.add(arg_obj)
-            db_session.commit()
-        else:
-            arg_list.append(arg_query.first())
-    arg_list.sort(key=lambda arg: arg.index)
-    return single_instance_list(arg_list)
+        sql_arg = get_or_create(db_session,
+                                db.SQLArg,
+                                value=arg)
+        arg_list.append(sql_arg)
+    return arg_list
 
-def get_stack_list(stack, db_session):
-    stack_list = []
+def get_stack_list(db_session, stack):
+    sql_stack_item_list = []
     for stack_item in stack:
-        query = db_session.query(db.SQLStackItem).filter(and_(db.SQLStackItem.function==stack_item['function'],
-                                                              db.SQLStackItem.module==stack_item['module']))
-        if query.count()==0:
-            stack_item_obj = db.SQLStackItem(stack_item)
-            stack_list.append(stack_item_obj)
-            db_session.add(stack_item_obj)
-            db_session.commit()
-        else:
-            stack_list.append(query.first())
-    return single_instance_list(stack_list)
+        sql_stack_item = get_or_create(db_session,
+                                       db.SQLStackItem,
+                                       function=stack_item['function'],
+                                       module=stack_item['module'])
+        sql_stack_item_list.append(sql_stack_item)
+    return sql_stack_item_list
+
+def get_or_create(session, model, **kwargs):
+    instance = session.query(model).filter_by(**kwargs).first()
+    if not instance:
+        instance = model(kwargs)
+        session.add(instance)
+    return instance
 
 
 def single_instance_list(in_list):
@@ -217,7 +235,7 @@ def single_instance_list(in_list):
     return out_list
 
 
-function_stat_handler = StatHandler(push_fn_stats)
-handler_stat_handler = StatHandler(push_fn_stats)
-sql_stat_handler = StatHandler(push_sql_stats)
-file_stat_handler = StatHandler(push_file_stats)
+function_stat_handler = StatHandler(parse_fn_packet)
+handler_stat_handler = StatHandler(parse_fn_packet)
+sql_stat_handler = StatHandler(parse_sql_packet)
+file_stat_handler = StatHandler(parse_file_packet)
