@@ -35,10 +35,11 @@ def create_output_fn():
     location = str(cfg['output']['location'])
     # Need to change to getBool
     address = location if location.startswith('http://') else 'http://'+location
-    compress == True if cfg['output']['compress']=='true' else False
+    compress = True if cfg['output']['compress']=='true' else False
     if compress:
         import zlib
     stat_logger.info('Sending collected stats to {0}{1}'.format(address,' (compressed)'*compress))
+
 
     def push_stats_fn(stats, address=address):
         """A function to push json to server"""
@@ -50,7 +51,7 @@ def create_output_fn():
         ############# TODO MAKE THIS HTTPS
         stat_logger.info('Sending collected stats to %s' % address)
         try:
-            urlopen(Request('%s/%s'%(address, stats['type']), output, headers=headers))
+            urlopen(Request('{0}/{1}'.format(address, stats['type']), output, headers=headers))
         except URLError as e:
             print e
     return push_stats_fn
