@@ -37,9 +37,10 @@ class CallStack(Base):
         self.pstat_uuid = profile['pstat_uuid']
 
 
-    def _to_dict(self):
+    def to_dict(self):
+        name = self.name
         response = {'id':self.id,
-                    'name': self.name.full_name,
+                    'name': name.full_name(),
                     'datetime':self.datetime,
                     'duration':self.duration,
                     'pstat_uuid':self.pstat_uuid}
@@ -52,6 +53,11 @@ class CallStack(Base):
         list_dict = defaultdict(list)
         for key, value in [meta._to_tuple() for meta in self.metadata_items]:
             list_dict[key].append(value)
+        # if list only one item, set to that one item
+        list_dict = dict(list_dict)
+        for k,v in list_dict.items():
+            if len(v)==1:
+                list_dict[k] = v[0]
         return list_dict
 
     # def __repr__(self):
@@ -64,16 +70,16 @@ class CallStackName(Base):
     class_name = Column(String)
     fn_name = Column(String)
 
-    def __init__(self, dict_in=None, module_name=None, class_name=None, fn_name=None):
-        if dict_in and type(dict_in)==dict:
-            self.module_name = dict_in['module_name']
-            self.class_name = dict_in['class_name']
-            self.fn_name = dict_in['fn_name']
-        elif module_name and class_name and fn_name:
-            self.module_name = module_name
-            self.class_name = class_name
-            self.fn_name = fn_name
-        self.full_name = '{0}.{1}.{2}'.format(self.module_name, self.class_name, self.fn_name)
+    def __init__(self, name_dict):
+        self.module_name = name_dict['module_name']
+        self.class_name = name_dict['class_name']
+        self.fn_name = name_dict['fn_name']
+        
+    def full_name(self):
+        if self.class_name:
+            return '{0}.{1}: {2}'.format(self.module_name, self.class_name, self.fn_name)
+        else:
+            return '{0}.{1}'.format(self.module_name, self.fn_name)
 
 
 
@@ -100,8 +106,10 @@ class SQLStatement(Base):
         self.datetime = profile['datetime']
         self.duration = profile['duration']
 
-    def _to_dict(self):
+    def to_dict(self):
+        sql = self.sql_string.sql
         response = {'id':self.id,
+                    'sql':sql,
                     'datetime':self.datetime,
                     'duration':self.duration,
                     'args':self._args()}
@@ -111,14 +119,20 @@ class SQLStatement(Base):
         list_dict = defaultdict(list)
         for key, value in [meta._to_tuple() for meta in self.metadata_items]:
             list_dict[key].append(value)
+        # if list only one item, set to that one item
+        list_dict = dict(list_dict)
+        for k,v in list_dict.items():
+            if len(v)==1:
+                list_dict[k] = v[0]
         return list_dict
     
     def _stack(self):
-        stack_list = self.sql_stack_items.sort(key=attrgetter('index'))
-        return [stack_item.stack_item._to_dict() for stack_item in stack_list]
+        self.sql_stack_items.sort(key=attrgetter('index'))
+        return [stack_item.stack_item.to_dict() for stack_item in self.sql_stack_items]
 
     def _args(self):
-        return [arg.value for arg in self.arguments]
+        self.arguments.sort(key=attrgetter('index'))
+        return [arg.arg.value for arg in self.arguments]
 
     def __repr__(self):
         sql = self._metadata()['sql_string']
@@ -133,13 +147,14 @@ class SQLString(Base):
     sql = Column(String)
 
     def __init__(self, sql):
-        if type(sql)==str:
+        if type(sql)==dict:
+            self.sql = sql['sql']
+        else:
             self.sql = sql
-        elif type(sql)==dict:
-            self.sql = sql.values()[0]
 
     def __repr__(self):
-        return self.sql
+        truncated_sql = self.sql[:17]+'...' if len(self.sql)>20 else self.sql
+        return 'SQLString({0})'.format(truncated_sql)
 
 
 class SQLStackAssociation(Base):
@@ -161,7 +176,7 @@ class SQLStackItem(Base):
         self.function = stat['function']
         self.module = stat['module']
 
-    def _to_dict(self):
+    def to_dict(self):
         return {'module':self.module,
                 'function':self.function}
 
@@ -185,11 +200,11 @@ class SQLArg(Base):
     value = Column(String)
 
     def __init__(self, value):
-        if type(value)==str:
+        if type(value)==dict:
+            self.value = value['value']
+        else:
             self.value = value
-        elif type(value)==dict:
-            self.value = value.values()[0]
-
+        
     def __repr__(self):
         return 'SQLArg({0})'.format(self.id)
     
@@ -221,8 +236,11 @@ class FileAccess(Base):
         self.data_written = profile['data_written']
         self.mode = profile['mode']
       
-    def _to_dict(self):
+    def to_dict(self):
+        filename = self.filename.filename
         response = {'id':self.id,
+                    'filename':filename,
+                    'mode':self.mode,
                     'datetime':self.datetime,
                     'duration':self.duration,
                     'data_written':self.data_written}
@@ -232,10 +250,15 @@ class FileAccess(Base):
         list_dict = defaultdict(list)
         for key, value in [meta._to_tuple() for meta in self.metadata_items]:
             list_dict[key].append(value)
+        # if list only one item, set to that one item
+        list_dict = dict(list_dict)
+        for k,v in list_dict.items():
+            if len(v)==1:
+                list_dict[k] = v[0]
         return list_dict
     
-    # def __repr__(self):
-    #     return 'FileAccess({0}, {1!s})'.format(self._metadata()['filename'],int(self.datetime))
+    def __repr__(self):
+        return 'FileAccess({0}, {1!s})'.format(self._metadata()['filename'],int(self.datetime))
 
 
 class FileName(Base):
@@ -244,10 +267,11 @@ class FileName(Base):
     filename = Column(String)
 
     def __init__(self, filename):
-        if type(filename)==str:
+        if type(filename)==dict:
+            self.filename = filename['filename']
+        else:
             self.filename = filename
-        elif type(filename)==dict:
-            self.filename = filename.values()[0]
+
 
 
 
@@ -260,7 +284,12 @@ class MetaData(Base):
     key = Column(String)
     value = Column(String)
 
-    def __init__(self, key, value):
+    def __init__(self, meta_dict):
+        length = len(meta_dict.items())
+        if length==1:
+            key,value = meta_dict.items()[0]
+        elif length==2:
+            key,value = meta_dict['key'], meta_dict['value']
         self.key = key
         self.value = value
 
