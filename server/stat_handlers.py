@@ -87,18 +87,20 @@ def parse_fn_packet(packet):
         profile['pstat_uuid'] = _id
         stats.dump_stats('pstats\\'+_id)
 
-        # callstack metadata
+        # callstack names
         call_stack_name = get_or_create(db_session,
-                                       db.CallStackMetadata,
+                                       db.CallStackName,
                                        module_name = profile['module'],
                                        class_name = profile['class'],
-                                       fn_name = profile['function']))
-
+                                       fn_name = profile['function'])
+        
         # Add call stack
         call_stack = db.CallStack(profile)
         call_stack.name = call_stack_name
         call_stack.metadata_items = metadata_list
+        # add to session
         db_session.add(call_stack)
+
     db_session.commit()
  
 
@@ -109,7 +111,14 @@ def parse_sql_packet(packet):
     global_metadata_list = get_metadata_list(packet['metadata'], db_session)
     
     for profile in packet['stats']:
-        # Parse SQL statement
+        
+        # get-or-set all arguments (do not map relationship yet)
+        sql_arg_list = get_arg_list(db_session, profile['args'])
+
+        # get-or-set all stack items (do not map relationship yet)
+        sql_stack_item_list = get_stack_list(db_session, profile['stack'])
+
+        # Parse SQL string
         parsed_sql = parse_sql(profile['sql_string'])[0]
         sql_identifiers = []
         for token in parsed_sql.tokens:
@@ -117,26 +126,42 @@ def parse_sql_packet(packet):
                 if item.ttype == sql_tokens.Name:
                     sql_identifiers.append(item.value)
         statement_type = profile['sql_string'].split()[0]
-                            
-        # Get SQL metadata
-        sql_identifiers = get_metadata_list({'statement_identifiers':sql_identifiers
+
+        # get-or-set the metadata
+        sql_identifiers = get_metadata_list({'statement_identifiers':sql_identifiers,
                                              'statement_type':statement_type},
                                             db_session)
         metadata_list = global_metadata_list + sql_identifiers
+
+        # get-or-set the sql string
+        sql_string = get_or_create(db_session,
+                                   db.SQLString,
+                                   sql=profile['sql_string'])
         
-        # Create sql stack items
-        sql_stack_item_list = get_stack_list(profile['stack'], db_session)
-
-        # Create arguments list
-        sql_arguments_list = get_arg_list(profile['args'], db_session)
-
-        # Add sql statement
+        # create the statement object
         sql_statement = db.SQLStatement(profile)
-        sql_statement.metadata_items = metadata_list
-        sql_statement.sql_stack_items = sql_stack_item_list
-        sql_statement.arguments = sql_arguments_list
 
+        # add the arg asssociatons
+        for i, arg in enumerate(sql_arg_list):
+            sql_arg_assoc = db.SQLArgAssociation(index=i)
+            sql_arg_assoc.arg = arg
+            sql_statement.arguments.append(sql_arg_assoc)
+
+        # add the stack asssociatons
+        for i, stack_item in enumerate(sql_stack_item_list):
+            sql_stack_item_assoc = db.SQLStackAssociation(index=i)
+            sql_stack_item_assoc.stack_item = stack_item
+            sql_statement.sql_stack_items.append(sql_stack_item_assoc)
+
+        # add the metadata
+        sql_statement.metadata_items = metadata_list
+
+        # add the sql string
+        sql_statement.sql_string = sql_string
+
+        # Add sql statement to session
         db_session.add(sql_statement)
+    
     db_session.commit()
 
 
@@ -147,10 +172,17 @@ def parse_file_packet(packet):
     metadata_list = get_metadata_list(packet['metadata'], db_session)
     
     for profile in packet['stats']:
+        # Add filename
+        filename = get_or_create(db_session,
+                                 db.FileName,
+                                 filename=profile['filename'])
         # Add file access row
         file_access = db.FileAccess(profile)
+        file_access.filename = filename
         file_access.metadata_items = metadata_list
+        # add to session
         db_session.add(file_access)
+
     db_session.commit()
     
 
@@ -168,32 +200,29 @@ def get_metadata_list(metadata_dictionary, db_session):
     return list(set(metadata_list))
 
 
-def get_arg_list(args, db_session):
+def get_arg_list(db_session, args):
     arg_list = []
-    for i in range(len(args)):
-        arg = args[i]
-        arg_list.append(get_or_create(db_session,
-                                      db.SQLArg,
-                                      value=arg,
-                                      index=i))
-    arg_list.sort(key=attrgetter(index))
+    for arg in args:
+        sql_arg = get_or_create(db_session,
+                                db.SQLArg,
+                                value=arg)
+        arg_list.append(sql_arg)
     return arg_list
 
-def get_stack_list(stack, db_session):
-    stack_list = []
+def get_stack_list(db_session, stack):
+    sql_stack_item_list = []
     for stack_item in stack:
-        stack_list.append(get_or_create(db_session,
-                                        db.SQLStackItem,
-                                        function=stack_item['function'],
-                                        module=stack_item['module']))
-    return stack_list
-
-
+        sql_stack_item = get_or_create(db_session,
+                                       db.SQLStackItem,
+                                       function=stack_item['function'],
+                                       module=stack_item['module'])
+        sql_stack_item_list.append(sql_stack_item)
+    return sql_stack_item_list
 
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     if not instance:
-        instance = model(**kwargs)
+        instance = model(kwargs)
         session.add(instance)
     return instance
 

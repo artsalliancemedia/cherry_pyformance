@@ -6,9 +6,16 @@ from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
 import os
 from collections import defaultdict
+from operator import attrgetter
 
 Base = declarative_base()
 
+
+
+call_stack_metadata_association_table = Table('call_stack_metadata_association', Base.metadata,
+    Column('call_stack_id', Integer, ForeignKey('call_stacks.id'), primary_key=True), 
+    Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
+)
 
 class CallStack(Base):
     __tablename__ = 'call_stacks'
@@ -29,7 +36,7 @@ class CallStack(Base):
 
     def _to_dict(self):
         response = {'id':self.id,
-                    'name': self.name.full_name)
+                    'name': self.name.full_name,
                     'datetime':self.datetime,
                     'duration':self.duration,
                     'pstat_uuid':self.pstat_uuid}
@@ -51,20 +58,26 @@ class CallStackName(Base):
     class_name = Column(String)
     fn_name = Column(String)
 
-    def __init__(self, module_name, class_name, fn_name):
-        self.module_name = module_name
-        self.class_name = class_name
-        self.fn_name = fn_name
+    def __init__(self, dict_in=None, module_name=None, class_name=None, fn_name=None):
+        if dict_in and type(dict_in)==dict:
+            self.module_name = dict_in['module_name']
+            self.class_name = dict_in['class_name']
+            self.fn_name = dict_in['fn_name']
+        elif module_name and class_name and fn_name:
+            self.module_name = module_name
+            self.class_name = class_name
+            self.fn_name = fn_name
         self.full_name = '{0}.{1}.{2}'.format(self.module_name, self.class_name, self.fn_name)
 
-call_stack_metadata_association_table = Table('call_stack_metadata_association', Base.metadata,
-    Column('call_stack_id', Integer, ForeignKey('call_stacks.id'), primary_key=True), 
-    Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
-)
 
 
 #========================================#
 
+
+sql_statement_metadata_association_table = Table('sql_statement_metadata_association', Base.metadata,
+    Column('sql_statement_id', Integer, ForeignKey('sql_statements.id'), primary_key=True), 
+    Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
+)
 
 class SQLStatement(Base):
     __tablename__ = 'sql_statements'
@@ -75,7 +88,7 @@ class SQLStatement(Base):
 
     sql_string = relationship('SQLString', cascade='all', backref='sql_statements')
     sql_stack_items = relationship('SQLStackAssociation', cascade='all', backref='sql_statements')
-    arguments = relationship('SQLArg', secondary=sql_statement_argument_association_table, cascade='all', backref='sql_statements')
+    arguments = relationship('SQLArgAssociation', cascade='all', backref='sql_statements')
     metadata_items = relationship('MetaData', secondary=sql_statement_metadata_association_table, cascade='all', backref='sql_statements')
 
     def __init__(self, profile):
@@ -96,7 +109,8 @@ class SQLStatement(Base):
         return list_dict
     
     def _stack(self):
-        return [stack._to_dict() for stack in self.sql_stack_items]
+        stack_list = self.sql_stack_items.sort(key=attrgetter('index'))
+        return [stack_item.stack_item._to_dict() for stack_item in stack_list]
 
     def _args(self):
         return [arg.value for arg in self.arguments]
@@ -114,7 +128,10 @@ class SQLString(Base):
     sql = Column(String)
 
     def __init__(self, sql):
-        self.sql = sql
+        if type(sql)==str:
+            self.sql = sql
+        elif type(sql)==dict:
+            self.sql = sql.values()[0]
 
     def __repr__(self):
         return self.sql
@@ -122,11 +139,11 @@ class SQLString(Base):
 
 class SQLStackAssociation(Base):
     __tablename__ = 'sql_stack_association'
-    sql_statement_id = Column(Integer, ForeignKey('sql_statements.id'), primary_key=True),
-    stack_item_id = Column(Integer, ForeignKey('sql_arguements.id'), primary_key=True),
+    sql_statement_id = Column(Integer, ForeignKey('sql_statements.id'), primary_key=True)
+    sql_stack_item_id = Column(Integer, ForeignKey('sql_stack_items.id'), primary_key=True)
     index = Column(Integer, primary_key=True)
-    
-    stack_item = relationship("SQLStackItem", backref="sql_statement_association")
+
+    stack_item = relationship("SQLStackItem", cascade='all', backref="sql_association")
 
 
 class SQLStackItem(Base):
@@ -147,31 +164,39 @@ class SQLStackItem(Base):
         return 'SQLStackItem({0})'.format(self.id)
 
 
-sql_statement_argument_association_table = Table('sql_statement_argument_association', Base.metadata,
-    Column('sql_statement_id', Integer, ForeignKey('sql_statements.id'), primary_key=True), 
-    Column('argument_id', Integer, ForeignKey('sql_arguements.id'), primary_key=True)
-)
+class SQLArgAssociation(Base):
+    __tablename__ = 'sql_arguments_association'
+    sql_statement_id = Column(Integer, ForeignKey('sql_statements.id'), primary_key=True)
+    sql_argument_id = Column(Integer, ForeignKey('sql_arguments.id'), primary_key=True)
+    index = Column(Integer, primary_key=True)
+
+    arg = relationship("SQLArg", cascade='all', backref="sql_association")
+
+
 
 class SQLArg(Base):
-    __tablename__ = 'sql_arguements'
+    __tablename__ = 'sql_arguments'
     id = Column(Integer, primary_key=True)
     value = Column(String)
-    index = Column(Integer)
 
-    def __init__(self, value, index):
-        self.value = value
-        self.index = index
+    def __init__(self, value):
+        if type(value)==str:
+            self.value = value
+        elif type(value)==dict:
+            self.value = value.values()[0]
 
     def __repr__(self):
-        return 'SQLArg({0})'.format(self.value)
+        return 'SQLArg({0})'.format(self.id)
     
-sql_statement_metadata_association_table = Table('sql_statement_metadata_association', Base.metadata,
-    Column('sql_statement_id', Integer, ForeignKey('sql_statements.id'), primary_key=True), 
-    Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
-)
+
 
 #========================================#
 
+
+file_access_metadata_association_table = Table('file_access_metadata_association', Base.metadata,
+    Column('file_access_id', Integer, ForeignKey('file_accesses.id'), primary_key=True), 
+    Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
+)
 
 class FileAccess(Base):
     __tablename__ = 'file_accesses'
@@ -183,7 +208,7 @@ class FileAccess(Base):
     data_written = Column(Integer)
     mode = Column(String)
     
-    name = relationship('FileName', cascade='all', backref='file_accesses')
+    filename = relationship('FileName', cascade='all', backref='file_accesses')
     metadata_items = relationship('MetaData', secondary=file_access_metadata_association_table, cascade='all', backref='file_accesses')
   
     def __init__(self, profile):
@@ -216,13 +241,12 @@ class FileName(Base):
     filename = Column(String)
 
     def __init__(self, filename):
-        self.filename = filename
+        if type(filename)==str:
+            self.filename = filename
+        elif type(filename)==dict:
+            self.filename = filename.values()[0]
 
 
-file_access_metadata_association_table = Table('file_access_metadata_association', Base.metadata,
-    Column('file_access_id', Integer, ForeignKey('file_accesses.id'), primary_key=True), 
-    Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
-)
 
 
 #========================================#
