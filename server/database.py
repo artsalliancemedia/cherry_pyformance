@@ -6,10 +6,10 @@ from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
 import os
 from collections import defaultdict
+from operator import attrgetter
 import pstats
 from alembic.config import Config
 from alembic import command as al_command
-from operator import attrgetter
 
 Base = declarative_base()
 
@@ -48,7 +48,7 @@ class CallStack(Base):
     
     def _stats(self):
         return pstats.Stats(os.path.join(os.getcwd(),'pstats',self.pstat_uuid))
-                
+
     def _metadata(self):
         list_dict = defaultdict(list)
         for key, value in [meta._to_tuple() for meta in self.metadata_items]:
@@ -210,6 +210,7 @@ class SQLArg(Base):
     
 
 
+#========================================#
 
 file_access_metadata_association_table = Table('file_access_metadata_association', Base.metadata,
     Column('file_access_id', Integer, ForeignKey('file_accesses.id'), primary_key=True), 
