@@ -17,12 +17,7 @@ class Tables(object):
             call_stack = db.session.query(db.CallStack).get(id)
             if call_stack == None:
                 raise cherrypy.HTTPError(404)
-            metadata_list = call_stack.metadata_items
-            metadata_id = None
-            for metadata in metadata_list:
-                if metadata.key == 'full_name':
-                    metadata_id = metadata.id
-                    break
+            metadata_id = call_stack.name.id
             mytemplate = Template(filename=os.path.join(self.templates_dir,'callstack.html'), lookup=self.template_lookup)
             return mytemplate.render(call_stack=call_stack, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
         else:
@@ -35,12 +30,7 @@ class Tables(object):
             sql_statement = db.session.query(db.SQLStatement).get(id)
             if sql_statement == None:
                 raise cherrypy.HTTPError(404)
-            metadata_list = sql_statement.metadata_items
-            metadata_id = None
-            for metadata in metadata_list:
-                if metadata.key == 'sql_string':
-                    metadata_id = metadata.id
-                    break
+            metadata_id = sql_statement.sql_string.id
             mytemplate = Template(filename=os.path.join(self.templates_dir,'sqlstatement.html'), lookup=self.template_lookup)
             return mytemplate.render(sql_statement=sql_statement, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
         else:
@@ -53,12 +43,7 @@ class Tables(object):
             file_access = db.session.query(db.FileAccess).get(id)
             if file_access == None:
                 raise cherrypy.HTTPError(404)
-            metadata_list = file_access.metadata_items
-            metadata_id = None
-            for metadata in metadata_list:
-                if metadata.key == 'filename':
-                    metadata_id = metadata.id
-                    break
+            metadata_id = file_access.filename.id
             mytemplate = Template(filename=os.path.join(self.templates_dir,'fileaccess.html'), lookup=self.template_lookup)
             return mytemplate.render(file_access=file_access, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
         else:

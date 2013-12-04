@@ -1,6 +1,6 @@
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, Float, ForeignKey
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, composite
 from sqlalchemy.ext.declarative import declarative_base
 from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
@@ -12,7 +12,6 @@ from alembic.config import Config
 from alembic import command as al_command
 
 Base = declarative_base()
-
 
 
 call_stack_metadata_association_table = Table('call_stack_metadata_association', Base.metadata,
@@ -40,7 +39,7 @@ class CallStack(Base):
     def to_dict(self):
         name = self.name
         response = {'id':self.id,
-                    'name': name.full_name(),
+                    'name': str(name.full_name),
                     'datetime':self.datetime,
                     'duration':self.duration,
                     'pstat_uuid':self.pstat_uuid}
@@ -63,28 +62,36 @@ class CallStack(Base):
     # def __repr__(self):
     #     return 'Callstack({0}, {1!s})'.format(self._metadata()['full_name'],int(self.datetime))
 
+class CallStackFullName(object):
+    def __init__(self, module_name, class_name, fn_name):
+        self.module_name = module_name
+        self.class_name = class_name
+        self.fn_name = fn_name
+
+    def __composite_values__(self):
+        if self.class_name:
+            return '{0}.{1}: {2}'.format(self.module_name, self.class_name, self.fn_name)
+        else:
+            return '{0}.{1}'.format(self.module_name, self.fn_name)
+        
+    def __str__(self):
+        return self.__composite_values__()
+
 class CallStackName(Base):
     __tablename__ = 'call_stack_names'
     id = Column(Integer, primary_key=True)
     module_name = Column(String)
     class_name = Column(String)
     fn_name = Column(String)
+    
+    full_name = composite(CallStackFullName, module_name, class_name, fn_name)
 
     def __init__(self, name_dict):
         self.module_name = name_dict['module_name']
         self.class_name = name_dict['class_name']
         self.fn_name = name_dict['fn_name']
-        
-    def full_name(self):
-        if self.class_name:
-            return '{0}.{1}: {2}'.format(self.module_name, self.class_name, self.fn_name)
-        else:
-            return '{0}.{1}'.format(self.module_name, self.fn_name)
-
-
 
 #========================================#
-
 
 sql_statement_metadata_association_table = Table('sql_statement_metadata_association', Base.metadata,
     Column('sql_statement_id', Integer, ForeignKey('sql_statements.id'), primary_key=True), 
@@ -194,7 +201,6 @@ class SQLArgAssociation(Base):
     arg = relationship("SQLArg", cascade='all', backref="sql_association")
 
 
-
 class SQLArg(Base):
     __tablename__ = 'sql_arguments'
     id = Column(Integer, primary_key=True)
@@ -208,11 +214,8 @@ class SQLArg(Base):
         
     def __repr__(self):
         return 'SQLArg({0})'.format(self.id)
-    
-
 
 #========================================#
-
 
 file_access_metadata_association_table = Table('file_access_metadata_association', Base.metadata,
     Column('file_access_id', Integer, ForeignKey('file_accesses.id'), primary_key=True), 
@@ -274,10 +277,6 @@ class FileName(Base):
             self.filename = filename['filename']
         else:
             self.filename = filename
-
-
-
-
 
 #========================================#
 

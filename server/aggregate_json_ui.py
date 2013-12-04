@@ -81,43 +81,49 @@ def datatables(query_func):
             return query_func(table_class, id=id, filter_kwargs=filter_kwargs, sort=sort)
     return dt_wrapped
 
+metadata_table_dict = {db.CallStack: (db.CallStackName, db.CallStackName.full_name, db.CallStack.name),
+                       db.SQLStatement: (db.SQLString, db.SQLString.sql, db.SQLStatement.sql_string),
+                       db.FileAccess: (db.FileName, db.FileName.filename, db.FileAccess.filename)}
+
 @datatables
 def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_date=None, end_date=None, sort=[('avg','DESC')], start=None, limit=None):
     column_name = column_name_dict[table_class]
+    metadata_table = metadata_table_dict[table_class][0]
+    metadata_value = metadata_table_dict[table_class][1]
+    table_class_column = metadata_table_dict[table_class][2]
     if id: # Grabbing information for a specific method, sql statement or filename
         total_num_items = 1
 
-        times_query = db.session.query(db.MetaData.id,
+        times_query = db.session.query(metadata_table.id,
                                        table_class.id,
                                        table_class.duration,
                                        table_class.datetime)
-        times_query = times_query.filter(db.MetaData.id==id)
-        times_query = times_query.join(table_class.metadata_items)
+        times_query = times_query.join(table_class_column)
         
         if filter_kwargs:
             for k in filter_kwargs:
                 if 'key_' in k:
                     v = k.replace('key','value')
                     times_query = times_query.filter(table_class.metadata_items.any(and_(db.MetaData.key==filter_kwargs[k], db.MetaData.value==filter_kwargs[v])))
-                
+        
+        times_query = times_query.filter(metadata_table.id==id)
         if start_date:  times_query = times_query.filter(table_class.datetime>start_date)
         if end_date:    times_query = times_query.filter(table_class.datetime<end_date)
         times = times_query.all()
         times = [(time[2],time[3],time[1]) for time in times]
         times = sorted(times, key=itemgetter(1))
     else: # Grab all known information
-        total_num_items = db.session.query(db.MetaData).filter(db.MetaData.key==column_name).count()
+        total_num_items = db.session.query(metadata_table).count()
     
-    query = db.session.query(db.MetaData.id,
-                             db.MetaData.value.label(column_name),
-                             func.count(db.MetaData.id).label('count'),
+    query = db.session.query(metadata_table.id,
+                             metadata_value.label(column_name),
+                             func.count(table_class.id).label('count'),
                              func.sum(table_class.duration).label('total'),
                              func.avg(table_class.duration).label('avg'),
                              func.min(table_class.duration).label('min'),
                              func.max(table_class.duration).label('max'))
     # Only get information for current tab (e.g. Call Stacks)
-    query = query.filter(db.MetaData.key==column_name)
-    query = query.join(table_class.metadata_items)
+    query = query.join(table_class_column)
     
     # Filter data based on the key/value pairs picked in the side bar
     if filter_kwargs:
@@ -126,11 +132,11 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
                 v = k.replace('key','value')
                 query = query.filter(table_class.metadata_items.any(and_(db.MetaData.key==filter_kwargs[k], db.MetaData.value==filter_kwargs[v])))
     
-    query = query.group_by(db.MetaData.id)
-    if id:          query = query.filter(db.MetaData.id==id)
+    query = query.group_by(metadata_table.id)
+    if id:          query = query.filter(metadata_table.id==id)
     if start_date:  query = query.filter(table_class.datetime>start_date)
     if end_date:    query = query.filter(table_class.datetime<end_date)
-    if search:      query = query.filter(and_(db.MetaData.key==column_name, db.MetaData.value.ilike('%%%s%%'%search)))
+    if search:      query = query.filter(metadata_value.ilike('%%%s%%'%search))
     for sorter in sort:
         query = query.order_by('%s %s'%sorter)
     filtered_num_items = query.count()
@@ -139,12 +145,18 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
     if id:
         try:
             result = list(query.first())
+            # Convert call stack name object to string
+            result[1] = str(result[1])
             result.append(times)
             return result,1,1
         except:
             return [],0,0
     else:
-        results = [list(result) for result in query.all()] # convert to lists from keyedTuples
+        # Convert to lists from keyedTuples
+        results = [list(result) for result in query.all()]
+        # Convert call stack name objects to strings
+        for result in results:
+            result[1] = str(result[1])
         return results, total_num_items, filtered_num_items
 
 class AggregateAPI(object):
