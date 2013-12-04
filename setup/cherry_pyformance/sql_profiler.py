@@ -150,8 +150,7 @@ def profile_sql(action, sql, *args, **kwargs):
         sql_stats_buffer[_id] = {'datetime':start_time,
                                  'duration':time_diff,
                                  'stack':stack,
-                                 'metadata': {'sql_string':sql,
-                                              'statement_type':sql.split()[0]},
+                                 'sql_string':sql,
                                  'args':args[0] if len(args)>0 else []
                                 }
         del stack

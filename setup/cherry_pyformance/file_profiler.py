@@ -77,8 +77,8 @@ class FileWrapper(object):
                                        'duration':self.close_time-self.open_time,
                                        'time_to_open':self.time_to_open,
                                        'data_written':self.written,
-                                       'metadata': {'filename':self.fullname,
-                                                    'mode':self.mode}}
+                                       'filename':self.fullname,
+                                       'mode':self.mode}
 
 
 class OpenFn(object):
