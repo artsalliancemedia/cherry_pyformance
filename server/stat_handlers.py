@@ -162,7 +162,7 @@ def parse_sql_packet(packet):
         # Add sql statement to session
         db_session.add(sql_statement)
     
-    db_session.commit()
+        db_session.commit()
 
 
 def parse_file_packet(packet):
@@ -194,9 +194,9 @@ def get_metadata_list(metadata_dictionary, db_session):
             metadata_dictionary[metadata_key] = [metadata_dictionary[metadata_key]]
         for dict_value in metadata_dictionary[metadata_key]:
             metadata_list.append(get_or_create(db_session,
-                                                db.MetaData,
-                                                key=metadata_key,
-                                                value=dict_value))
+                                               db.MetaData,
+                                               key=metadata_key,
+                                               value=dict_value))
     return list(set(metadata_list))
 
 
@@ -225,14 +225,6 @@ def get_or_create(session, model, **kwargs):
         instance = model(kwargs)
         session.add(instance)
     return instance
-
-
-def single_instance_list(in_list):
-    out_list = []
-    for item in in_list:
-        if not item in out_list:
-            out_list.append(item)
-    return out_list
 
 
 function_stat_handler = StatHandler(parse_fn_packet)
