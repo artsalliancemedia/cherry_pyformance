@@ -1,6 +1,6 @@
 import database as db
 import sqlalchemy
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, or_
 import cherrypy
 from cgi import escape as html_escape
 from operator import itemgetter
@@ -81,9 +81,13 @@ def datatables(query_func):
             return query_func(table_class, id=id, filter_kwargs=filter_kwargs, sort=sort)
     return dt_wrapped
 
-metadata_table_dict = {db.CallStack: (db.CallStackName, db.CallStackName.full_name, db.CallStack.name),
-                       db.SQLStatement: (db.SQLString, db.SQLString.sql, db.SQLStatement.sql_string),
-                       db.FileAccess: (db.FileName, db.FileName.filename, db.FileAccess.filename)}
+metadata_table_dict = {db.CallStack: [db.CallStackName, db.CallStackName.full_name, db.CallStack.name],
+                       db.SQLStatement: [db.SQLString, db.SQLString.sql, db.SQLStatement.sql_string],
+                       db.FileAccess: [db.FileName, db.FileName.filename, db.FileAccess.filename]}
+
+searchable_columns_dict = {db.CallStack: [db.CallStackName.module_name, db.CallStackName.class_name, db.CallStackName.fn_name],
+                           db.SQLStatement: [db.SQLString.sql],
+                           db.FileAccess: [db.FileName.filename]}
 
 @datatables
 def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_date=None, end_date=None, sort=[('avg','DESC')], start=None, limit=None):
@@ -136,7 +140,11 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
     if id:          query = query.filter(metadata_table.id==id)
     if start_date:  query = query.filter(table_class.datetime>start_date)
     if end_date:    query = query.filter(table_class.datetime<end_date)
-    if search:      query = query.filter(metadata_value.ilike('%%%s%%'%search))
+    if search:
+        search_clauses = []
+        for column in searchable_columns_dict[table_class]:
+            search_clauses.append(column.ilike(('%%%s%%'%search)))
+        query = query.filter(or_(*search_clauses))
     for sorter in sort:
         query = query.order_by('%s %s'%sorter)
     filtered_num_items = query.count()
