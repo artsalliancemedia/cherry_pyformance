@@ -59,8 +59,8 @@ class CallStack(Base):
                 list_dict[k] = v[0]
         return list_dict
 
-    # def __repr__(self):
-    #     return 'Callstack({0}, {1!s})'.format(self._metadata()['full_name'],int(self.datetime))
+    def __repr__(self):
+        return 'Callstack({0}, {1!s})'.format(self.name.full_name,int(self.datetime))
 
 class CallStackFullName(object):
     def __init__(self, module_name, class_name, fn_name):

@@ -102,7 +102,7 @@
       
       drawBarGraphs('');
       
-      $.getJSON('/tables/api/metadata?get_keys=true', function(data){
+      $.getJSON('/tables/api/metadata?get_keys=${self.url_name()}', function(data){
         key_select = $('#key-select');
         key_select.empty();
         key_select.append($("<option />").val(0).text('Select metadata key'));

@@ -81,6 +81,23 @@ def datatables(query_func):
             return query_func(table_class, id=id, filter_kwargs=filter_kwargs, sort=sort)
     return dt_wrapped
 
+call_stack_metadata_dict = {'module': db.CallStackName.module_name,
+                            'class':  db.CallStackName.class_name,
+                            'method': db.CallStackName.fn_name}
+
+def filter_query(query, filter_kwargs, table_class):
+    for k in filter_kwargs:
+        if 'key_' in k:
+            v = k.replace('key','value')
+            if filter_kwargs[k] in call_stack_metadata_dict:
+                if filter_kwargs[k] == '':
+                    filter_kwargs[k] = None
+                call_stack_attr = call_stack_metadata_dict[filter_kwargs[k]]
+                query = query.filter(call_stack_attr==filter_kwargs[v])
+            else:
+                query = query.filter(table_class.metadata_items.any(and_(db.MetaData.key==filter_kwargs[k], db.MetaData.value==filter_kwargs[v])))
+    return query
+
 metadata_table_dict = {db.CallStack: [db.CallStackName, db.CallStackName.full_name, db.CallStack.name],
                        db.SQLStatement: [db.SQLString, db.SQLString.sql, db.SQLStatement.sql_string],
                        db.FileAccess: [db.FileName, db.FileName.filename, db.FileAccess.filename]}
@@ -104,11 +121,7 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
                                        table_class.datetime)
         times_query = times_query.join(table_class_column)
         
-        if filter_kwargs:
-            for k in filter_kwargs:
-                if 'key_' in k:
-                    v = k.replace('key','value')
-                    times_query = times_query.filter(table_class.metadata_items.any(and_(db.MetaData.key==filter_kwargs[k], db.MetaData.value==filter_kwargs[v])))
+        times_query = filter_query(times_query, filter_kwargs, table_class)
         
         times_query = times_query.filter(metadata_table.id==id)
         if start_date:  times_query = times_query.filter(table_class.datetime>start_date)
@@ -130,11 +143,7 @@ def json_aggregate(table_class, id=None, filter_kwargs=None, search=None, start_
     query = query.join(table_class_column)
     
     # Filter data based on the key/value pairs picked in the side bar
-    if filter_kwargs:
-        for k in filter_kwargs:
-            if 'key_' in k:
-                v = k.replace('key','value')
-                query = query.filter(table_class.metadata_items.any(and_(db.MetaData.key==filter_kwargs[k], db.MetaData.value==filter_kwargs[v])))
+    query = filter_query(query, filter_kwargs, table_class)
     
     query = query.group_by(metadata_table.id)
     if id:          query = query.filter(metadata_table.id==id)
