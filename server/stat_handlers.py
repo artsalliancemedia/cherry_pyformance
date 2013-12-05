@@ -7,6 +7,7 @@ import cPickle
 import pstats
 import uuid
 from threading import Thread
+from Queue import Queue
 from sqlparse import tokens as sql_tokens, parse as parse_sql
 from sqlalchemy import and_
 from operator import attrgetter
@@ -35,6 +36,18 @@ def decompress_json(entity):
     except ValueError:
         raise cherrypy.HTTPError(400, 'Invalid JSON document')
 
+stat_handler_queue = Queue()
+        
+def worker():
+    while True:
+        item = stat_handler_queue.get()
+        fn = item[0]
+        fn(item[1])
+        stat_handler_queue.task_done()
+        
+worker_thread = Thread(target=worker)
+worker_thread.daemon = True
+worker_thread.start()
 
 class StatHandler(object):
     '''
@@ -50,7 +63,7 @@ class StatHandler(object):
     def POST(self):
         # Add sender's ip to flush metadata
         cherrypy.serving.request.json['metadata']['ip_address'] = cherrypy.request.remote.ip
-        Thread(target=self.parse_fn, args=(cherrypy.serving.request.json,)).start()
+        stat_handler_queue.put([self.parse_fn, cherrypy.serving.request.json])
         return 'Hello, World.'
 
 
@@ -162,7 +175,7 @@ def parse_sql_packet(packet):
         # Add sql statement to session
         db_session.add(sql_statement)
     
-        db_session.commit()
+    db_session.commit()
 
 
 def parse_file_packet(packet):
