@@ -1,5 +1,5 @@
 import sqlalchemy
-from sqlalchemy import Table, Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Table, Column, Integer, String, Float, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker, relationship, composite
 from sqlalchemy.ext.declarative import declarative_base
 from threading import Thread
@@ -85,6 +85,8 @@ class CallStackName(Base):
     fn_name = Column(String)
     
     full_name = composite(CallStackFullName, module_name, class_name, fn_name)
+    
+    __table_args__ = (UniqueConstraint('module_name', 'class_name', 'fn_name', name='_call_stack_name_uc'),)
 
     def __init__(self, name_dict):
         self.module_name = name_dict['module_name']
@@ -152,7 +154,7 @@ class SQLStatement(Base):
 class SQLString(Base):
     __tablename__ = 'sql_strings'
     id = Column(Integer, primary_key=True)
-    sql = Column(String)
+    sql = Column(String, unique=True)
 
     def __init__(self, sql):
         if type(sql)==dict:
@@ -179,6 +181,8 @@ class SQLStackItem(Base):
     id = Column(Integer, primary_key=True)
     module = Column(String)
     function = Column(String)
+    
+    __table_args__ = (UniqueConstraint('module', 'function', name='_sql_stack_item_uc'),)
 
     def __init__(self, stat):
         self.function = stat['function']
@@ -204,7 +208,7 @@ class SQLArgAssociation(Base):
 class SQLArg(Base):
     __tablename__ = 'sql_arguments'
     id = Column(Integer, primary_key=True)
-    value = Column(String)
+    value = Column(String, unique=True)
 
     def __init__(self, value):
         if type(value)==dict:
@@ -270,7 +274,7 @@ class FileAccess(Base):
 class FileName(Base):
     __tablename__ = 'file_names'
     id = Column(Integer, primary_key=True)
-    filename = Column(String)
+    filename = Column(String, unique=True)
 
     def __init__(self, filename):
         if type(filename)==dict:
@@ -285,6 +289,8 @@ class MetaData(Base):
     id = Column(Integer, primary_key=True)
     key = Column(String)
     value = Column(String)
+    
+    __table_args__ = (UniqueConstraint('key', 'value', name='_metadata_item_uc'),)
 
     def __init__(self, meta_dict):
         length = len(meta_dict.items())
