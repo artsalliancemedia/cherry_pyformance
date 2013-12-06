@@ -65,14 +65,16 @@
         window.location.href = '/<%block name="url_name"/>/'+id;
       });
     };
+    
+    var kwarg = ''
 
-    function drawBarGraphs(kwargs){
-      $.getJSON('/api/${self.url_name()}?sort=total&limit='+numBars+'&'+kwargs,function(data){
+    function drawBarGraphs(){
+      $.getJSON('/api/${self.url_name()}?sort=total&limit='+numBars+'&'+kwarg,function(data){
         $('svg').remove();
         draw(data[0], 3);
-        $.getJSON('/api/${self.url_name()}?sort=avg&limit='+numBars+'&'+kwargs,function(data){
+        $.getJSON('/api/${self.url_name()}?sort=avg&limit='+numBars+'&'+kwarg,function(data){
           draw(data[0], 4);
-          $.getJSON('/api/${self.url_name()}?sort=count&limit='+numBars+'&'+kwargs,function(data){
+          $.getJSON('/api/${self.url_name()}?sort=count&limit='+numBars+'&'+kwarg,function(data){
             draw(data[0], 2);
           });
         });
@@ -95,7 +97,7 @@
                                                     { "asSorting": [ "desc", "asc" ] },
                                                     { "asSorting": [ "desc", "asc" ] }],
                                       "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                         $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/${self.url_name()}/'+aData[0] });
+                                         $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/${self.url_name()}/'+aData[0]+'?'+kwarg });
                                          $('td:eq(0)', nRow).text(trunc(aData[1],100));
                                        }
       });
@@ -118,17 +120,17 @@
     
     function keySelectChange(){
       var val = $('#key-select').val();
-      var kwarg = ''
+      var key_kwarg = ''
       if(val != 0){
-        kwarg = 'key=' + val;
+        key_kwarg = 'key=' + val;
       }
         
       // Remove all options from the select list
       val_select = $('#value-select');
       val_select.empty();
         
-      if(kwarg != ''){
-        $.getJSON('/tables/api/metadata?'+kwarg, function(data){
+      if(key_kwarg != ''){
+        $.getJSON('/tables/api/metadata?'+key_kwarg, function(data){
           val_select.append($("<option />").val(0).text('Select metadata value'));
       
           // Insert the new options from the array
@@ -147,7 +149,7 @@
     
     function valueSelectChange(){
       var val = $('#value-select').val();
-      var kwarg = ''
+      kwarg = ''
       if(val != 0){
         var key = 'key_1=' + $('#key-select').val();
         var value = 'value_1=' + val;
@@ -155,7 +157,7 @@
       }
       oTable.fnSettings().sAjaxSource = '/api/${self.url_name()}?datatables=true' + kwarg;
       oTable.fnDraw();
-      drawBarGraphs(kwarg);
+      drawBarGraphs();
     };
   </script>
 </%block>
