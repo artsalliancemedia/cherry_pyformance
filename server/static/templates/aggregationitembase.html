@@ -135,28 +135,8 @@
       var dateLimit = '';
       if (start_date){dateLimit+='start_date='+start_date+'&'};
       if (end_date){dateLimit+='end_date='+end_date+'&'};
-      $.getJSON('/api/${self.url_name()}/<%block name="mako_item_id"/>?'+dateLimit+'${encoded_kwargs}', parseJSON, noDataError);
+      $.getJSON('/api/${self.url_name()}/<%block name="mako_item_id"/>?'+dateLimit, parseJSON, noDataError);
     };
-      
-    $(document).ready(function(){
-      $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?${encoded_kwargs}', parseJSON, noDataError);
-      
-      $.datepicker.formatDate('@');
-      $('#datepick1').datepicker().change(dpChange);
-      $('#datepick2').datepicker().change(dpChange);
-      
-      
-      $.getJSON('/tables/api/metadata?get_keys=${self.url_name()}', function(data){
-        key_select = $('#key-select');
-        key_select.empty();
-        key_select.append($("<option />").val(0).text('Select metadata key'));
-        
-        // Insert the new ones from the array above
-        $.each(data, function(value) {
-          key_select.append($("<option />").val(data[value]).text(data[value]));
-        });
-      });
-    });
       
     function keySelectChange(){
       var val = $('#key-select').val();
@@ -170,19 +150,25 @@
       val_select.empty();
         
       if(kwarg != ''){
-        $.getJSON('/tables/api/metadata?'+kwarg, function(data){
-          val_select.append($("<option />").val(0).text('Select metadata value'));
-      
-          // Insert the new options from the array
-          $.each(data, function(value) {
-            val_select.append($("<option />").val(data[value]).text(data[value]));
-          });
+        // Need to use ajax call here instead of getJSON because call needs to be syncronous
+        $.ajax({
+          url: '/tables/api/metadata?'+kwarg,
+          dataType: 'json',
+          async: false,
+          success: function(data) {
+	          val_select.append($("<option />").val(0).text('Select metadata value'));
+	      
+	          // Insert the new options from the array
+	          $.each(data, function(value) {
+	            val_select.append($("<option />").val(data[value]).text(data[value]));
+	          });
+          }
         });
       }
       else{
         val_select.append($("<option />").val(0).text('Pick a metadata key'));
       }
-      $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?${encoded_kwargs}', parseJSON, noDataError);
+      $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}', parseJSON, noDataError);
     };
     
     function valueSelectChange(){
@@ -193,8 +179,45 @@
         var value = 'value_1=' + val;
         kwarg = key + '&' + value;
       }
-      $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?${encoded_kwargs}&' + kwarg, parseJSON, noDataError);
+      $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?' + kwarg, parseJSON, noDataError);
     };
+      
+    $(document).ready(function(){
+      $.datepicker.formatDate('@');
+      $('#datepick1').datepicker().change(dpChange);
+      $('#datepick2').datepicker().change(dpChange);
+      
+      
+      $.getJSON('/tables/api/metadata?get_keys=${self.url_name()}', function(data){
+        var key_select = $('#key-select');
+        key_select.empty();
+        key_select.append($("<option />").val(0).text('Select metadata key'));
+        
+        // Insert the new ones from the array above
+        $.each(data, function(value) {
+          key_select.append($("<option />").val(data[value]).text(data[value]));
+        });
+        
+        // Get initial filters from kwargs
+        var init_key = 0;
+        var init_val = 0;
+        for(var key in ${kwargs}){
+          if(key == "key_1"){
+            init_key = ${kwargs}[key];
+          }
+          else if(key == "value_1"){
+            init_val = ${kwargs}[key];
+          }
+        }
+        // Set initial filters and draw graph
+        key_select.val(init_key);
+        keySelectChange();
+        var value_select = $('#value-select');
+        value_select.val(init_val);
+        var val = value_select.val();
+        valueSelectChange();
+      });
+    });
   </script>
 </%block>
 
