@@ -216,6 +216,10 @@
         value_select.val(init_val);
         var val = value_select.val();
         valueSelectChange();
+        
+        if(!jQuery.isEmptyObject(${kwargs})){
+          $('#ac-1-title').prop('checked', true);
+        }
       });
     });
   </script>
