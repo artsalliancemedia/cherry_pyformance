@@ -14,7 +14,7 @@
   <script type="text/javascript">
     var oTable;
 
-    var height=200
+    var height=200;
     var width=1000;
     var margin=50;
     var numBars=6;
@@ -22,6 +22,8 @@
     function trunc(string, numChars){
       return string.length>numChars?string.substring(0,numChars-3)+'...':string
     }
+    
+    var kwarg = ''
 
     function draw(data, index){
       var x_extent = d3.extent(data, function(d){return d[index]});
@@ -62,11 +64,9 @@
           $(this).children('rect').attr({'fill':'skyblue'});
       }).click(function(){
         id = $(this).children('rect').attr('data-id');
-        window.location.href = '/<%block name="url_name"/>/'+id;
+        window.location.href = '/<%block name="url_name"/>/'+id+'?'+kwarg;
       });
     };
-    
-    var kwarg = ''
 
     function drawBarGraphs(){
       $.getJSON('/api/${self.url_name()}?sort=total&limit='+numBars+'&'+kwarg,function(data){
@@ -102,7 +102,7 @@
                                        }
       });
       
-      drawBarGraphs('');
+      drawBarGraphs();
       
       $.getJSON('/tables/api/metadata?get_keys=${self.url_name()}', function(data){
         key_select = $('#key-select');
@@ -144,7 +144,7 @@
       }
       oTable.fnSettings().sAjaxSource = '/api/${self.url_name()}?datatables=true';
       oTable.fnDraw();
-      drawBarGraphs('');
+      drawBarGraphs();
     };
     
     function valueSelectChange(){
