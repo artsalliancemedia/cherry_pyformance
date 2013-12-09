@@ -13,7 +13,6 @@ class FileWrapper(object):
     def __init__(self, file, datetime, time_to_open):
         self.open_time = time.clock()
         self.file = file
-        self.name = file.name
         self.fullname = os.path.abspath(file.name)
         try:
             self.relname = os.path.relpath(file.name)
