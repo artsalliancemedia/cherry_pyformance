@@ -18,7 +18,7 @@ class FileWrapper(object):
         try:
             self.relname = os.path.relpath(file.name)
         except:
-            self.relname = self.fullname
+            self.relname = file.name
         self.mode = file.mode
         self.datetime = datetime
         self.time_to_open = time_to_open
