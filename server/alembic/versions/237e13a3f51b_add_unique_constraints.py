@@ -23,9 +23,9 @@ def upgrade():
     op.create_unique_constraint("_metadata_item_uc", "metadata_items", ['key', 'value'])
 
 def downgrade():
-    drop_constraint("_call_stack_name_uc", "call_stack_names")
-    drop_constraint("_sql_strings_uc", "sql_strings")
-    drop_constraint("_sql_stack_item_uc", "sql_stack_items")
-    drop_constraint("_sql_arguments_uc", "sql_arguments")
-    drop_constraint("_file_names_uc", "file_names")
-    drop_constraint("_metadata_item_uc", "metadata_items")
+    op.drop_constraint("_call_stack_name_uc", "call_stack_names")
+    op.drop_constraint("_sql_strings_uc", "sql_strings")
+    op.drop_constraint("_sql_stack_item_uc", "sql_stack_items")
+    op.drop_constraint("_sql_arguments_uc", "sql_arguments")
+    op.drop_constraint("_file_names_uc", "file_names")
+    op.drop_constraint("_metadata_item_uc", "metadata_items")
