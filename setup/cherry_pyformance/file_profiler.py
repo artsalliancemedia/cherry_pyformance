@@ -15,6 +15,10 @@ class FileWrapper(object):
         self.file = file
         self.name = file.name
         self.fullname = os.path.abspath(file.name)
+        try:
+            self.relname = os.path.relpath(file.name)
+        except:
+            self.relname = self.fullname
         self.mode = file.mode
         self.datetime = datetime
         self.time_to_open = time_to_open
@@ -77,7 +81,7 @@ class FileWrapper(object):
                                        'duration':self.close_time-self.open_time,
                                        'time_to_open':self.time_to_open,
                                        'data_written':self.written,
-                                       'filename':self.fullname,
+                                       'filename':self.relname,
                                        'mode':self.mode}
 
 
