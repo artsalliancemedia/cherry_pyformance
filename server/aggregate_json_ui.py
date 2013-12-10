@@ -78,7 +78,11 @@ def datatables(query_func):
             if 'sort' in filter_kwargs:
                 sort = filter_kwargs['sort']
                 del(filter_kwargs['sort'])
-            return query_func(table_class, id=id, filter_kwargs=filter_kwargs, sort=sort)
+            limit = None
+            if 'limit' in filter_kwargs:
+                limit = filter_kwargs['limit']
+                del(filter_kwargs['limit'])
+            return query_func(table_class, id=id, filter_kwargs=filter_kwargs, sort=sort, limit=limit)
     return dt_wrapped
 
 call_stack_metadata_dict = {'module': db.CallStackName.module_name,

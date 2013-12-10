@@ -25,9 +25,11 @@ class AggregatePages(object):
             call_stack[1]=str(call_stack[1]) #unicode throws off template when casting dict as js obj
             call_stack[2]=int(call_stack[2]) #convert long to int
             if 'id' in filter_kwargs: filter_kwargs.pop('id')
+            for k in kwargs:
+                kwargs[k] = str(kwargs[k])
             
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatecallstack.html'), lookup=self.template_lookup)
-            return mytemplate.render(call_stack=call_stack, encoded_kwargs=urlencode(filter_kwargs))
+            return mytemplate.render(call_stack=call_stack, kwargs=filter_kwargs)
         else:
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatecallstacks.html'), lookup=self.template_lookup)
             return mytemplate.render()
@@ -42,9 +44,11 @@ class AggregatePages(object):
             statement[1]=str(statement[1]) #unicode throws off template when casting dict as js obj
             statement[2]=int(statement[2]) #convert long to int
             if 'id' in filter_kwargs: filter_kwargs.pop('id')
+            for k in kwargs:
+                kwargs[k] = str(kwargs[k])
             
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatesql.html'), lookup=self.template_lookup)
-            return mytemplate.render(statement=statement, encoded_kwargs=urlencode(filter_kwargs))
+            return mytemplate.render(statement=statement, kwargs=filter_kwargs)
         else:
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatesqls.html'), lookup=self.template_lookup)
             return mytemplate.render()
@@ -59,9 +63,11 @@ class AggregatePages(object):
             file_access[1]=str(file_access[1]) #unicode throws off template when casting dict as js obj
             file_access[2]=int(file_access[2]) #convert long to int
             if 'id' in filter_kwargs: filter_kwargs.pop('id')
+            for k in kwargs:
+                kwargs[k] = str(kwargs[k])
             
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatefileaccess.html'), lookup=self.template_lookup)
-            return mytemplate.render(file_access=file_access, encoded_kwargs=urlencode(filter_kwargs))
+            return mytemplate.render(file_access=file_access, kwargs=filter_kwargs)
         else:
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatefileaccesses.html'), lookup=self.template_lookup)
             return mytemplate.render()

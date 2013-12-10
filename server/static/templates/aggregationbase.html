@@ -14,25 +14,28 @@
   <script type="text/javascript">
     var oTable;
 
-    var height=200
+    var height=30;
     var width=1000;
-    var margin=50;
+    var margin=10;
     var numBars=6;
     
     function trunc(string, numChars){
       return string.length>numChars?string.substring(0,numChars-3)+'...':string
     }
+    
+    var kwargs = ''
 
     function draw(data, index){
       var x_extent = d3.extent(data, function(d){return d[index]});
       var x_scale = d3.scale.linear()
                         .range([margin,width-margin])
                         .domain(x_extent);
+      var dataLen = data.length;
       d3.select('div#graph'+index)
         .append('svg')
           .attr('class','graph'+index)
           .attr('width',width)
-          .attr('height',height)
+          .attr('height',height*dataLen)
         .selectAll('g')
         .data(data)
         .enter()
@@ -41,13 +44,13 @@
         .append('rect')
           .attr('fill','skyblue')
           .attr('width', function(d){return x_scale(d[index])})
-          .attr('height',height/numBars)
-          .attr('y',function(d,i){return height/numBars*(i)+i})
+          .attr('height',height)
+          .attr('y',function(d,i){return height*(i)+i})
           .attr('data-id',function(d){return d[0]});
       d3.selectAll('.graph'+index+' g')
         .append('text')
           .attr('x',10)
-          .attr('y',function(d,i){return height/numBars*(i+0.5)+i+4})
+          .attr('y',function(d,i){return height*(i+0.5)+i+4})
           .text(function(d){
             if (index==3){
               return d[index].toFixed(4)+' - '+trunc(d[1].replace('\n',''),100)
@@ -62,19 +65,17 @@
           $(this).children('rect').attr({'fill':'skyblue'});
       }).click(function(){
         id = $(this).children('rect').attr('data-id');
-        window.location.href = '/<%block name="url_name"/>/'+id;
+        window.location.href = '/<%block name="url_name"/>/'+id+'?'+kwargs;
       });
     };
-    
-    var kwarg = ''
 
-    function drawBarGraphs(){
-      $.getJSON('/api/${self.url_name()}?sort=total&limit='+numBars+'&'+kwarg,function(data){
+    function drawBarGraphs(bar_kwargs){
+      $.getJSON('/api/${self.url_name()}?sort=total&limit='+numBars+'&'+bar_kwargs,function(data){
         $('svg').remove();
         draw(data[0], 3);
-        $.getJSON('/api/${self.url_name()}?sort=avg&limit='+numBars+'&'+kwarg,function(data){
+        $.getJSON('/api/${self.url_name()}?sort=avg&limit='+numBars+'&'+bar_kwargs,function(data){
           draw(data[0], 4);
-          $.getJSON('/api/${self.url_name()}?sort=count&limit='+numBars+'&'+kwarg,function(data){
+          $.getJSON('/api/${self.url_name()}?sort=count&limit='+numBars+'&'+bar_kwargs,function(data){
             draw(data[0], 2);
           });
         });
@@ -97,7 +98,7 @@
                                                     { "asSorting": [ "desc", "asc" ] },
                                                     { "asSorting": [ "desc", "asc" ] }],
                                       "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                                         $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/${self.url_name()}/'+aData[0]+'?'+kwarg });
+                                         $(nRow).css({'cursor':'pointer'}).click(function(){window.location.href = '/${self.url_name()}/'+aData[0]+'?'+kwargs });
                                          $('td:eq(0)', nRow).text(trunc(aData[1],100));
                                        }
       });
@@ -120,17 +121,17 @@
     
     function keySelectChange(){
       var val = $('#key-select').val();
-      var key_kwarg = ''
+      var key = ''
       if(val != 0){
-        key_kwarg = 'key=' + val;
+        key = 'key=' + val;
       }
         
       // Remove all options from the select list
       val_select = $('#value-select');
       val_select.empty();
-        
-      if(key_kwarg != ''){
-        $.getJSON('/tables/api/metadata?'+key_kwarg, function(data){
+      
+      if(key != ''){
+        $.getJSON('/tables/api/metadata?'+key, function(data){
           val_select.append($("<option />").val(0).text('Select metadata value'));
       
           // Insert the new options from the array
@@ -142,23 +143,37 @@
       else{
         val_select.append($("<option />").val(0).text('Pick a metadata key'));
       }
-      oTable.fnSettings().sAjaxSource = '/api/${self.url_name()}?datatables=true';
-      oTable.fnDraw();
-      drawBarGraphs('');
     };
     
-    function valueSelectChange(){
+    var numFilters = 0;
+    
+    function addFilter(){
       var val = $('#value-select').val();
-      kwarg = ''
       if(val != 0){
-        var key = 'key_1=' + $('#key-select').val();
-        var value = 'value_1=' + val;
-        kwarg = '&' + key + '&' + value;
+        numFilters += 1;
+        var key = 'key_' + numFilters.toString() + '=' + $('#key-select').val();
+        var value = 'value_' + numFilters.toString() + '=' + val;
+        var kwarg = '&' + key + '&' + value;
+        kwargs += kwarg;
+        
+        $("#filter-list").append("<li>" + $('#key-select').val() + " = " + val + "</li>");
+        
+	      oTable.fnSettings().sAjaxSource = '/api/${self.url_name()}?datatables=true' + kwargs;
+	      oTable.fnDraw();
+	      drawBarGraphs(kwargs);
       }
-      oTable.fnSettings().sAjaxSource = '/api/${self.url_name()}?datatables=true' + kwarg;
-      oTable.fnDraw();
-      drawBarGraphs();
     };
+    
+    function clearFilters(){
+      numFilters = 0;
+      kwargs = '';
+      
+      $('#filter-list > li').remove();
+      
+      oTable.fnSettings().sAjaxSource = '/api/${self.url_name()}?datatables=true' + kwargs;
+      oTable.fnDraw();
+      drawBarGraphs(kwargs);
+    }
   </script>
 </%block>
 
@@ -168,17 +183,25 @@
     <label for="ac-1-title">
     <h1>Add new filter</h1>
     </label>
-    <ul class="ac-filter">
+    <ul class="ac-filter-select">
       <li>
         <label>Key</label>
         <select id="key-select" onchange="keySelectChange()">
           <option value="0">Select metadata key</option>
         </select>
         <label>Value</label>
-        <select id="value-select" onchange="valueSelectChange()">
+        <select id="value-select">
           <option value="0">Pick a metadata key</option>
         </select>
-      </li> 
+      </li>
+      <li>
+        <button onclick="addFilter()">Add Filter</button>
+      </li>
+      <li>
+        <button onclick="clearFilters()">Clear Filters</button>
+      </li>
+    </ul>
+    <ul id="filter-list" class="ac-filter-list">
     </ul>
   </section>
 </%block>
