@@ -11,21 +11,23 @@
   <%block name="head"/>
 </head>
 
-<header class="main-container">
-  <nav> <img class="logo" src="../images/logo.png"/>
-    <ul>
-      <%block name="header_list"/>
-    </ul>
-  </nav>
-</header>
-
 <body>
-<section class="container main-container">
-  <section class="actions ac-container">
-    <%block name="left_panel"/>
+
+  <header class="main-container">
+    <nav> <img class="logo" src="../images/logo.png"/>
+      <ul>
+        <%block name="header_list"/>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="container main-container">
+    <section class="actions ac-container">
+      <%block name="left_panel"/>
+    </section>
+    <section class="content">
+      <%block name="base"/>
+    </section>
   </section>
-  <section class="content">
-    <%block name="base"/>
-  </section>
-</section>
+
 </body>

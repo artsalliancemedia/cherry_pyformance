@@ -24,6 +24,17 @@ class Tables(object):
             mytemplate = Template(filename=os.path.join(self.templates_dir,'callstacks.html'), lookup=self.template_lookup)
             return mytemplate.render(encoded_kwargs=urlencode(kwargs))
 
+
+    @cherrypy.expose
+    def callstackitems(self, callstack_id):
+        call_stack = db.session.query(db.CallStack).get(callstack_id)
+        if call_stack == None:
+            raise cherrypy.HTTPError(404)
+        mytemplate = Template(filename=os.path.join(self.templates_dir,'callstackitem.html'), lookup=self.template_lookup)
+        return mytemplate.render(call_stack=call_stack)
+
+
+
     @cherrypy.expose
     def sqlstatements(self, id=None, **kwargs):
         if id:
