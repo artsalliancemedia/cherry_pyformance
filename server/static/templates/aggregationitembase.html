@@ -167,7 +167,7 @@
     var numFilters = 0;
     var kwargs = '';
     
-    function addFilter(){
+    function addNewFilter(){
       var key = '';
       var val = '';
       if(arguments.length == 2){
@@ -186,7 +186,7 @@
         kwargs += kwarg;
         
         $("#filter-list").append("<li>" + key + " = " + val + "</li>");
-        var list_height = numFilters * 30;
+        var list_height = numFilters * 29;
         $("#filter-list").css("height", list_height.toString() + "px");
         
         if(arguments.length == 0){
@@ -234,7 +234,7 @@
         }
         
         for(var i=0; i<init_keys.length; i++){
-          addFilter(init_keys[i], init_vals[i]);
+          addNewFilter(init_keys[i], init_vals[i]);
         }
         
         $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?' + kwargs, parseJSON, noDataError);  
@@ -265,7 +265,7 @@
         </select>
       </li>
       <li>
-        <button onclick="addFilter()">Add Filter</button>
+        <button onclick="addNewFilter()">Add Filter</button>
       </li>
       <li>
         <button onclick="clearFilters()">Clear Filters</button>
