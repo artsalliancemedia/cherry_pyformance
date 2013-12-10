@@ -102,9 +102,17 @@ def filter_query(query, filter_kwargs, table_class):
                 query = query.filter(table_class.metadata_items.any(and_(db.MetaData.key==filter_kwargs[k], db.MetaData.value==filter_kwargs[v])))
     return query
 
-metadata_table_dict = {db.CallStack: [db.CallStackName, db.CallStackName.full_name, db.CallStack.name],
-                       db.SQLStatement: [db.SQLString, db.SQLString.sql, db.SQLStatement.sql_string],
-                       db.FileAccess: [db.FileName, db.FileName.filename, db.FileAccess.filename]}
+metadata_table_dict = {db.CallStack: [db.CallStackName,
+                                      func.concat(db.CallStackName.module_name,
+                                                  db.CallStackName.class_name,
+                                                  db.CallStackName.fn_name),
+                                      db.CallStack.name],
+                       db.SQLStatement: [db.SQLString,
+                                         db.SQLString.sql,
+                                         db.SQLStatement.sql_string],
+                       db.FileAccess: [db.FileName,
+                                       db.FileName.filename,
+                                       db.FileAccess.filename]}
 
 searchable_columns_dict = {db.CallStack: [db.CallStackName.module_name, db.CallStackName.class_name, db.CallStackName.fn_name],
                            db.SQLStatement: [db.SQLString.sql],
