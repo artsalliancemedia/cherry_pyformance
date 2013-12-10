@@ -147,7 +147,7 @@
     
     var numFilters = 0;
     
-    function addFilter(){
+    function addNewFilter(){
       var val = $('#value-select').val();
       if(val != 0){
         numFilters += 1;
@@ -195,7 +195,7 @@
         </select>
       </li>
       <li>
-        <button onclick="addFilter()">Add Filter</button>
+        <button onclick="addNewFilter()">Add Filter</button>
       </li>
       <li>
         <button onclick="clearFilters()">Clear Filters</button>
