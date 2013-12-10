@@ -4,6 +4,23 @@ import cherrypy
 # from sqlalchemy import or_, and_
 from cgi import escape as html_escape
 import re
+import os.path
+import json
+import analyse_stats as a
+
+def retrieve_pstat(uuid):
+    if not os.path.isfile(os.path.join('pstats',uuid+'.json')):
+        stats = a.load(uuid)
+        callees = a.keys_to_str(stats.all_callees)
+        total_tt = stats.total_tt
+        stats = a.keys_to_str(stats.stats)
+        response = {'stats':stats,'callees':callees,'total_tt':total_tt}
+        a.write_json(response, uuid)
+        return response
+    else:
+        with open(os.path.join('pstats',str(uuid)+'.json')) as f:
+            return json.load(f)
+
 
 
 class JSONAPI(object):
@@ -25,6 +42,15 @@ class JSONAPI(object):
         else:
             results = db.session.query(db.CallStack)
             return [item.to_dict() for item in results.all()]
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def callstackitems(self, callstack_id):
+        callstack = db.session.query(db.CallStack).get(callstack_id)
+        if not callstack:
+            raise cherrypy.NotFound
+        uuid = callstack.pstat_uuid
+        return retrieve_pstat(uuid)
 
 
     @cherrypy.expose
