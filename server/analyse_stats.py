@@ -3,8 +3,6 @@ import os
 import json
 
 
-lsprof = ('~',0,"<method 'disable' of '_lsprof.Profiler' objects>")
-
 def load(uuid):
     stats = pstats.Stats(os.path.join('pstats',uuid))
     stats.calc_callees()
