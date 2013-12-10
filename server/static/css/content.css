@@ -148,8 +148,11 @@ input[type="file"] {
 	transition: height 0.5s ease-in-out;
 	-webkit-transition: height 0.5s ease-in-out;
 }
-.ac-container input:checked ~ ul.ac-filter {
-	height: 250px;
+.ac-container input:checked ~ ul.ac-filter-select {
+	height: 165px;
+}
+.ac-container input:checked ~ ul.ac-filter-list {
+  height: 250px;
 }
 
 /* = Main content section

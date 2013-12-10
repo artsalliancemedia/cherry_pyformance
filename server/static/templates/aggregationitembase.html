@@ -137,50 +137,70 @@
       if (end_date){dateLimit+='end_date='+end_date+'&'};
       $.getJSON('/api/${self.url_name()}/<%block name="mako_item_id"/>?'+dateLimit, parseJSON, noDataError);
     };
-      
+    
     function keySelectChange(){
       var val = $('#key-select').val();
-      var kwarg = ''
+      var key = ''
       if(val != 0){
-        kwarg = 'key=' + val;
+        key = 'key=' + val;
       }
         
       // Remove all options from the select list
       val_select = $('#value-select');
       val_select.empty();
-        
-      if(kwarg != ''){
-        // Need to use ajax call here instead of getJSON because call needs to be syncronous
-        $.ajax({
-          url: '/tables/api/metadata?'+kwarg,
-          dataType: 'json',
-          async: false,
-          success: function(data) {
-	          val_select.append($("<option />").val(0).text('Select metadata value'));
-	      
-	          // Insert the new options from the array
-	          $.each(data, function(value) {
-	            val_select.append($("<option />").val(data[value]).text(data[value]));
-	          });
-          }
+      
+      if(key != ''){
+        $.getJSON('/tables/api/metadata?'+key, function(data){
+          val_select.append($("<option />").val(0).text('Select metadata value'));
+      
+          // Insert the new options from the array
+          $.each(data, function(value) {
+            val_select.append($("<option />").val(data[value]).text(data[value]));
+          });
         });
       }
       else{
         val_select.append($("<option />").val(0).text('Pick a metadata key'));
       }
-      $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}', parseJSON, noDataError);
     };
     
-    function valueSelectChange(){
-      var val = $('#value-select').val();
-      var kwarg = ''
-      if(val != 0){
-        var key = 'key_1=' + $('#key-select').val();
-        var value = 'value_1=' + val;
-        kwarg = key + '&' + value;
+    var numFilters = 0;
+    var kwargs = '';
+    
+    function addFilter(){
+      var key = '';
+      var val = '';
+      if(arguments.length == 2){
+        key = arguments[0];
+        val = arguments[1];
       }
-      $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?' + kwarg, parseJSON, noDataError);
+      else{
+        key = $('#key-select').val();
+        val = $('#value-select').val();
+      }
+      if(val != 0){
+        numFilters += 1;
+        var key_string = 'key_' + numFilters.toString() + '=' + key;
+        var val_string = 'value_' + numFilters.toString() + '=' + val;
+        var kwarg = '&' + key_string + '&' + val_string;
+        kwargs += kwarg;
+        
+        $("#filter-list").append("<li>" + key + " = " + val + "</li>");
+        
+        if(arguments.length == 0){
+          $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?' + kwargs, parseJSON, noDataError);
+        }
+      }
     };
+    
+    function clearFilters(){
+      numFilters = 0;
+      kwargs = '';
+      
+      $('#filter-list > li').remove();
+      
+      $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}', parseJSON, noDataError);
+    }
       
     $(document).ready(function(){
       $.datepicker.formatDate('@');
@@ -199,25 +219,24 @@
         });
         
         // Get initial filters from kwargs
-        var init_key = 0;
-        var init_val = 0;
+        var init_keys = [];
+        var init_vals = [];
         for(var key in ${kwargs}){
-          if(key == "key_1"){
-            init_key = ${kwargs}[key];
+          if(key.indexOf("key_") !== -1){
+            init_keys.push(${kwargs}[key]);
           }
-          else if(key == "value_1"){
-            init_val = ${kwargs}[key];
+          else if(key.indexOf("value_") !== -1){
+            init_vals.push(${kwargs}[key]);
           }
         }
-        // Set initial filters and draw graph
-        key_select.val(init_key);
-        keySelectChange();
-        var value_select = $('#value-select');
-        value_select.val(init_val);
-        var val = value_select.val();
-        valueSelectChange();
         
-        if(!jQuery.isEmptyObject(${kwargs})){
+        for(var i=0; i<init_keys.length; i++){
+          addFilter(init_keys[i], init_vals[i]);
+        }
+        
+        $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?' + kwargs, parseJSON, noDataError);  
+        
+        if(!$.isEmptyObject(${kwargs})){
           $('#ac-1-title').prop('checked', true);
         }
       });
@@ -231,17 +250,25 @@
     <label for="ac-1-title">
     <h1>Add new filter</h1>
     </label>
-    <ul class="ac-filter">
+    <ul class="ac-filter-select">
       <li>
         <label>Key</label>
         <select id="key-select" onchange="keySelectChange()">
           <option value="0">Select metadata key</option>
         </select>
         <label>Value</label>
-        <select id="value-select" onchange="valueSelectChange()">
+        <select id="value-select">
           <option value="0">Pick a metadata key</option>
         </select>
-      </li> 
+      </li>
+      <li>
+        <button onclick="addFilter()">Add Filter</button>
+      </li>
+      <li>
+        <button onclick="clearFilters()">Clear Filters</button>
+      </li>
+    </ul>
+    <ul id="filter-list" class="ac-filter-list">
     </ul>
   </section>
 </%block>
