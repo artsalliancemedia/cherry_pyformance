@@ -186,6 +186,8 @@
         kwargs += kwarg;
         
         $("#filter-list").append("<li>" + key + " = " + val + "</li>");
+        var list_height = numFilters * 30;
+        $("#filter-list").css("height", list_height.toString() + "px");
         
         if(arguments.length == 0){
           $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?' + kwargs, parseJSON, noDataError);
@@ -198,6 +200,7 @@
       kwargs = '';
       
       $('#filter-list > li').remove();
+      $("#filter-list").css("height", "0px")
       
       $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}', parseJSON, noDataError);
     }

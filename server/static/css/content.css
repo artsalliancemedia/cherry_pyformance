@@ -152,7 +152,7 @@ input[type="file"] {
 	height: 165px;
 }
 .ac-container input:checked ~ ul.ac-filter-list {
-  height: 250px;
+  height: 0px;
 }
 
 /* = Main content section
