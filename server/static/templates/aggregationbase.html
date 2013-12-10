@@ -157,8 +157,6 @@
         kwargs += kwarg;
         
         $("#filter-list").append("<li>" + $('#key-select').val() + " = " + val + "</li>");
-        var list_height = numFilters * 29;
-        $("#filter-list").css("height", list_height.toString() + "px");
         
 	      oTable.fnSettings().sAjaxSource = '/api/${self.url_name()}?datatables=true' + kwargs;
 	      oTable.fnDraw();
@@ -171,7 +169,6 @@
       kwargs = '';
       
       $('#filter-list > li').remove();
-      $("#filter-list").css("height", "0px")
       
       oTable.fnSettings().sAjaxSource = '/api/${self.url_name()}?datatables=true' + kwargs;
       oTable.fnDraw();
