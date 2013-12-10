@@ -148,9 +148,7 @@
         }
 
         $(document).ready(function(){
-            $.getJSON('/tables/api/callstackitems/${call_stack.id}', function(json){
-                parseStatsJSON(json);
-            });
+            $.getJSON('/tables/api/callstackitems/${call_stack.id}', parseStatsJSON);
         });
     </script>
 
