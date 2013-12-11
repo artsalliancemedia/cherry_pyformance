@@ -74,15 +74,11 @@ def datatables(query_func):
                     "iTotalRecords": total_num_items,
                     "iTotalDisplayRecords": filtered_num_items}
         else:
-            sort = [('avg','DESC')]
-            if 'sort' in filter_kwargs:
-                sort = filter_kwargs['sort']
-                del(filter_kwargs['sort'])
-            limit = None
-            if 'limit' in filter_kwargs:
-                limit = filter_kwargs['limit']
-                del(filter_kwargs['limit'])
-            return query_func(table_class, id=id, filter_kwargs=filter_kwargs, sort=sort, limit=limit)
+            sort = filter_kwargs.get('sort', [('avg','DESC')])
+            limit = filter_kwargs.get('limit',None)
+            start_date = filter_kwargs.get('start_date',None)
+            end_date = filter_kwargs.get('end_date',None)
+            return query_func(table_class, id=id, filter_kwargs=filter_kwargs, sort=sort, limit=limit, start_date=start_date, end_date=end_date)
     return dt_wrapped
 
 call_stack_metadata_dict = {'module': db.CallStackName.module_name,
