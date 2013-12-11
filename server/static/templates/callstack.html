@@ -13,8 +13,7 @@
     .closed{font-style: normal;}
     .expand{position: relative;
             left: -10px;}
-    table,td,th{border-left: #BBB 1px solid;
-            border-right: #BBB 1px solid;
+    table,td,th{border: #BBB 1px solid;
             border-spacing:0;
             border-collapse:collapse;
             margin: 0;
@@ -27,6 +26,9 @@
             text-align: right;}
     td:nth-last-child(2){text-align: right;}
     .content{width: -webkit-calc(95% - 282px);}
+    tr.hover-siblings-children{background-color: rgba(230,226,175,0.2);}
+    tr.hover-siblings{background-color: rgba(167,163,126,0.5);}
+    tr.hover-children{background-color: rgba(77,117,128,0.5);}
 
 </%block>
 
@@ -58,7 +60,6 @@
       return $(document.createElement(el)).text(text);
   }
 
-
   function getRootFns(json){
       var key_array = [];
       for (key in json.stats){
@@ -86,9 +87,17 @@
               parent = true;
           };
           var row = newEl('tr').attr('data-tier',tier)
-                               .attr('data-key', fn);
+                               .attr('data-key', fn)
+                               .hover(function(){
+                                    var that = $(this)
+                                    highlightSiblings(that);
+                                    highlightChildren(that);
+                                },function(){
+                                    $('.hover-children').removeClass('hover-children');
+                                    $('.hover-siblings').removeClass('hover-siblings');
+                                    $('.hover-siblings-children').removeClass('hover-siblings-children');
+                                });
           var statList;
-          console.log(isRecursive(json,fn))
           if ( $.isEmptyObject(json.stats[fn][4]) || isRecursive(json,fn) ){
               statList = json.stats[fn];
           }else{
@@ -98,7 +107,7 @@
               };
           };
           row.append(newEl('td',statList[0]+' ('+statList[1]+')'))
-             .append(newEl('td',statList[3].toFixed(6)))
+             .append(newEl('td',statList[3].toFixed(7)))
              .append(newEl('td',(100*statList[3]/json.total_tt).toFixed(4)+'%'));
           var keyList = fn.split('::');
           if (keyList.length==3){
@@ -111,14 +120,17 @@
                  .append(newEl('td'));
           };
           var fnIndent = newEl('div').addClass('indent').css("width",20*(1+parseInt(tier)));
-          var pctIndent = newEl('div').addClass('indent').css("width",5*(1+parseInt(tier)));
+          var pctIndent = newEl('div').addClass('indent').css("width",10*(1+parseInt(tier)));
           if(parent){
-              row.addClass('parent').addClass('closed').click(function(){
-                  var that = $(this);
-                  expand(json,that);
-              });
+              row.addClass('parent')
+                 .addClass('closed')
+                 .click(function(){
+                      var that = $(this);
+                      expand(json,that);
+                      highlightChildren(that);
+                  });
+
               fnIndent.text('+');
-              pctIndent.text('+');
           };
           row.children('td:eq(3)').prepend(fnIndent);
           row.children('td:eq(2)').prepend(pctIndent);
@@ -127,6 +139,71 @@
 
       };
 
+  }
+  function highlightChildren(row){
+      row.removeClass('hover-siblings');
+      row.removeClass('hover-siblings-children');
+      var children = getChildRows(row);
+      children.forEach(function(selectedRow){
+          selectedRow.addClass('hover-children');
+      });
+  }
+
+  function highlightSiblings(row){
+      var siblingsAndChildren = getSiblingRows(row);
+      siblingsAndChildren[0].forEach(function(selectedRow){
+          selectedRow.addClass('hover-siblings');
+      });
+      siblingsAndChildren[1].forEach(function(selectedRow){
+          selectedRow.addClass('hover-siblings-children');
+      });
+  }
+
+
+  function getChildRows(row){
+      var rowList = [row];
+      var parentTier = parseInt(row.attr('data-tier'));
+      var next = row.next();
+      var nextTier = next.attr('data-tier');
+      while (nextTier>parentTier){
+          rowList.push(next);
+          next = next.next();
+          nextTier = next.attr('data-tier');
+      };
+      return rowList;
+  }
+  function getSiblingRows(row){
+      var siblings = [row];
+      var siblingsChildren = [];
+      var siblingTier = parseInt(row.attr('data-tier'));
+      var prev = row.prev();
+      var prevTier = prev.attr('data-tier');
+      while (prevTier>=siblingTier){
+          if (prevTier==siblingTier){
+              siblings.push(prev);
+          }else{
+              siblingsChildren.push(prev);
+          };
+          prev = prev.prev();
+          prevTier = prev.attr('data-tier');
+      };
+      var next = row.next();
+      var nextTier = next.attr('data-tier');
+      //get past own siblings first
+      while (nextTier>siblingTier){
+          next = next.next();
+          nextTier = next.attr('data-tier');
+      };
+      while (nextTier>=siblingTier){
+          if (nextTier==siblingTier){
+              siblings.push(next);
+          }else{
+              siblingsChildren.push(next);
+          };
+          next = next.next();
+          nextTier = next.attr('data-tier');
+      };
+      return [siblings,siblingsChildren];
   }
 
   function removeRows(parent, tier){
