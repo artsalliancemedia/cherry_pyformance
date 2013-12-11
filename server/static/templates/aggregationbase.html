@@ -16,7 +16,6 @@
 
     var height=30;
     var width=1000;
-    var margin=10;
     var numBars=6;
     
     function trunc(string, numChars){
@@ -26,10 +25,10 @@
     var kwargs = ''
 
     function draw(data, index){
-      var x_extent = d3.extent(data, function(d){return d[index]});
+      var x_domain = [0, d3.max(data, function(d){return d[index]})];
       var x_scale = d3.scale.linear()
-                        .range([margin,width-margin])
-                        .domain(x_extent);
+                        .range([0,width])
+                        .domain(x_domain);
       var dataLen = data.length;
       d3.select('div#graph'+index)
         .append('svg')
