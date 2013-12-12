@@ -1,7 +1,7 @@
 from mako.template import Template
 from mako.lookup import TemplateLookup
 import cherrypy
-from aggregate_json_ui import json_aggregate, parse_kwargs
+from aggregate_json_ui import json_aggregate_item, parse_kwargs
 import os
 from urllib import urlencode
 import database as db
@@ -19,7 +19,7 @@ class AggregatePages(object):
     def callstacks(self, id=None, **kwargs):
         if id:
             table_kwargs, filter_kwargs = parse_kwargs(kwargs)
-            call_stack, total, filtered = json_aggregate(id, table_kwargs, filter_kwargs, db.CallStack)
+            call_stack, total, filtered = json_aggregate_item(id, filter_kwargs, db.CallStack)
             if call_stack == None:
                 raise cherrypy.HTTPError(404)
             call_stack[1]=str(call_stack[1]) #unicode throws off template when casting dict as js obj
@@ -38,7 +38,7 @@ class AggregatePages(object):
     def sqlstatements(self, id=None, **kwargs):
         if id:
             table_kwargs, filter_kwargs = parse_kwargs(kwargs)
-            statement, total, filtered = json_aggregate(id, table_kwargs, filter_kwargs, db.SQLStatement)
+            statement, total, filtered = json_aggregate_item(id, filter_kwargs, db.SQLStatement)
             if statement == None:
                 raise cherrypy.HTTPError(404)
             statement[1]=str(statement[1]) #unicode throws off template when casting dict as js obj
@@ -57,7 +57,7 @@ class AggregatePages(object):
     def fileaccesses(self, id=None, **kwargs):
         if id:
             table_kwargs, filter_kwargs = parse_kwargs(kwargs)
-            file_access, total, filtered = json_aggregate(id, table_kwargs, filter_kwargs, db.FileAccess)
+            file_access, total, filtered = json_aggregate_item(id, filter_kwargs, db.FileAccess)
             if file_access == None:
                 raise cherrypy.HTTPError(404)
             file_access[1]=str(file_access[1]) #unicode throws off template when casting dict as js obj
