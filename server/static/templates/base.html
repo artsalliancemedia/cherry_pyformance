@@ -1,33 +1,57 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
-  <%block name="title"/>
-  <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
-  <style type="text/css" media="screen">
-    @import "/css/all.css";
-    <%block name="base_style"/>
-  </style>
-  <%block name="head"/>
-</head>
+  <head>
+    <link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 
-<body>
+    <%block name="title"/>
 
-  <header class="main-container">
-    <nav> <img class="logo" src="../images/logo.png"/>
-      <ul>
+    <script src="/static/js/lib/jquery.js"></script>
+    <script src="/static/js/lib/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="/static/js/lib/d3.min.js"></script>
+    <script src="/static/js/lib/jquery.dataTables.min.js"></script>
+
+
+    <link rel="stylesheet" href="/static/css/lib/jquery-ui.css">
+    <link rel="stylesheet" href="/static/css/lib/jquery.dataTables.css" />
+    <link rel="stylesheet" href="/static/css/all.css">
+
+    <%block name="head"/>
+    <script src="/static/js/filtering.js"></script>
+  </head>
+
+  <body>
+    <header>
+      <h1 class="logo">Cherry Pyformance</h1>
+      <nav>
         <%block name="header_list"/>
-      </ul>
-    </nav>
-  </header>
+      </nav>
+    </header>
 
-  <section class="container main-container">
-    <section class="actions ac-container">
-      <%block name="left_panel"/>
-    </section>
-    <section class="content">
+    <div class="actions">
+      <img class="loader" src="/static/images/loader.gif">
+      <h1>Add Filter</h1>
+
+      <form class="add_filter">
+        <label for="filter_key">Key</label>
+        <select name="filter_key" id="filter_key">
+          <option>Select metadata key</option>
+        </select>
+
+        <label for="filter_value">Value</label>
+        <select name="filter_value" id="filter_value">
+          <option>Pick a metadata key</option>
+        </select>
+      </form>
+
+      <button class="clear_filters">Clear</button>
+      <h1>Applied Filters</h1>
+
+      <p class="no_filters">No filters yet</p>
+      <ul id="filters"></ul>
+    </div>
+
+    <div class="content">
       <%block name="base"/>
-    </section>
-  </section>
-
-</body>
+    </div>
+  </body>
+</html>

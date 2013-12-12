@@ -31,6 +31,7 @@ def decompress_json(entity):
             body = zlib.decompress(body)
         except:
             raise cherrypy.HTTPError(500, 'Invalid gzip data')
+
     try:
         cherrypy.serving.request.json = json_decode(body.decode('utf-8'))
     except ValueError:
@@ -61,9 +62,14 @@ class StatHandler(object):
 
     @cherrypy.tools.json_in(content_type=allowed_content_types, processor=decompress_json)
     def POST(self):
-        # Add sender's ip to flush metadata
+        # Add sender's details to the metadata
         cherrypy.serving.request.json['metadata']['ip_address'] = cherrypy.request.remote.ip
+        if cherrypy.request.remote.name:
+            cherrypy.serving.request.json['metadata']['hostname'] = cherrypy.request.remote.name
+
         stat_handler_queue.put([self.parse_fn, cherrypy.serving.request.json])
+
+        cherrypy.response.status = 202 # Send back Accepted so they know it's successfully into the processing queue.
         return 'Hello, World.'
 
 
