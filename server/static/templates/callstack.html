@@ -4,262 +4,138 @@
   <title>Call Stack</title>
 </%block>
 
-<%block name="base_style">
-    @import "/css/jquery.dataTables.css";
-    table{width: 100%}
-    tr td:last-child{color:#AAA;}
-    tr td:nth-last-child(2){color:#AAA;}
-    .parent span{font-weight: bold;}
-    .closed{font-style: normal;}
-    .expand{position: relative;
-            left: -10px;}
-    table,td,th{border: #BBB 1px solid;
-            border-spacing:0;
-            border-collapse:collapse;
-            margin: 0;
-            padding: 0;}
-    tr{border: 0;}
-    tr:nth-child(even){background-color: #DAEAED;}
-    tr:nth-child(odd){background-color: #FFF;}
-    .indent{display: inline-block;
-            padding-right: 5px;
-            text-align: right;}
-    td:nth-last-child(2){text-align: right;}
-    .content{width: -webkit-calc(95% - 282px);}
-    tr.hover-siblings-children{background-color: rgba(230,226,175,0.2);}
-    tr.hover-siblings{background-color: rgba(167,163,126,0.5);}
-    tr.hover-children{background-color: rgba(77,117,128,0.5);}
+<%block name="extra_head">
+  <style>
+      .expand, .collapse {
+        font-weight: bold;
+      }
+      .expand:before {
+        content: '+';
+        padding-right: 0.5em;
+      }
+      .collapse:before {
+        content: '-';
+        padding-right: 0.5em;
+      }
+  </style>
 
+  <script>
+    function addRows(json, fnArray, preceedingRow, tier) {
+        function isRecursive(json,fn){
+            return $.inArray(fn, Object.keys(json.stats[fn][4]))>-1
+        }
+
+        var parentRow = preceedingRow;
+        for (var i = 0; i < fnArray.length; i++){
+            var fn = fnArray[i];
+
+            var parent = (Object.keys(json.callees[fn]).length > 0),
+              row = $('<tr></tr>').attr('data-tier', tier).attr('data-key', fn);
+
+            var statList;
+            if ( $.isEmptyObject(json.stats[fn][4]) || isRecursive(json,fn) ){
+                statList = json.stats[fn];
+            }
+            else {
+                var oldFn = parentRow.attr('data-key');
+                if (oldFn) {
+                    statList = json.callees[oldFn][fn];
+                }
+            }
+
+            // Add in the num_calls, time and total first.
+            row.append($('<td></td>').text(statList[0] + ' (' + statList[1] + ')'))
+               .append($('<td></td>').text(statList[3].toFixed(7)))
+               .append($('<td></td>').text((100 * statList[3] / json.total_tt).toFixed(4) + '%').addClass('total'));
+
+            // Now add in the func, module and line if these are all present.
+            var keyList = fn.split('::');
+            if (keyList.length === 3) {
+                row.append($('<td></td>').text(keyList[2]).addClass('func'))
+                   .append($('<td></td>').text(keyList[0]).addClass('module'))
+                   .append($('<td></td>').text(keyList[1]).addClass('line'));
+            } else {
+                row.append($('<td></td>').text(fn).addClass('func'))
+                   .append($('<td></td>'))
+                   .append($('<td></td>'));
+            }
+
+            if(parent) {
+              row.click(function(){
+                  expand(json, $(this));
+                });
+
+              row.find('.func').addClass('expand');
+            }
+
+            var indent_width = 7 + (20 * tier);
+            row.find('.func').css('padding-left', indent_width);
+            row.find('.total').css('padding-left', indent_width);
+
+            preceedingRow.after(row);
+            preceedingRow = row;
+        }
+    }
+
+    function expand(json, that) {
+        var func = that.find('.func'),
+          key = that.attr('data-key'),
+          tier = parseInt(that.attr('data-tier')) + 1;
+
+        if (func.hasClass('expand')){
+            var child_row_data = Object.keys(json.callees[key]);
+            addRows(json, child_row_data, that, tier);
+        }
+        else {
+            // Remove rows
+            while (parseInt(that.next().attr('data-tier')) > tier - 1){
+                that.next().remove();
+            }
+        }
+        
+        func.toggleClass('collapse').toggleClass('expand');
+    }
+
+    function parseStatsJSON(json){
+        var rootFns = [];
+        for (key in json.stats){
+            if ( json.stats.hasOwnProperty(key) && ( $.isEmptyObject(json.stats[key][4]) || key in json.stats[key][4] ) ){
+                rootFns.push(key);
+            }
+        }
+
+        addRows(json, rootFns, $('thead'), 0);
+    }
+
+    $(document).ready(function(){
+        $.getJSON('/tables/api/callstackitems/${call_stack.id}', parseStatsJSON);
+    });
+  </script>
 </%block>
 
 <%block name="url_name">callstacks</%block>
 
 <%block name="mako_item_id">${call_stack.id}</%block>
- 
-<%block name="extra_script">
-   
-  function htmlEscape(str) {
-      return String(str)
-              .replace(/&/g, '&amp;')
-              .replace(/"/g, '&quot;')
-              .replace(/'/g, '&#39;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;');
-  }
-
-  function htmlUnescape(value){
-      return String(value)
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&amp;/g, '&');
-  }
-
-  function newEl (el, text) {
-      return $(document.createElement(el)).text(text);
-  }
-
-  function getRootFns(json){
-      var key_array = [];
-      for (key in json.stats){
-          if ( json.stats.hasOwnProperty(key) && ( $.isEmptyObject(json.stats[key][4]) || key in json.stats[key][4] ) ){
-              key_array.push(key);
-          };
-      };
-      return key_array;
-  }
-
-  function getChildren(json,fn) {
-      return Object.keys(json.callees[fn])
-  }
-
-  function isRecursive(json,fn){
-      return $.inArray(fn, Object.keys(json.stats[fn][4]))>-1
-  }
-
-  function addRows(json, fnArray, preceedingRow, tier) {
-      var parentRow = preceedingRow;
-      for (var i=0; i<fnArray.length; i++){
-          var fn = fnArray[i];
-          var parent = false;
-          if (Object.keys(json.callees[fn]).length > 0){
-              parent = true;
-          };
-          var row = newEl('tr').attr('data-tier',tier)
-                               .attr('data-key', fn)
-                               .hover(function(){
-                                    var that = $(this)
-                                    highlightSiblings(that);
-                                    highlightChildren(that);
-                                },function(){
-                                    $('.hover-children').removeClass('hover-children');
-                                    $('.hover-siblings').removeClass('hover-siblings');
-                                    $('.hover-siblings-children').removeClass('hover-siblings-children');
-                                });
-          var statList;
-          if ( $.isEmptyObject(json.stats[fn][4]) || isRecursive(json,fn) ){
-              statList = json.stats[fn];
-          }else{
-              oldFn = parentRow.attr('data-key');
-              if (oldFn){
-                  statList = json.callees[oldFn][fn];
-              };
-          };
-          row.append(newEl('td',statList[0]+' ('+statList[1]+')'))
-             .append(newEl('td',statList[3].toFixed(7)))
-             .append(newEl('td',(100*statList[3]/json.total_tt).toFixed(4)+'%'));
-          var keyList = fn.split('::');
-          if (keyList.length==3){
-              row.append(newEl('td').append(newEl('span',keyList[2])))
-                 .append(newEl('td').append(newEl('span',keyList[0])))
-                 .append(newEl('td').append(newEl('span',keyList[1])));
-          }else{
-              row.append(newEl('td').append(newEl('span',fn)))
-                 .append(newEl('td'))
-                 .append(newEl('td'));
-          };
-          var fnIndent = newEl('div').addClass('indent').css("width",20*(1+parseInt(tier)));
-          var pctIndent = newEl('div').addClass('indent').css("width",10*(1+parseInt(tier)));
-          if(parent){
-              row.addClass('parent')
-                 .addClass('closed')
-                 .click(function(){
-                      var that = $(this);
-                      expand(json,that);
-                      highlightChildren(that);
-                  });
-
-              fnIndent.text('+');
-          };
-          row.children('td:eq(3)').prepend(fnIndent);
-          row.children('td:eq(2)').prepend(pctIndent);
-          preceedingRow.after(row);
-          preceedingRow = row;
-
-      };
-
-  }
-  function highlightChildren(row){
-      row.removeClass('hover-siblings');
-      row.removeClass('hover-siblings-children');
-      var children = getChildRows(row);
-      children.forEach(function(selectedRow){
-          selectedRow.addClass('hover-children');
-      });
-  }
-
-  function highlightSiblings(row){
-      var siblingsAndChildren = getSiblingRows(row);
-      siblingsAndChildren[0].forEach(function(selectedRow){
-          selectedRow.addClass('hover-siblings');
-      });
-      siblingsAndChildren[1].forEach(function(selectedRow){
-          selectedRow.addClass('hover-siblings-children');
-      });
-  }
-
-
-  function getChildRows(row){
-      var rowList = [row];
-      var parentTier = parseInt(row.attr('data-tier'));
-      var next = row.next();
-      var nextTier = next.attr('data-tier');
-      while (nextTier>parentTier){
-          rowList.push(next);
-          next = next.next();
-          nextTier = next.attr('data-tier');
-      };
-      return rowList;
-  }
-  function getSiblingRows(row){
-      var siblings = [row];
-      var siblingsChildren = [];
-      var siblingTier = parseInt(row.attr('data-tier'));
-      var prev = row.prev();
-      var prevTier = prev.attr('data-tier');
-      while (prevTier>=siblingTier){
-          if (prevTier==siblingTier){
-              siblings.push(prev);
-          }else{
-              siblingsChildren.push(prev);
-          };
-          prev = prev.prev();
-          prevTier = prev.attr('data-tier');
-      };
-      var next = row.next();
-      var nextTier = next.attr('data-tier');
-      //get past own siblings first
-      while (nextTier>siblingTier){
-          next = next.next();
-          nextTier = next.attr('data-tier');
-      };
-      while (nextTier>=siblingTier){
-          if (nextTier==siblingTier){
-              siblings.push(next);
-          }else{
-              siblingsChildren.push(next);
-          };
-          next = next.next();
-          nextTier = next.attr('data-tier');
-      };
-      return [siblings,siblingsChildren];
-  }
-
-  function removeRows(parent, tier){
-      while (parseInt(parent.next().attr('data-tier'))>tier){
-          parent.next().remove();
-      }
-  }
-
-  function expand(json,that){
-      var key = that.attr('data-key');
-      var tier = parseInt(that.attr('data-tier')) + 1;
-      if (that.hasClass('closed')){
-          that.find('.indent').text('-');
-          addRows(json, getChildren(json, key), that, tier);
-      }else{
-          that.find('.indent').text('+');
-          removeRows(that, tier - 1)
-      };
-      that.toggleClass('closed');
-  }
-
-  function parseStatsJSON(json){
-      var rootFns = getRootFns(json);
-      var tier = 0;
-      addRows(json, rootFns, $('thead'), 0);
-  }
-
-  $(document).ready(function(){
-      $.getJSON('/tables/api/callstackitems/${call_stack.id}', parseStatsJSON);
-  });
-
-
-</%block>
 
 <%block name="header_list">
-  <li><a href="/callstacks" class="active">Call Stacks</a></li>
-  <li><a href="/sqlstatements">SQL Statements</a></li>
-  <li><a href="/fileaccesses">File Accesses</a></li>
+  <a href="/callstacks" class="active">Call Stacks</a>
+  <a href="/sqlstatements">SQL Statements</a>
+  <a href="/fileaccesses">File Accesses</a>
 </%block>
 
 <%block name="breadcrumbs">
-  <a href="/callstacks">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/callstacks/${metadata_id}">Aggregation Item</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Call Stack
+  <a href="/callstacks">Aggregation</a> &gt; <a href="/callstacks/${metadata_id}">Aggregation Item</a> &gt; Call Stack
 </%block>
 
 <%block name="extra_base">
-  <br><h1>Call Stack Stats:</h1>
-  
-      <table>
-        <thead>
-            <th>Calls</th>
-            <th>Time</th>
-            <th>% of total</th>
-            <th>Function</th>
-            <th>Module</th>
-            <th>Line</th>
-        </thead>
-    </table>
-
+  <table class="my_table dataTable" style="margin-bottom: 1.5em;">
+    <thead>
+        <th>No. Calls</th>
+        <th>Time</th>
+        <th>% of Total</th>
+        <th>Function</th>
+        <th>Module</th>
+        <th>Line</th>
+    </thead>
+  </table>
 </%block>

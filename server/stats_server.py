@@ -17,8 +17,9 @@ from stat_handlers import function_stat_handler, handler_stat_handler, sql_stat_
 
 def handle_error():
     cherrypy.response.status = 500
-    cherrypy.response.body = mako.template.Template(filename=os.path.join(os.getcwd(),'static','templates','500.html'))\
-                                          .render(error_str=cherrypy._cperror.format_exc())
+    cherrypy.response.body = mako.template.Template(
+                                filename=os.path.join(os.getcwd(), 'static', 'templates', '500.html')
+                            ).render(error_str=cherrypy._cperror.format_exc())
 
 
 def start_cherrypy(host, port):
@@ -27,28 +28,32 @@ def start_cherrypy(host, port):
     cherrypy.log.screen = False
     cherrypy.log('Mounting the handlers')
     method_dispatch_cfg = {'/': {'request.dispatch': cherrypy.dispatch.MethodDispatcher()} }
-    front_end_config = {'/': {'tools.staticdir.on': True,
-                              'tools.staticdir.dir': os.path.join(os.getcwd(), 'static'),
-                              'tools.staticdir.content_types': {'js': 'application/javascript',
-                                                                'css': 'text/css',
-                                                                'images': 'image/png'}
-                              }
-                        }
+    front_end_config = {
+            '/static': {
+                'tools.staticdir.on': True,
+                'tools.staticdir.dir': os.path.join(os.getcwd(), 'static'),
+                'tools.staticdir.content_types': {
+                    'js': 'application/javascript',
+                    'css': 'text/css',
+                    'images': 'image/png'
+                }
+            }
+        }
 
     cherrypy.config.update({'request.error_response': handle_error})
     cherrypy.config.update({'error_page.404': os.path.join(os.getcwd(),'static','templates','404.html')})
 
 
 
-    cherrypy.tree.mount( function_stat_handler, '/function',   method_dispatch_cfg )
-    cherrypy.tree.mount( handler_stat_handler,  '/handler',    method_dispatch_cfg )
-    cherrypy.tree.mount( sql_stat_handler,      '/database',   method_dispatch_cfg )
-    cherrypy.tree.mount( file_stat_handler,     '/file',       method_dispatch_cfg )
+    cherrypy.tree.mount(function_stat_handler, '/function',   method_dispatch_cfg )
+    cherrypy.tree.mount(handler_stat_handler,  '/handler',    method_dispatch_cfg )
+    cherrypy.tree.mount(sql_stat_handler,      '/database',   method_dispatch_cfg )
+    cherrypy.tree.mount(file_stat_handler,     '/file',       method_dispatch_cfg )
 
-    cherrypy.tree.mount( Tables(),              '/tables',     front_end_config )
-    cherrypy.tree.mount( JSONAPI(),             '/tables/api', {'/':{}} )
-    cherrypy.tree.mount( AggregatePages(),      '/',           front_end_config )
-    cherrypy.tree.mount( AggregateAPI(),        '/api',        {'/':{}} )
+    cherrypy.tree.mount(Tables(),              '/tables')
+    cherrypy.tree.mount(JSONAPI(),             '/tables/api')
+    cherrypy.tree.mount(AggregatePages(),      '/',           front_end_config)
+    cherrypy.tree.mount(AggregateAPI(),        '/api')
 
     # Attach the signal handlers to detect keyboard interrupt
     if hasattr(cherrypy.engine, 'signal_handler'):

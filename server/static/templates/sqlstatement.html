@@ -25,18 +25,19 @@
 </%block>
 
 <%block name="header_list">
-  <li><a href="/callstacks">Call Stacks</a></li>
-  <li><a href="/sqlstatements" class="active">SQL Statements</a></li>
-  <li><a href="/fileaccesses">File Accesses</a></li>
+  <a href="/callstacks">Call Stacks</a>
+  <a href="/sqlstatements" class="active">SQL Statements</a>
+  <a href="/fileaccesses">File Accesses</a>
 </%block>
 
 <%block name="breadcrumbs">
-  <a href="/sqlstatements">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/sqlstatements/${metadata_id}">Aggregation Item</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;SQL Statement
+  <a href="/sqlstatements">Aggregation</a> &gt; <a href="/sqlstatements/${metadata_id}">Aggregation Item</a> &gt; SQL Statement
 </%block>
 
 <%block name="extra_base">
-  <br><h1>SQL Stack Items:</h1>
+  <h1>SQL Stack Items:</h1>
   <div id="stack"></div>
-  <br><h1>SQL Args:</h1>
+  
+  <h1>SQL Args:</h1>
   <div id="args"></div>
 </%block>

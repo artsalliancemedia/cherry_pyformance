@@ -31,27 +31,13 @@ table {
 }
 /* = Main Container
 ********************************************************************************/
-.main-container:after {
-	content: ".";
-	display: block;
-	clear: both;
-	visibility: hidden;
-	line-height: 0;
-	height: 0;
-}
-.main-container {
-	display: inline-block;
-}
-html[xmlns] .main-container {
-	display: block;
-}
-* html .main-container {
-	height: 1%;
+html, body {
+	height: 100%;
+	width: 100%;
 }
 /* = Headers
 ********************************************************************************/
 h1 {
-	/*font-size: 1.143em;*/
 	font-weight: bold;
 	margin-bottom: 10px;
 }
@@ -60,28 +46,10 @@ h1 {
 a {
 	text-decoration: none;
 	font-weight: bold;
+	color: #26466D;
 }
-/* = Inputs
-********************************************************************************/
-::-webkit-input-placeholder {
- color: #b8b8b8;
-}
-
-:-moz-placeholder {
- color: #b8b8b8;
-}
-/* = Section highlight
-********************************************************************************/
-::selection {
-	background: #c7479a;
-}
-::-moz-selection {
- background:#c7479a;
-}
-/* = Common
-********************************************************************************/
-.word_break {
-	word-break: break-all;
+a:hover {
+	color: #335e93;
 }
 /* = Main structure
 ********************************************************************************/
@@ -92,30 +60,53 @@ body {
 	background: #f6f6f6;
 	color: #333;
 }
+select, input {
+	padding: 3px;
+	border: solid 1px #D1D1D1;
+	border-radius: 5px;
+	color: #333;
+}
+button {
+	background: linear-gradient(to bottom, #ffffff 0%, #dfdfdf 100%);
+	border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) #A2A2A2;
+	border-radius: 4px;
+	border-style: solid;
+	border-width: 1px;
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset, 0 1px 2px rgba(0, 0, 0, 0.05);
+	color: #333333;
+	cursor: pointer;
+	display: inline-block;
+	font-size: 1em;
+	line-height: 18px;
+	margin-bottom: 0;
+	padding: 4px 12px;
+	text-align: center;
+	text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
+	vertical-align: middle;
+	float: right;
+}
+button:hover {
+	background: #dfdfdf;
+}
 /* = Header
 ********************************************************************************/
 header {
 	color: #aaa;
 	background: #26466D;
-	width: 100%;
 	height: 40px;
-	background: -moz-linear-gradient(top, #26466D 0%, #000033 100%);
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #26466D), color-stop(100%, #000033));
-	background: -webkit-linear-gradient(top, #26466D 0%, #000033 100%);
-	background: -o-linear-gradient(top, #26466D 0%, #000033 100%);
-	background: -ms-linear-gradient(top, #26466D 0%, #000033 100%);
-	background: linear-gradient(to bottom, #26466D 0%, #000033 100%);
+	position: relative;
 }
 .logo {
-	float: left;
-	margin: 10px 100px 0 10px;
+	position: absolute;
+	left: 10px;
+	top: 12px;
+	font-size: 1.25em;
+	color: white;
 }
-nav ul {
-	float: left;
-	margin-top: 5px;
-}
-nav li {
-	float: left;
+nav {
+	position: absolute;
+	left: 250px;
+	top: 5px;
 }
 header a {
 	color: #aaa;
@@ -128,18 +119,8 @@ header a:hover {
 }
 header .active {
 	color: #333;
-	background: #ffffff;
-	background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNmNmY2ZjYiIHN0b3Atb3BhY2l0eT0iMSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNncmFkLXVjZ2ctZ2VuZXJhdGVkKSIgLz4KPC9zdmc+);
-	background: -moz-linear-gradient(top, #ffffff 0%, #f6f6f6 100%);
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ffffff), color-stop(100%, #f6f6f6));
-	background: -webkit-linear-gradient(top, #ffffff 0%, #f6f6f6 100%);
-	background: -o-linear-gradient(top, #ffffff 0%, #f6f6f6 100%);
-	background: -ms-linear-gradient(top, #ffffff 0%, #f6f6f6 100%);
-	background: linear-gradient(to bottom, #ffffff 0%, #f6f6f6 100%);
-);
+	background: #f6f6f6;
 }
 header .active:hover {
 	color: #666;
 }
-/* = Content
-********************************************************************************/
