@@ -43,7 +43,7 @@ column_name_dict = {db.CallStack: 'full_name',
 
 # Decorator for dealing with server-side datatables kwargs
 def datatables(query_func):
-    def dt_wrapped(table_kwargs, filter_kwargs, table_class):
+    def dt_wrapped(table_class, filter_kwargs, table_kwargs):
         if table_kwargs:
             # parse datatables kwargs
             sort = []
@@ -52,15 +52,11 @@ def datatables(query_func):
                 sort_col = cols[int(table_kwargs['iSortCol_' + str(i)])]
                 sort_dir = 'DESC' if table_kwargs['sSortDir_' + str(i)] == 'desc' else 'ASC'
                 sort.append((sort_col, sort_dir))
-            start = int(table_kwargs['iDisplayStart'])
-            limit = int(table_kwargs['iDisplayLength'])
 
             data, total_num_items, filtered_num_items = query_func(
                                                                 table_class,
                                                                 filter_kwargs=filter_kwargs,
                                                                 search = table_kwargs['sSearch'],
-                                                                start_date = filter_kwargs.get('start_date', None),
-                                                                end_date = filter_kwargs.get('end_date', None),
                                                                 sort = sort,
                                                                 start = int(table_kwargs['iDisplayStart']),
                                                                 limit = int(table_kwargs['iDisplayLength'])
@@ -72,20 +68,15 @@ def datatables(query_func):
                     "iTotalDisplayRecords": filtered_num_items
                 }
         else:
-            sort = [('avg','DESC')]
+            sort = filter_kwargs.get('sort', [('avg','DESC')])
             if 'sort' in filter_kwargs:
-                sort = filter_kwargs['sort']
                 del(filter_kwargs['sort'])
 
-            limit = None
+            limit = filter_kwargs.get('limit', None)
             if 'limit' in filter_kwargs:
-                limit = filter_kwargs['limit']
                 del(filter_kwargs['limit'])
 
-            start_date = filter_kwargs.get('start_date', None)
-            end_date = filter_kwargs.get('end_date', None)
-
-            return query_func(table_class, filter_kwargs=filter_kwargs, sort=sort, limit=limit, start_date=start_date, end_date=end_date)
+            return query_func(table_class, filter_kwargs=filter_kwargs, sort=sort, limit=limit)
 
     return dt_wrapped
 
@@ -127,7 +118,7 @@ searchable_columns_dict = {
 
 # Get JSON aggregate data for main aggregate pages
 @datatables
-def json_aggregate(table_class, filter_kwargs=None, search=None, sort=[('avg','DESC')], start=None, limit=None, start_date=None, end_date=None):
+def json_aggregate(table_class, filter_kwargs=None, search=None, sort=[('avg','DESC')], start=None, limit=None):
     # Get specific table info (call stack/sql statement/file access)
     column_name = column_name_dict[table_class]
     metadata_table = metadata_table_dict[table_class][0]
@@ -153,19 +144,14 @@ def json_aggregate(table_class, filter_kwargs=None, search=None, sort=[('avg','D
     query = filter_query(query, filter_kwargs, table_class)
     query = query.group_by(metadata_table.id)
 
-    if start_date:
-        query = query.filter(table_class.datetime > start_date)
-    if end_date:
-        query = query.filter(table_class.datetime < end_date)
-
     if search:
         search_clauses = []
         for column in searchable_columns_dict[table_class]:
-            search_clauses.append(column.ilike(('%%%s%%' % search)))
+            search_clauses.append(column.ilike('%{0}%'.format(search)))
         query = query.filter(or_(*search_clauses))
 
     for sorter in sort:
-        query = query.order_by('%s %s' % sorter)
+        query = query.order_by('{0} {1}'.format(*sorter))
     filtered_num_items = query.count()
 
     if start:
@@ -182,7 +168,7 @@ def json_aggregate(table_class, filter_kwargs=None, search=None, sort=[('avg','D
     return results, total_num_items, filtered_num_items
 
 # Get JSON aggregate data for aggregate item pages
-def json_aggregate_item(id, filter_kwargs, table_class):
+def json_aggregate_item(table_class, filter_kwargs, id):
     # Get specific table info (call stack/sql statement/file access)
     column_name = column_name_dict[table_class]
     metadata_table = metadata_table_dict[table_class][0]
@@ -200,26 +186,27 @@ def json_aggregate_item(id, filter_kwargs, table_class):
                                    table_class.duration,
                                    table_class.datetime)
     times_query = times_query.join(table_class_column)
-    
     times_query = filter_query(times_query, filter_kwargs, table_class)
-    
-    times_query = times_query.filter(metadata_table.id==id)
+    times_query = times_query.filter(metadata_table.id == id)
+
     if start_date:
-        times_query = times_query.filter(table_class.datetime>start_date)
+        times_query = times_query.filter(table_class.datetime > start_date)
     if end_date:
-        times_query = times_query.filter(table_class.datetime<end_date)
-    times = times_query.all()
-    times = [(time[2],time[3],time[1]) for time in times]
+        times_query = times_query.filter(table_class.datetime < end_date)
+
+    times = [(time[2], time[3], time[1]) for time in times_query.all()]
     times = sorted(times, key=itemgetter(1))
     
     # Get aggregate item data
-    query = db.session.query(metadata_table.id,
-                             metadata_value.label(column_name),
-                             func.count(table_class.id).label('count'),
-                             sqlalchemy.cast(func.sum(table_class.duration), sqlalchemy.Numeric(10, 5)).label('total'),
-                             sqlalchemy.cast(func.avg(table_class.duration), sqlalchemy.Numeric(10, 5)).label('avg'),
-                             sqlalchemy.cast(func.min(table_class.duration), sqlalchemy.Numeric(10, 5)).label('min'),
-                             sqlalchemy.cast(func.max(table_class.duration), sqlalchemy.Numeric(10, 5)).label('max'))
+    query = db.session.query(
+            metadata_table.id,
+            metadata_value.label(column_name),
+            func.count(table_class.id).label('count'),
+            sqlalchemy.cast(func.sum(table_class.duration), sqlalchemy.Numeric(10, 5)).label('total'),
+            sqlalchemy.cast(func.avg(table_class.duration), sqlalchemy.Numeric(10, 5)).label('avg'),
+            sqlalchemy.cast(func.min(table_class.duration), sqlalchemy.Numeric(10, 5)).label('min'),
+            sqlalchemy.cast(func.max(table_class.duration), sqlalchemy.Numeric(10, 5)).label('max')
+        )
     # Only get information for current tab (e.g. Call Stacks)
     query = query.join(table_class_column)
     
@@ -227,12 +214,16 @@ def json_aggregate_item(id, filter_kwargs, table_class):
     query = filter_query(query, filter_kwargs, table_class)
     
     query = query.group_by(metadata_table.id)
-    query = query.filter(metadata_table.id==id)
+    query = query.filter(metadata_table.id == id)
     
-    if start_date:  query = query.filter(table_class.datetime>start_date)
-    if end_date:    query = query.filter(table_class.datetime<end_date)
+    if start_date:
+        query = query.filter(table_class.datetime > start_date)
+    if end_date:
+        query = query.filter(table_class.datetime < end_date)
+
     for sorter in sort:
-        query = query.order_by('%s %s'%sorter)
+        query = query.order_by('{0} {1}'.format(*sorter))
+
     if limit:
         query = query.limit(limit)
     
@@ -251,27 +242,27 @@ class AggregateAPI(object):
     def callstacks(self, id=None, **kwargs):
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
         if id:
-            return json_aggregate_item(id, filter_kwargs, db.CallStack)
+            return json_aggregate_item(db.CallStack, filter_kwargs, id)
         else:
-            return json_aggregate(table_kwargs, filter_kwargs, db.CallStack)
+            return json_aggregate(db.CallStack, filter_kwargs, table_kwargs)
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def sqlstatements(self, id=None, **kwargs):
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
         if id:
-            return json_aggregate_item(id, filter_kwargs, db.SQLStatement)
+            return json_aggregate_item(db.SQLStatement, filter_kwargs, id)
         else:
-            return json_aggregate(table_kwargs, filter_kwargs, db.SQLStatement)
+            return json_aggregate(db.SQLStatement, filter_kwargs, table_kwargs)
     
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def fileaccesses(self, id=None, **kwargs):
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
         if id:
-            return json_aggregate_item(id, filter_kwargs, db.FileAccess)
+            return json_aggregate_item(db.FileAccess, filter_kwargs, id)
         else:
-            return json_aggregate(table_kwargs, filter_kwargs, db.FileAccess)
+            return json_aggregate(db.FileAccess, filter_kwargs, table_kwargs)
 
 
 
