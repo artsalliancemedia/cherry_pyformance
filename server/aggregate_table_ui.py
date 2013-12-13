@@ -19,15 +19,20 @@ class AggregatePages(object):
     def callstacks(self, id=None, **kwargs):
         if id:
             table_kwargs, filter_kwargs = parse_kwargs(kwargs)
-            call_stack, total, filtered = json_aggregate_item(id, filter_kwargs, db.CallStack)
+            call_stack, total, filtered = json_aggregate_item(db.CallStack, filter_kwargs, id)
+
             if call_stack == None:
                 raise cherrypy.HTTPError(404)
-            call_stack[1]=str(call_stack[1]) #unicode throws off template when casting dict as js obj
-            call_stack[2]=int(call_stack[2]) #convert long to int
-            if 'id' in filter_kwargs: filter_kwargs.pop('id')
+
+            call_stack[1] = str(call_stack[1]) #unicode throws off template when casting dict as js obj
+            call_stack[2] = int(call_stack[2]) #convert long to int
+
+            if 'id' in filter_kwargs:
+                filter_kwargs.pop('id')
+
             for k in kwargs:
                 kwargs[k] = str(kwargs[k])
-            
+
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatecallstack.html'), lookup=self.template_lookup)
             return mytemplate.render(call_stack=call_stack, kwargs=filter_kwargs)
         else:
@@ -38,12 +43,17 @@ class AggregatePages(object):
     def sqlstatements(self, id=None, **kwargs):
         if id:
             table_kwargs, filter_kwargs = parse_kwargs(kwargs)
-            statement, total, filtered = json_aggregate_item(id, filter_kwargs, db.SQLStatement)
+            statement, total, filtered = json_aggregate_item(db.SQLStatement, filter_kwargs, id)
+
             if statement == None:
                 raise cherrypy.HTTPError(404)
-            statement[1]=str(statement[1]) #unicode throws off template when casting dict as js obj
-            statement[2]=int(statement[2]) #convert long to int
-            if 'id' in filter_kwargs: filter_kwargs.pop('id')
+
+            statement[1] = str(statement[1]) #unicode throws off template when casting dict as js obj
+            statement[2] = int(statement[2]) #convert long to int
+
+            if 'id' in filter_kwargs:
+                filter_kwargs.pop('id')
+
             for k in kwargs:
                 kwargs[k] = str(kwargs[k])
             
@@ -57,12 +67,17 @@ class AggregatePages(object):
     def fileaccesses(self, id=None, **kwargs):
         if id:
             table_kwargs, filter_kwargs = parse_kwargs(kwargs)
-            file_access, total, filtered = json_aggregate_item(id, filter_kwargs, db.FileAccess)
+            file_access, total, filtered = json_aggregate_item(db.FileAccess, filter_kwargs, id)
+
             if file_access == None:
                 raise cherrypy.HTTPError(404)
-            file_access[1]=str(file_access[1]) #unicode throws off template when casting dict as js obj
-            file_access[2]=int(file_access[2]) #convert long to int
-            if 'id' in filter_kwargs: filter_kwargs.pop('id')
+
+            file_access[1] = str(file_access[1]) #unicode throws off template when casting dict as js obj
+            file_access[2] = int(file_access[2]) #convert long to int
+
+            if 'id' in filter_kwargs:
+                filter_kwargs.pop('id')
+
             for k in kwargs:
                 kwargs[k] = str(kwargs[k])
             

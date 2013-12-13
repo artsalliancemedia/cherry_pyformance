@@ -1,28 +1,37 @@
 <%inherit file="/base.html"/>
 
 <%block name="head">
-  <script type="text/javascript">
+  <script>
+    var url_name = "<%block name="url_name"/>",
+      item_id = <%block name="mako_item_id"/>;
+
     $(document).ready(function() {
-    
-      $.getJSON('/tables/api/<%block name="url_name"/>/<%block name="mako_item_id"/>',function(data){
+      $.getJSON('/tables/api/' + url_name + '/' + item_id, function(data) {
         var metaHtml = '';
         for (var key in data) {
-          if(data.hasOwnProperty(key) && key!='stack' && key!='args' && key!='stats_keys' && key!='stats_values'){
-            metaHtml += '<p>'+key+' - '+data[key]+'</p>';
-          };
-        };
+          if(data.hasOwnProperty(key) && key != 'stack' && key != 'args' && key != 'stats_keys' && key != 'stats_values'){
+            metaHtml += '<p><label>' + key + ':</label> ' + data[key] + '</p>';
+          }
+        }
         $('#metadata').html(metaHtml);
         
         <%block name="extra_script"/>
       });
-      
     });
   </script>
+
+  <%block name="extra_head"/>
 </%block>
 
 <%block name="base">
-  <%block name="breadcrumbs"/>
-  <br><br><h1>MetaData:</h1>
-  <div id="metadata"></div>
+  <div class="breadcrumbs">
+    <%block name="breadcrumbs"/>
+  </div>
+  
   <%block name="extra_base"/>
+
+  <div class="item_container">
+    <h1>MetaData</h1>
+    <div id="metadata"></div>
+  </div>
 </%block>
