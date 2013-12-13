@@ -118,9 +118,21 @@ code.item_container {
 	border-bottom: solid 1px #999;
 	border-radius: 0;
 	padding: 0;
+	user-select: none;
+}
+.ui-widget-content .ui-state-default {
+	background: none;
+	border: none;
+}
+.ui-widget-content .ui-state-default a {
+	color: #aaa;
 }
 .ui-widget-content .ui-state-active {
 	border: 1px solid #999;
+	background-color: white;
+}
+.ui-widget-content .ui-state-active a {
+	color: #333;
 }
 .ui-tabs .ui-tabs-panel {
 	padding: 1em 0 3em;
@@ -160,6 +172,10 @@ table.dataTable tr td:first-child {
 }
 .dataTables_info {
 	margin-top: 0.4em;
+}
+
+.item_container pre.sh_sourceCode {
+	background-color: transparent;
 }
 
 

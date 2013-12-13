@@ -5,15 +5,17 @@
 </%block>
 
 <%block name="sh_sql_highlight">
-  //highlight sql syntax
-  sh_highlightDocument();
+  $(document).ready(function() {
+    // highlight sql syntax
+    sh_highlightDocument();
+  });
 </%block>
 
 <%block name="url_name">sqlstatements</%block>
 
 <%block name="mako_item_id">${statement[0]}</%block>
 
-<%block name="mako_item_string"><span class="sh_sql">${statement[1].replace(', ',',\n      ').replace('AND','\n      AND')}</span></%block>
+<%block name="mako_item_string"><pre class="sh_sql">${statement[1].replace(', ',',\n      ').replace('AND','\n      AND')}</pre></%block>
 
 <%block name="header_list">
   <a href="/callstacks">Call Stacks</a>

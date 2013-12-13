@@ -11,8 +11,8 @@
         for (var key in data) {
           if(data.hasOwnProperty(key) && key != 'stack' && key != 'args' && key != 'stats_keys' && key != 'stats_values'){
             metaHtml += '<p><label>' + key + ':</label> ' + data[key] + '</p>';
-          };
-        };
+          }
+        }
         $('#metadata').html(metaHtml);
         
         <%block name="extra_script"/>

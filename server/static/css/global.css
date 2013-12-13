@@ -88,6 +88,9 @@ button {
 button:hover {
 	background: #dfdfdf;
 }
+p {
+	margin: 0.5em 0;
+}
 /* = Header
 ********************************************************************************/
 header {
