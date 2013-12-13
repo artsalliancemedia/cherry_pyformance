@@ -1,288 +1,85 @@
 <%inherit file="/base.html"/>
 
-<%block name="base_style">
-    @import "/css/jquery.dataTables.css";
-    <%block name="sh_acid_import"/>
-    pre{font-size: 12pt;
-        margin: 0 auto;
-        width: 800px;}
-    path{fill:none;
-        stroke:black;
-        stroke-width:2px;}
-    svg{border: 1px black solid;}
-    datum{cursor:pointer;}
-</%block>
-
 <%block name="head">
-  <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
-  <script type="text/javascript" src="/js/jquery-ui-1.10.3.custom.min.js"></script>
-  <script type="text/javascript" src="/js/sh_main.min.js"></script>
-  <%block name="sh_sql_import"/>
-  <script type="text/javascript" src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-  <script type="text/javascript">
-    var height=400;
-    var width=700;
-    var margin=50;
+  <script src="/static/js/lib/sh_main.min.js"></script>
+  <script src="/static/js/lib/sh_sql.min.js"></script>
 
-    function draw(data){
+  <link rel="stylesheet" href="/static/css/lib/sh_acid.min.css"/>
+  <style>
+    path {
+      fill: none;
+      stroke: skyblue;
+      stroke-width: 2px;
+    }
+    path.domain {
+      stroke: black;
+    }
+    text.label {
+      font-weight: bold;
+    }
+    .datum {
+      cursor: pointer;
+      fill: black;
+      r: 4;
+    }
+    .datum:hover {
+      stroke: black;
+      stroke-width: 2;
+      fill: red;
+      r: 7;
+    }
+  </style>
 
-      d3.select('div#function_graph')
-        .append('svg')
-          .attr('width',width)
-          .attr('height',height)
-        .selectAll('circle')
-        .data(data)
-        .enter()
-        .append('circle')
+  <script>
+    // Send through templated variables to the javascript file :)
+    var url_name = '${self.url_name()}',
+      item_id = <%block name="mako_item_id"/>;
 
-      var x_extent = d3.extent(data, function(d){return d[1]*1000});
-      var x_scale = d3.time.scale()
-                        .range([margin,width-margin])
-                        .domain(x_extent);
-      var y_extent = d3.extent(data, function(d){return d[0]});
-      var y_scale = d3.scale.linear()
-                            .range([height-margin,margin])
-                            .domain(y_extent);
-      d3.selectAll('circle')
-                  .attr('cx', function(d){return x_scale(d[1]*1000)})
-                  .attr('cy', function(d){return y_scale(d[0])})
-                  .attr('r',5)
-                  .attr('class','datum')
-                  .attr('data-id',function(d){return d[2]});
-
-      var line = d3.svg.line()
-                       .x(function(d){return x_scale(d[1]*1000)})
-                       .y(function(d){return y_scale(d[0])});
-      d3.select('svg')
-        .append('path')
-          .attr('d',line(data));
-
-      var x_axis = d3.svg.axis().scale(x_scale);
-      d3.select('svg')
-        .append('g')
-          .attr('class','x axis')
-          .attr('transform', 'translate(0,'+(height-margin)+')')
-        .call(x_axis);
-        
-      d3.select('svg')
-        .append("text")
-			    .attr("class", "x label")
-			    .attr("text-anchor", "middle")
-			    .attr("x", width/2)  
-			    .attr("y", height - 12)
-		    .text("Time");
-    
-      var y_axis = d3.svg.axis().scale(y_scale).orient('left');
-      d3.select('svg')
-        .append('g')
-          .attr('class','y axis')
-          .attr('transform', 'translate('+margin+', 0)')
-        .call(y_axis);
-        
-      d3.select('svg')
-        .append("text")
-          .attr("class", "y label")
-          .attr("text-anchor", "middle")
-          .attr("x", width/20)
-          .attr("y", height/12)
-        .text("Duration");
-    
-      //mouseover points
-      $('.datum').hover(function(e){
-          $(this).attr({'stroke':'black',
-                        'stroke-width':2,
-                        'fill':'red',
-                        'r':7});
-        },function(e){
-          $(this).attr({'fill':'black',
-                       'r':4});
-      }).click(function(){
-        id = $(this).attr('data-id');
-        window.location.href = '/tables/<%block name="url_name"/>/'+id;
-      });
-    
-    };
-
-    function parseJSON(data){
-      item = data[0];
-      $('svg').remove();
-      if(item.length == 0){
-        return;
+    // Get initial filters from kwargs
+    var init_keys = [],
+      init_vals = [];
+    for(var key in ${kwargs}){
+      if(key.indexOf("key_") !== -1){
+        init_keys.push(${kwargs}[key]);
       }
-
-      dataHtml = '';
-      dataHtml += '<tr><td>count:</td><td>'+item[2]+'</td></tr>';
-      dataHtml += '<tr><td>total:</td><td>'+item[3]+'</td></tr>';
-      dataHtml += '<tr><td>avg:</td><td>'+item[4]+'</td></tr>';
-      dataHtml += '<tr><td>min:</td><td>'+item[5]+'</td></tr>';
-      dataHtml += '<tr><td>max:</td><td>'+item[6]+'</td></tr>';
-      $('#data').html(dataHtml);
-      
-      <%block name="sh_sql_highlight"/>
-      
-      //draw graph
-      draw(item[7]);
-    };
-    
-    function noDataError() {
-      $('svg').remove();
-      $('#data').html('<p>No data.</p>')
+      else if(key.indexOf("value_") !== -1){
+        init_vals.push(${kwargs}[key]);
+      }
     }
     
-    var kwargs = '';
-
-    function dpChange(e){
-      var start_date = new Date($('#datepick1').val())/1000;
-      var end_date = new Date($('#datepick2').val())/1000;
-      var dateLimit = '';
-      if (start_date){dateLimit+='start_date='+start_date+'&'};
-      if (end_date){dateLimit+='end_date='+end_date+'&'};
-      $.getJSON('/api/${self.url_name()}/<%block name="mako_item_id"/>?'+dateLimit+kwargs, parseJSON, noDataError);
-    };
-    
-    function keySelectChange(){
-      var val = $('#key-select').val();
-      var key = ''
-      if(val != 0){
-        key = 'key=' + val;
-      }
-        
-      // Remove all options from the select list
-      val_select = $('#value-select');
-      val_select.empty();
-      
-      if(key != ''){
-        $.getJSON('/tables/api/metadata?'+key, function(data){
-          val_select.append($("<option />").val(0).text('Select metadata value'));
-      
-          // Insert the new options from the array
-          $.each(data, function(value) {
-            val_select.append($("<option />").val(data[value]).text(data[value]));
-          });
-        });
-      }
-      else{
-        val_select.append($("<option />").val(0).text('Pick a metadata key'));
-      }
-    };
-    
-    var numFilters = 0;
-    
-    function addNewFilter(){
-      var key = '';
-      var val = '';
-      if(arguments.length == 2){
-        key = arguments[0];
-        val = arguments[1];
-      }
-      else{
-        key = $('#key-select').val();
-        val = $('#value-select').val();
-      }
-      if(val != 0){
-        numFilters += 1;
-        var key_string = 'key_' + numFilters.toString() + '=' + key;
-        var val_string = 'value_' + numFilters.toString() + '=' + val;
-        var kwarg = '&' + key_string + '&' + val_string;
-        kwargs += kwarg;
-        
-        $("#filter-list").append("<li>" + key + " = " + val + "</li>");
-        
-        if(arguments.length == 0){
-          $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?' + kwargs, parseJSON, noDataError);
-        }
-      }
-    };
-    
-    function clearFilters(){
-      numFilters = 0;
-      kwargs = '';
-      
-      $('#filter-list > li').remove();
-      
-      $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}', parseJSON, noDataError);
+    for(var i = 0; i < init_keys.length; i++){
+      add_filter(init_keys[i], init_vals[i]);
     }
-      
-    $(document).ready(function(){
-      $.datepicker.formatDate('@');
-      $('#datepick1').datepicker().change(dpChange);
-      $('#datepick2').datepicker().change(dpChange);
-      
-      
-      $.getJSON('/tables/api/metadata?get_keys=${self.url_name()}', function(data){
-        var key_select = $('#key-select');
-        key_select.empty();
-        key_select.append($("<option />").val(0).text('Select metadata key'));
-        
-        // Insert the new ones from the array above
-        $.each(data, function(value) {
-          key_select.append($("<option />").val(data[value]).text(data[value]));
-        });
-        
-        // Get initial filters from kwargs
-        var init_keys = [];
-        var init_vals = [];
-        for(var key in ${kwargs}){
-          if(key.indexOf("key_") !== -1){
-            init_keys.push(${kwargs}[key]);
-          }
-          else if(key.indexOf("value_") !== -1){
-            init_vals.push(${kwargs}[key]);
-          }
-        }
-        
-        for(var i=0; i<init_keys.length; i++){
-          addNewFilter(init_keys[i], init_vals[i]);
-        }
-        
-        $.getJSON('/api/${self.url_name()}/${self.mako_item_id()}?' + kwargs, parseJSON, noDataError);  
-        
-        if(!$.isEmptyObject(${kwargs})){
-          $('#ac-1-title').prop('checked', true);
-        }
-      });
-    });
+    
+    <%block name="sh_sql_highlight"/>
   </script>
-</%block>
 
-<%block name="left_panel">
-  <section>
-    <input id="ac-1-title" name="accordion-1" type="checkbox" />
-    <label for="ac-1-title">
-    <h1>Add new filter</h1>
-    </label>
-    <ul class="ac-filter-select">
-      <li>
-        <label>Key</label>
-        <select id="key-select" onchange="keySelectChange()">
-          <option value="0">Select metadata key</option>
-        </select>
-        <label>Value</label>
-        <select id="value-select">
-          <option value="0">Pick a metadata key</option>
-        </select>
-      </li>
-      <li>
-        <button onclick="addNewFilter()">Add Filter</button>
-      </li>
-      <li>
-        <button onclick="clearFilters()">Clear Filters</button>
-      </li>
-    </ul>
-    <ul id="filter-list" class="ac-filter-list">
-    </ul>
-  </section>
+  <script src="/static/js/aggregation_item_base.js"></script>
 </%block>
 
 <%block name="base">
-  <a href="/${self.url_name()}">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;Aggregation Item
-
-  <div>
-    <%block name="mako_item_string"/>
+  <div class="breadcrumbs">
+    <div id="stats"></div>
+    <a href="/${self.url_name()}">Aggregation</a> &gt; ${self.mako_item_id()}
   </div>
-  <form>
-    <p>From:<input type="text" id="datepick1">   To:<input type="text" id="datepick2"></p>
+
+  <code class="item_container">
+    <%block name="mako_item_string"/>
+  </code>
+
+  <form class="filter_graph">
+    <h1>Filter Graph</h1>
+
+    <label for="filter_from">From:</label>
+    <input type="text" name="filter_from" id="filter_from">
+    
+    <label for="filter_to">To:</label>
+    <input type="text" name="filter_to" id="filter_to">
   </form>
-  <table id="data"></table>
-  <div id="function_graph"></div>
+
+  <div class="item_container">
+    <div id="function_graph"></div>
+
+    <p class="info">Click on a node to see an individual data point in further detail.</p>
+  </div>
 </%block>

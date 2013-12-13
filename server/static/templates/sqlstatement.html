@@ -7,36 +7,41 @@
 <%block name="url_name">sqlstatements</%block>
 
 <%block name="mako_item_id">${sql_statement.id}</%block>
- 
+
 <%block name="extra_script">
-   var stackHtml = '';
-   var stack = data.stack;
-   for (var i=0; i<stack.length; i++) {
-     stackHtml += '<p>'+stack[i].module+' - '+stack[i].function+'</p>';
-   };
-   $('#stack').html(stackHtml);
-   
-   var argsHtml = '';
-   var args = data.args;
-   for (var i=0; i<args.length; i++) {
-     argsHtml += '<p>'+args[i]+'</p>';
-   };
-   $('#args').html(argsHtml);
+  var stackHtml = '',
+    stack = data.stack;
+  for (var i = 0; i < stack.length; i++) {
+    stackHtml += '<p>' + stack[i].module + ' - ' + stack[i].function + '</p>';
+  }
+  $('#stack').html(stackHtml);
+
+  var argsHtml = '',
+    args = data.args;
+  for (var i = 0; i < args.length; i++) {
+    argsHtml += '<li>' + args[i] + '</li>';
+  }
+  $('#args').toggle(data.args.length > 0).find('ul').html(argsHtml);
 </%block>
 
 <%block name="header_list">
-  <li><a href="/callstacks">Call Stacks</a></li>
-  <li><a href="/sqlstatements" class="active">SQL Statements</a></li>
-  <li><a href="/fileaccesses">File Accesses</a></li>
+  <a href="/callstacks">Call Stacks</a>
+  <a href="/sqlstatements" class="active">SQL Statements</a>
+  <a href="/fileaccesses">File Accesses</a>
 </%block>
 
 <%block name="breadcrumbs">
-  <a href="/sqlstatements">Aggregation</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;<a href="/sqlstatements/${metadata_id}">Aggregation Item</a>&nbsp;&nbsp;&gt;&nbsp;&nbsp;SQL Statement
+  <a href="/sqlstatements">Aggregation</a> &gt; <a href="/sqlstatements/${metadata_id}">Aggregation Item</a> &gt; SQL Statement
 </%block>
 
 <%block name="extra_base">
-  <br><h1>SQL Stack Items:</h1>
-  <div id="stack"></div>
-  <br><h1>SQL Args:</h1>
-  <div id="args"></div>
+  <div class="item_container">
+    <h1>SQL Stack Items</h1>
+    <code id="stack"></code>
+    
+    <div id="args">
+      <h1>SQL Args</h1>
+      <ul></ul>
+    </div>
+  </div>
 </%block>
