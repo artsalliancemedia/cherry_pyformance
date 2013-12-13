@@ -1,5 +1,3 @@
-var kwargs = '';
-
 function filter_key() {
 	var val = $(this).val();
 	var key_kwarg = '';
@@ -18,7 +16,7 @@ function filter_key() {
 
 		$.getJSON('/tables/api/metadata?' + key_kwarg, function(data){
 			val_select.append($("<option />").val(0).text('Select metadata value'));
-	
+
 			// Insert the new options from the array
 			$.each(data, function(value) {
 				val_select.append($("<option />").val(data[value]).text(data[value]));
@@ -31,7 +29,16 @@ function filter_key() {
 	}
 }
 
-var numFilters = 0;
+function serialise_kwargs(kwargs) {
+	var kwargs_serialised = '';
+	for (var i = 0; i < kwargs.length; i++) {
+		kwargs_serialised += '&key_' + (i + 1) + '=' + kwargs[i]['key'] + '&value_' + (i + 1) + '=' + kwargs[i]['value'];
+	}
+
+	return kwargs_serialised;
+}
+
+var kwargs = [];
 function add_filter(filter_key, filter_value) {
 	if (!filter_key || typeof filter_key === 'object')
 		filter_key = $('#filter_key').val();
@@ -40,36 +47,43 @@ function add_filter(filter_key, filter_value) {
 
 	// If we have a value then add another filter and redraw everything :)
 	if(filter_value != 0) {
-		numFilters += 1;
 		$('.no_filters').hide();
-
-		kwargs += '&key_' + numFilters + '=' + filter_key + '&value_' + numFilters + '=' + filter_value;
 		$("#filters").append("<li>" + filter_key + " = \"" + filter_value + "\"</li>");
+		kwargs.push({key: filter_key, value: filter_value});
 	}
 
-	oTable.fnSettings().sAjaxSource = '/api/' + url_name + '?datatables=true' + kwargs;
-	oTable.fnDraw();
-
-	drawBarGraphs();
+	$("#filters").trigger('change', [kwargs]);
 }
 
 function clear_filters() {
-	numFilters = 0;
-	kwargs = '';
+	kwargs = [];
 	$('#filters > li').remove();
 	$('.no_filters').show();
 
-	oTable.fnSettings().sAjaxSource = '/api/' + url_name + '?datatables=true';
-	oTable.fnDraw();
-
-	drawBarGraphs();
+	$("#filters").trigger('change', [kwargs]);
 }
 
 $(document).ready(function() {
+	// Get initial filters from kwargs
+	var init_keys = [], init_vals = [];
+	for(var key in raw_kwargs){
+		if(key.indexOf("key_") !== -1) {
+			init_keys.push(raw_kwargs[key]);
+		}
+		else if(key.indexOf("value_") !== -1) {
+			init_vals.push(raw_kwargs[key]);
+		}
+	}
+
+	for(var i = 0; i < init_keys.length; i++) {
+		add_filter(init_keys[i], init_vals[i]);
+	}
+
+	$('#filters').trigger('load', [kwargs]);
+
 	$.getJSON('/tables/api/metadata?get_keys=' + url_name, function(data){
 		key_select = $('#filter_key');
-		key_select.empty();
-		key_select.append($("<option />").val(0).text('Select metadata key'));
+		key_select.empty().append($("<option />").text('Select metadata key'));
 		
 		// Insert the new ones from the array above
 		$.each(data, function(value) {

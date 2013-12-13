@@ -5,7 +5,7 @@ function trunc(string, numChars) {
 	return string.length > numChars ? string.substring(0, numChars - 3) + '...' : string;
 }
 
-function draw(data, selector, index) {
+function draw(data, selector, index, serialised_kwargs) {
 	var height = 200,
 		width = $('.content').width(),
 		margin = 50;
@@ -25,34 +25,31 @@ function draw(data, selector, index) {
 		.append('rect')
 		.attr('width', function(d){ return x_scale(d[index]); })
 		.attr('height', height / numBars)
-		.attr('y', function(d, i){ return height / numBars * (i) + i; })
-		.attr('data-id', function(d){ return d[0]; });
+		.attr('y', function(d, i){ return height / numBars * (i) + i; });
 
 	d3.selectAll(selector + ' g')
+		.append('a')
+		.attr('xlink:href', function(d) { return '/' + url_name + '/' + d[0] + '?' + serialised_kwargs; })
 		.append('text')
 		.attr('x', 10)
-		.attr('y', function(d, i) { return height / numBars * (i + 0.5) + i + 4; })
+		.attr('y', function(d, i) { return 22 + i * (height / numBars); })
 		.text(function(d) {
 			return (Math.round(d[index] * 10000) / 10000) + ' - ' + trunc(d[1].replace('\n', ''), 100)
 		});
-
-	$(selector + ' g').click(function() {
-		window.location.href = '/' + url_name + '/' + $(this).children('rect').attr('data-id');
-	});
 };
 
-function drawBarGraphs() {
-	var total = $.getJSON('/api/' + url_name + '?sort=total&limit=' + numBars + '&' + kwargs),
-		avg = $.getJSON('/api/' + url_name + '?sort=avg&limit=' + numBars + '&' + kwargs),
-		count = $.getJSON('/api/' + url_name + '?sort=count&limit=' + numBars + '&' + kwargs);
+function drawBarGraphs(serialised_kwargs) {
+	var total = $.getJSON('/api/' + url_name + '?sort=total&limit=' + numBars + '&' + serialised_kwargs),
+		avg = $.getJSON('/api/' + url_name + '?sort=avg&limit=' + numBars + '&' + serialised_kwargs),
+		count = $.getJSON('/api/' + url_name + '?sort=count&limit=' + numBars + '&' + serialised_kwargs);
 
 	// Parallelise these calls because we can, speeds up the rendering a tiny bit :)
 	$.when(total, avg, count).then(function(total_res, avg_res, count_res) {
-		$('svg').remove();
+		$('#tabs svg').remove();
 
-		draw(total_res[0][0], '.graph_total', 3);
-		draw(avg_res[0][0], '.graph_avg', 4);
-		draw(count_res[0][0], '.graph_count', 2);
+		draw(total_res[0][0], '.graph_total', 3, serialised_kwargs);
+		draw(avg_res[0][0], '.graph_avg', 4, serialised_kwargs);
+		draw(count_res[0][0], '.graph_count', 2, serialised_kwargs);
 	});
 }
 
@@ -83,13 +80,17 @@ $(document).ready(function() {
 			// This is unneeded, can be replaced with a jquery set operation which is faster than this cursor based operation.
 			"fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
 				$(nRow).click(function() {
-					window.location.href = '/' + url_name + '/' + aData[0] + '?' + kwargs;
+					window.location.href = '/' + url_name + '/' + aData[0] + '?' + serialise_kwargs(kwargs);
 				});
 				$('td:eq(0)', nRow).text(trunc(aData[1], 100));
 			}
 	});
 	
-	drawBarGraphs();
-	
-	$('#tabs').tabs({ active: 1 });
+	$('#tabs').tabs();
+	$('#filters').on('load change', function(e, kwargs) {
+		oTable.fnSettings().sAjaxSource = '/api/' + url_name + '?datatables=true&' + serialise_kwargs(kwargs);
+		oTable.fnDraw();
+
+		drawBarGraphs(serialise_kwargs(kwargs));
+	});
 });
