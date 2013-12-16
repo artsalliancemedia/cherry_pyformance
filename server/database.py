@@ -1,6 +1,6 @@
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, Float, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import sessionmaker, relationship, composite
+from sqlalchemy.orm import scoped_session, sessionmaker, relationship, composite
 from sqlalchemy.ext.declarative import declarative_base
 from threading import Thread
 from sqlparse import tokens as sql_tokens, parse as parse_sql
@@ -10,6 +10,40 @@ from operator import attrgetter
 import pstats
 from alembic.config import Config
 from alembic import command as al_command
+
+
+session = None
+
+def setup(user, password, host='localhost'):
+    postgres_string = u'postgresql://{0}:{1}@{2}'.format(user, password, host)
+
+    try:
+        db = sqlalchemy.create_engine(postgres_string + '/profile_stats')
+        db.connect()
+    except:
+        # If we get here it must be because the profile_stats db doesn't exist.
+        postgres = sqlalchemy.create_engine(postgres_string + '/postgres')
+        conn = postgres.connect()
+        conn.execute('commit')
+        conn.execute('create database profile_stats')
+        conn.close()
+
+        db = sqlalchemy.create_engine(postgres_string + '/profile_stats')
+        db.connect()
+
+        # Because we have a blank database lets first add in all the table found within.
+        Base.metadata.create_all(db)
+    
+    # Upgrade db to latest revision
+    alembic_cfg = Config("alembic.ini")
+    al_command.stamp(alembic_cfg, "head")
+
+    global session
+    session = scoped_session(sessionmaker(bind=db))
+
+
+# =================================================
+
 
 Base = declarative_base()
 
@@ -306,37 +340,4 @@ class MetaData(Base):
 
     def __repr__(self):
         return 'MetaData({0}={1})'.format(self.key,self.value)
-
-#========================================#
-
-def create_db_and_connect(postgres_string):
-    database = sqlalchemy.create_engine(postgres_string + '/profile_stats')
-    database.connect()
-    return database
-
-session = None
-
-def setup_profile_database(username, password):
-    postgres_string = 'postgresql://' + username + ':' + password + '@localhost'
-    alembic_cfg = Config("alembic.ini")
-    try:
-        db = create_db_and_connect(postgres_string)
-        
-        # Upgrade db to latest revision
-        al_command.upgrade(alembic_cfg, "head")
-    except:
-        postgres = sqlalchemy.create_engine(postgres_string + '/postgres')
-        conn = postgres.connect()
-        conn.execute('commit')
-        conn.execute('create database profile_stats')
-        conn.close()
-        db = create_db_and_connect(postgres_string)
-        Base.metadata.create_all(db)
-        
-        # Stamp table with current version for Alembic upgrades
-        al_command.stamp(alembic_cfg, "head")
-    global Session
-    global session
-    Session = sessionmaker(bind=db)
-    session = Session()
 
