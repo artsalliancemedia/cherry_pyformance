@@ -7,7 +7,7 @@ function filter_key() {
 
 	// Remove all options from the select list first
 	val_select = $('#filter_value');
-	val_select.empty();
+	val_select.find(':not(.no_value)').remove();
 
 
 	if(key_kwarg != '') {
@@ -15,8 +15,6 @@ function filter_key() {
 		loader.show();
 
 		$.getJSON('/tables/api/metadata?' + key_kwarg, function(data){
-			val_select.append($("<option />").val(0).text('Select metadata value'));
-
 			// Insert the new options from the array
 			$.each(data, function(value) {
 				val_select.append($("<option />").val(data[value]).text(data[value]));
@@ -24,8 +22,6 @@ function filter_key() {
 
 			loader.hide();
 		});
-	} else {
-		val_select.append($("<option/>").val(0).text('Pick a metadata key'));
 	}
 }
 
@@ -83,8 +79,6 @@ $(document).ready(function() {
 
 	$.getJSON('/tables/api/metadata?get_keys=' + url_name, function(data){
 		key_select = $('#filter_key');
-		key_select.empty().append($("<option />").text('Select metadata key'));
-		
 		// Insert the new ones from the array above
 		$.each(data, function(value) {
 			key_select.append($("<option />").val(data[value]).text(data[value]));
