@@ -66,23 +66,20 @@ function draw(data){
 	$('.datum').click(function(){
 		window.location.href = '/tables/' + url_name + '/' + $(this).attr('data-id');
 	});
-};
+}
 
 function load_stats(data) {
-	item = data[0];
-	if(item.length === 0){
-		return;
+	var item = data[0];
+	if(item.length > 0){
+		$('.stat_count').text(item[2]);
+		$('.stat_total').text(item[3]);
+		$('.stat_avg').text(item[4]);
+		$('.stat_min').text(item[5]);
+		$('.stat_max').text(item[6]);
+
+		draw(item[7]);
 	}
-
-	dataHtml = '<p><label>Count:</label> ' + item[2] + '</p>';
-	dataHtml += '<p><label>Total:</label> ' + item[3] + '</p>';
-	dataHtml += '<p><label>Avg:</label> ' + item[4] + '</p>';
-	dataHtml += '<p><label>Min:</label> ' + item[5] + '</p>';
-	dataHtml += '<p><label>Max:</label> ' + item[6] + '</p>';
-	$('#stats').html(dataHtml);
-
-	draw(item[7]);
-};
+}
 
 function filter_graph(e) {
 	var start_date = new Date($('#filter_from').val()) / 1000,
@@ -98,14 +95,7 @@ function filter_graph(e) {
 }
 
 function load_graph(e, kwargs) {
-	$.getJSON(
-		'/api/' + url_name + '/' + item_id + '?',
-		kwargs,
-		load_stats,
-		function() {
-			$('#stats').html('<p>No data found</p>')
-		}
-	);
+	$.getJSON('/api/' + url_name + '/' + item_id + '?', kwargs, load_stats);
 }
 
 $(document).ready(function(){

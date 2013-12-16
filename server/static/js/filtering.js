@@ -9,7 +9,7 @@ function filter_key() {
 		var loader = $('.loader');
 		loader.show();
 
-		$.getJSON('/tables/api/metadata?key=' + filter_key, function(data) {
+		$.getJSON('/tables/api/metadata', {key: filter_key}, function(data) {
 			// Insert the new options from the array
 			$.each(data, function(value) { // Use $.each over the built in forEach so we don't have to deal with problems with null values, it'll just gloss over that for us :)
 				val_select.append($("<option />").val(data[value]).text(data[value]));
@@ -30,7 +30,7 @@ function add_filter(filter_key, filter_value) {
 	// If we have a value then add another filter and redraw everything :)
 	if(filter_value != 0) {
 		$('.no_filters').hide();
-		$("#filters").append("<li>" + filter_key + " = \"" + filter_value + "\"</li>");
+		$("#filters").append($("<li/>").text(filter_key + " = \"" + filter_value + "\""));
 
 		kwargs['num_filters'] += 1;
 		kwargs['key_' + kwargs['num_filters']] = filter_key;

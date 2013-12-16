@@ -5,7 +5,7 @@ function trunc(string, numChars) {
 	return string.length > numChars ? string.substring(0, numChars - 3) + '...' : string;
 }
 
-function draw(data, selector, index, kwargs) {
+function draw_bar_graph(data, selector, index, kwargs) {
 	var height = 200,
 		width = $('.content').width(),
 		margin = 50;
@@ -13,6 +13,7 @@ function draw(data, selector, index, kwargs) {
 	var x_domain = [0, d3.max(data, function(d){ return d[index]; })],
 		x_scale = d3.scale.linear().range([0, width]).domain(x_domain);
 
+	// Draw the bounding box
 	d3.select(selector)
 		.append('svg')
 		.attr('width', width).attr('height', height)
@@ -21,12 +22,14 @@ function draw(data, selector, index, kwargs) {
 		.enter()
 		.append('g');
 
+	// Draw each of the bars
 	d3.selectAll(selector + ' g')
 		.append('rect')
 		.attr('width', function(d){ return x_scale(d[index]); })
 		.attr('height', height / numBars)
 		.attr('y', function(d, i){ return height / numBars * (i) + i; });
 
+	// Draw the overlay text
 	d3.selectAll(selector + ' g')
 		.append('a')
 		.attr('xlink:href', function(d) { return '/' + url_name + '/' + d[0] + '?' + $.param(kwargs); })
@@ -38,7 +41,7 @@ function draw(data, selector, index, kwargs) {
 		});
 };
 
-function drawBarGraphs(kwargs) {
+function draw_bar_graphs(kwargs) {
 	kwargs['limit'] = numBars;
 
 	var total = $.getJSON('/api/' + url_name + '?sort=total', kwargs),
@@ -49,15 +52,14 @@ function drawBarGraphs(kwargs) {
 	$.when(total, avg, count).then(function(total_res, avg_res, count_res) {
 		$('#tabs svg').remove();
 
-		draw(total_res[0][0], '.graph_total', 3, kwargs);
-		draw(avg_res[0][0], '.graph_avg', 4, kwargs);
-		draw(count_res[0][0], '.graph_count', 2, kwargs);
+		draw_bar_graph(total_res[0][0], '.graph_total', 3, kwargs);
+		draw_bar_graph(avg_res[0][0], '.graph_avg', 4, kwargs);
+		draw_bar_graph(count_res[0][0], '.graph_count', 2, kwargs);
 	});
 }
 
 $(document).ready(function() {
 	oTable = $('#main').dataTable({
-			"aaSorting": [[ 3, "desc" ]],
 			"bServerSide": true,
 			"sAjaxSource": '/api/' + url_name + '?datatables=true',
 			"bProcessing": true,
@@ -93,6 +95,6 @@ $(document).ready(function() {
 		oTable.fnSettings().sAjaxSource = '/api/' + url_name + '?datatables=true&' + $.param(kwargs);
 		oTable.fnDraw();
 
-		drawBarGraphs(kwargs);
+		draw_bar_graphs(kwargs);
 	});
 });

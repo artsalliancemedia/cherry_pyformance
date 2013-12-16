@@ -45,7 +45,13 @@
 
 <%block name="base">
   <div class="breadcrumbs">
-    <div id="stats"></div>
+    <ul id="stats">
+        <li><label>Count:</label> <span class="stat_count"></span></li>
+        <li><label>Total:</label> <span class="stat_total"></span></li>
+        <li><label>Avg:</label> <span class="stat_avg"></span></li>
+        <li><label>Min:</label> <span class="stat_min"></span></li>
+        <li><label>Max:</label> <span class="stat_max"></span></li>
+    </ul>
     <a href="/${self.url_name()}">Aggregation</a> &gt; ${self.mako_item_id()}
   </div>
 
