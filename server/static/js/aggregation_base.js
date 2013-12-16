@@ -5,7 +5,7 @@ function trunc(string, numChars) {
 	return string.length > numChars ? string.substring(0, numChars - 3) + '...' : string;
 }
 
-function draw(data, selector, index, serialised_kwargs) {
+function draw(data, selector, index, kwargs) {
 	var height = 200,
 		width = $('.content').width(),
 		margin = 50;
@@ -29,7 +29,7 @@ function draw(data, selector, index, serialised_kwargs) {
 
 	d3.selectAll(selector + ' g')
 		.append('a')
-		.attr('xlink:href', function(d) { return '/' + url_name + '/' + d[0] + '?' + serialised_kwargs; })
+		.attr('xlink:href', function(d) { return '/' + url_name + '/' + d[0] + '?' + $.param(kwargs); })
 		.append('text')
 		.attr('x', 10)
 		.attr('y', function(d, i) { return 22 + i * (height / numBars); })
@@ -38,18 +38,20 @@ function draw(data, selector, index, serialised_kwargs) {
 		});
 };
 
-function drawBarGraphs(serialised_kwargs) {
-	var total = $.getJSON('/api/' + url_name + '?sort=total&limit=' + numBars + '&' + serialised_kwargs),
-		avg = $.getJSON('/api/' + url_name + '?sort=avg&limit=' + numBars + '&' + serialised_kwargs),
-		count = $.getJSON('/api/' + url_name + '?sort=count&limit=' + numBars + '&' + serialised_kwargs);
+function drawBarGraphs(kwargs) {
+	kwargs['limit'] = numBars;
+
+	var total = $.getJSON('/api/' + url_name + '?sort=total', kwargs),
+		avg = $.getJSON('/api/' + url_name + '?sort=avg', kwargs),
+		count = $.getJSON('/api/' + url_name + '?sort=count', kwargs);
 
 	// Parallelise these calls because we can, speeds up the rendering a tiny bit :)
 	$.when(total, avg, count).then(function(total_res, avg_res, count_res) {
 		$('#tabs svg').remove();
 
-		draw(total_res[0][0], '.graph_total', 3, serialised_kwargs);
-		draw(avg_res[0][0], '.graph_avg', 4, serialised_kwargs);
-		draw(count_res[0][0], '.graph_count', 2, serialised_kwargs);
+		draw(total_res[0][0], '.graph_total', 3, kwargs);
+		draw(avg_res[0][0], '.graph_avg', 4, kwargs);
+		draw(count_res[0][0], '.graph_count', 2, kwargs);
 	});
 }
 
@@ -80,7 +82,7 @@ $(document).ready(function() {
 			// This is unneeded, can be replaced with a jquery set operation which is faster than this cursor based operation.
 			"fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
 				$(nRow).click(function() {
-					window.location.href = '/' + url_name + '/' + aData[0] + '?' + serialise_kwargs(kwargs);
+					window.location.href = '/' + url_name + '/' + aData[0] + '?' + $.param(kwargs);
 				});
 				$('td:eq(0)', nRow).text(trunc(aData[1], 100));
 			}
@@ -88,9 +90,9 @@ $(document).ready(function() {
 	
 	$('#tabs').tabs();
 	$('#filters').on('load change', function(e, kwargs) {
-		oTable.fnSettings().sAjaxSource = '/api/' + url_name + '?datatables=true&' + serialise_kwargs(kwargs);
+		oTable.fnSettings().sAjaxSource = '/api/' + url_name + '?datatables=true&' + $.param(kwargs);
 		oTable.fnDraw();
 
-		drawBarGraphs(serialise_kwargs(kwargs));
+		drawBarGraphs(kwargs);
 	});
 });

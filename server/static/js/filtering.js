@@ -1,22 +1,17 @@
 function filter_key() {
-	var val = $(this).val();
-	var key_kwarg = '';
-	if(val !== 0) {
-		key_kwarg = 'key=' + val;
-	}
+	var filter_key = $(this).val();
 
-	// Remove all options from the select list first
+	// Remove all options (except the "No Value Selected" one) from the select list first
 	val_select = $('#filter_value');
 	val_select.find(':not(.no_value)').remove();
 
-
-	if(key_kwarg != '') {
+	if(filter_key != '') {
 		var loader = $('.loader');
 		loader.show();
 
-		$.getJSON('/tables/api/metadata?' + key_kwarg, function(data){
+		$.getJSON('/tables/api/metadata?key=' + filter_key, function(data) {
 			// Insert the new options from the array
-			$.each(data, function(value) {
+			$.each(data, function(value) { // Use $.each over the built in forEach so we don't have to deal with problems with null values, it'll just gloss over that for us :)
 				val_select.append($("<option />").val(data[value]).text(data[value]));
 			});
 
@@ -25,16 +20,7 @@ function filter_key() {
 	}
 }
 
-function serialise_kwargs(kwargs) {
-	var kwargs_serialised = '';
-	for (var i = 0; i < kwargs.length; i++) {
-		kwargs_serialised += '&key_' + (i + 1) + '=' + kwargs[i]['key'] + '&value_' + (i + 1) + '=' + kwargs[i]['value'];
-	}
-
-	return kwargs_serialised;
-}
-
-var kwargs = [];
+var kwargs = {num_filters: 0};
 function add_filter(filter_key, filter_value) {
 	if (!filter_key || typeof filter_key === 'object')
 		filter_key = $('#filter_key').val();
@@ -45,14 +31,17 @@ function add_filter(filter_key, filter_value) {
 	if(filter_value != 0) {
 		$('.no_filters').hide();
 		$("#filters").append("<li>" + filter_key + " = \"" + filter_value + "\"</li>");
-		kwargs.push({key: filter_key, value: filter_value});
+
+		kwargs['num_filters'] += 1;
+		kwargs['key_' + kwargs['num_filters']] = filter_key;
+		kwargs['value_' + kwargs['num_filters']] = filter_value;
 	}
 
 	$("#filters").trigger('change', [kwargs]);
 }
 
 function clear_filters() {
-	kwargs = [];
+	kwargs = {num_filters: 0};
 	$('#filters > li').remove();
 	$('.no_filters').show();
 
@@ -77,7 +66,7 @@ $(document).ready(function() {
 
 	$('#filters').trigger('load', [kwargs]);
 
-	$.getJSON('/tables/api/metadata?get_keys=' + url_name, function(data){
+	$.getJSON('/tables/api/metadata', {get_keys: url_name}, function(data){
 		key_select = $('#filter_key');
 		// Insert the new ones from the array above
 		$.each(data, function(value) {

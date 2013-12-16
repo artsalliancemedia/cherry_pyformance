@@ -60,7 +60,7 @@ function draw(data){
 			.attr("x", height / 2)
 			.attr("y", 0)
 			.attr("transform", "rotate(90)")
-		.text("Duration");
+		.text("Duration (secs)");
 
 	//mouseover points
 	$('.datum').click(function(){
@@ -99,7 +99,8 @@ function filter_graph(e) {
 
 function load_graph(e, kwargs) {
 	$.getJSON(
-		'/api/' + url_name + '/' + item_id + '?' + serialise_kwargs(kwargs),
+		'/api/' + url_name + '/' + item_id + '?',
+		kwargs,
 		load_stats,
 		function() {
 			$('#stats').html('<p>No data found</p>')
