@@ -119,6 +119,10 @@ code.item_container {
 	border-radius: 0;
 	padding: 0;
 	user-select: none;
+	color: #333;
+}
+.ui-datepicker-prev, .ui-datepicker-next {
+	background-color: skyblue;
 }
 .ui-widget-content .ui-state-default {
 	background: none;
@@ -186,7 +190,7 @@ table.dataTable tr td:first-child {
 	margin-bottom: 1em;
 	float: right;
 }
-#stats p {
+#stats li {
 	display: inline-block;
 	margin-left: 1em;
 }

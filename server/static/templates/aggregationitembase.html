@@ -30,26 +30,12 @@
     }
   </style>
 
+
   <script>
     // Send through templated variables to the javascript file :)
     var url_name = '${self.url_name()}',
-      item_id = <%block name="mako_item_id"/>;
-
-    // Get initial filters from kwargs
-    var init_keys = [],
-      init_vals = [];
-    for(var key in ${kwargs}){
-      if(key.indexOf("key_") !== -1){
-        init_keys.push(${kwargs}[key]);
-      }
-      else if(key.indexOf("value_") !== -1){
-        init_vals.push(${kwargs}[key]);
-      }
-    }
-    
-    for(var i = 0; i < init_keys.length; i++){
-      add_filter(init_keys[i], init_vals[i]);
-    }
+      item_id = <%block name="mako_item_id"/>,
+      raw_kwargs = ${kwargs};
     
     <%block name="sh_sql_highlight"/>
   </script>
@@ -59,7 +45,13 @@
 
 <%block name="base">
   <div class="breadcrumbs">
-    <div id="stats"></div>
+    <ul id="stats">
+        <li><label>Count:</label> <span class="stat_count"></span></li>
+        <li><label>Total:</label> <span class="stat_total"></span></li>
+        <li><label>Avg:</label> <span class="stat_avg"></span></li>
+        <li><label>Min:</label> <span class="stat_min"></span></li>
+        <li><label>Max:</label> <span class="stat_max"></span></li>
+    </ul>
     <a href="/${self.url_name()}">Aggregation</a> &gt; ${self.mako_item_id()}
   </div>
 
