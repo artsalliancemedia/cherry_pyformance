@@ -16,10 +16,14 @@ session = None
 
 def setup(user, password, host='localhost'):
     postgres_string = u'postgresql://{0}:{1}@{2}'.format(user, password, host)
+    alembic_cfg = Config("alembic.ini")
 
     try:
         db = sqlalchemy.create_engine(postgres_string + '/profile_stats')
         db.connect()
+
+        # Upgrade db to latest revision
+        al_command.upgrade(alembic_cfg, "head")
     except:
         # If we get here it must be because the profile_stats db doesn't exist.
         postgres = sqlalchemy.create_engine(postgres_string + '/postgres')
@@ -34,9 +38,8 @@ def setup(user, password, host='localhost'):
         # Because we have a blank database lets first add in all the table found within.
         Base.metadata.create_all(db)
     
-    # Upgrade db to latest revision
-    alembic_cfg = Config("alembic.ini")
-    al_command.stamp(alembic_cfg, "head")
+        # Stamp table with current version for Alembic upgrades
+        al_command.stamp(alembic_cfg, "head")
 
     global session
     session = scoped_session(sessionmaker(bind=db))
