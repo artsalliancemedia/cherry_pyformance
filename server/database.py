@@ -16,6 +16,7 @@ session = None
 
 def setup(user, password, host='localhost'):
     postgres_string = u'postgresql://{0}:{1}@{2}'.format(user, password, host)
+    alembic_cfg = Config("alembic.ini")
 
     try:
         db = sqlalchemy.create_engine(postgres_string + '/profile_stats')
@@ -38,7 +39,6 @@ def setup(user, password, host='localhost'):
         Base.metadata.create_all(db)
     
         # Stamp table with current version for Alembic upgrades
-        alembic_cfg = Config("alembic.ini")
         al_command.stamp(alembic_cfg, "head")
 
     global session
