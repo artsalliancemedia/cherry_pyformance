@@ -86,16 +86,15 @@ def load_config():
 
 if __name__ == '__main__':
     cfg = load_config()
-        
-    username = cfg['database_username']
-    password = cfg['database_password']
-    host = cfg['server_host']
-    port = cfg['server_port']
 
     try:
-        db.setup_profile_database(username, password)
+        # Set up the initialise database config
+        db.setup(cfg['database_username'], cfg['database_password'])
+
+        # Ensure we have a pstats directory to write into.
         if not os.path.exists('pstats'):
             os.makedirs('pstats')
-        start_cherrypy(host, port)
+
+        start_cherrypy(cfg['server_host'], cfg['server_port'])
     except Exception, ex:
         print str(ex)

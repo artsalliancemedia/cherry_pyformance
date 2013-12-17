@@ -47,11 +47,13 @@ def datatables(query_func):
         if table_kwargs:
             # parse datatables kwargs
             sort = []
-            cols = ('id', column_name_dict[table_class], 'count', 'total', 'avg', 'min', 'max')
+            cols = (None, column_name_dict[table_class], 'count', 'total', 'avg', 'min', 'max')
             for i in xrange(int(table_kwargs['iSortingCols'])):
                 sort_col = cols[int(table_kwargs['iSortCol_' + str(i)])]
                 sort_dir = 'DESC' if table_kwargs['sSortDir_' + str(i)] == 'desc' else 'ASC'
-                sort.append((sort_col, sort_dir))
+
+                if sort_col:
+                    sort.append((sort_col, sort_dir))
 
             data, total_num_items, filtered_num_items = query_func(
                                                                 table_class,
@@ -152,7 +154,6 @@ def json_aggregate(table_class, filter_kwargs=None, search=None, sort=[('avg','D
 
     for sorter in sort:
         query = query.order_by('{0} {1}'.format(*sorter))
-    filtered_num_items = query.count()
 
     if start:
         query = query.offset(start)
@@ -165,7 +166,7 @@ def json_aggregate(table_class, filter_kwargs=None, search=None, sort=[('avg','D
     for result in results:
         result[1] = str(result[1])
 
-    return results, total_num_items, filtered_num_items
+    return results, total_num_items, len(results)
 
 # Get JSON aggregate data for aggregate item pages
 def json_aggregate_item(table_class, filter_kwargs, id):
