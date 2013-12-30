@@ -4,6 +4,22 @@ from sqlalchemy import func, and_, or_
 import cherrypy
 from cgi import escape as html_escape
 from operator import itemgetter
+import json
+import decimal
+
+
+class Decimal_JSON_Encoder(json.JSONEncoder):
+    """
+    A custom encoder for Python decimal objects
+    """
+    def default(self, obj):
+        if isinstance(obj, decimal.Decimal):
+            return float(obj)
+        return json.JSONEncoder.default(self, obj)
+
+def json_handler(*args, **kwargs):
+    value = cherrypy.serving.request._json_inner_handler(*args, **kwargs)
+    return Decimal_JSON_Encoder().iterencode(value)
 
 def parse_kwargs(kwargs):
 
@@ -238,7 +254,7 @@ def json_aggregate_item(table_class, filter_kwargs, id):
 
 class AggregateAPI(object):
     @cherrypy.expose
-    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_out(handler=json_handler)
     def callstacks(self, id=None, **kwargs):
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
         if id:
@@ -247,7 +263,7 @@ class AggregateAPI(object):
             return json_aggregate(db.CallStack, filter_kwargs, table_kwargs)
 
     @cherrypy.expose
-    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_out(handler=json_handler)
     def sqlstatements(self, id=None, **kwargs):
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
         if id:
@@ -256,7 +272,7 @@ class AggregateAPI(object):
             return json_aggregate(db.SQLStatement, filter_kwargs, table_kwargs)
     
     @cherrypy.expose
-    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_out(handler=json_handler)
     def fileaccesses(self, id=None, **kwargs):
         table_kwargs, filter_kwargs = parse_kwargs(kwargs)
         if id:
