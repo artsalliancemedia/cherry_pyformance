@@ -106,7 +106,6 @@ def initialise(config_file_path=None):
         from function_profiler import decorate_functions
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
-        decorate_functions()
         cherrypy.engine.subscribe('start', decorate_functions, 0)
 
     if cfg['handlers']:
@@ -119,7 +118,6 @@ def initialise(config_file_path=None):
         from sql_profiler import decorate_connections
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
-        decorate_connections()
         cherrypy.engine.subscribe('start', decorate_connections, 0)
 
     if cfg['files']['files_enabled']:
