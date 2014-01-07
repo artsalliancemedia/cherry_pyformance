@@ -87,7 +87,7 @@ class BogusStats(object):
 
 
 def parse_fn_packet(packet):
-    db_session = db.Session()
+    db_session = db.session
     
     # Get global metadata
     metadata_list = get_metadata_list(packet['metadata'], db_session)
@@ -124,7 +124,7 @@ def parse_fn_packet(packet):
  
 
 def parse_sql_packet(packet):
-    db_session = db.Session()
+    db_session = db.session
                     
     # Get flush metadata
     global_metadata_list = get_metadata_list(packet['metadata'], db_session)
@@ -185,7 +185,7 @@ def parse_sql_packet(packet):
 
 
 def parse_file_packet(packet):
-    db_session = db.Session()
+    db_session = db.session
                     
     # Get flush metadata
     metadata_list = get_metadata_list(packet['metadata'], db_session)

@@ -11,24 +11,20 @@ stats server where the data will be analysed and displayed.
 import cherrypy
 import cProfile
 import inspect
-import copy
 import time
 import cPickle
 import traceback
 
-from cherry_pyformance import cfg, get_stat, stat_logger
-
-
+from cherry_pyformance import cfg, stat_logger
 
 handler_stats_buffer = {}
-
 
 #=====================================================#
 
 class StatsTool(cherrypy.Tool):
     """
     A cherrypy tool which wraps handlers, collecting
-    profile stats from them. After the repsonse has
+    profile stats from them. After the response has
     been sent, the stats are sorted and put on the buffer.
     """
 
@@ -48,26 +44,28 @@ class StatsTool(cherrypy.Tool):
         """
         This is the handler wrapper. It initialises a stat record
         on the handler_stats_buffer based on request metadata, then fires the handler
-        while collecting its profile infomation.
+        while collecting its profile information.
         """
         request = cherrypy.serving.request
-        # Take the id of the request, this guarantees no cross-contamination
-        # of stats as each record is tied to the id of an instance of a request.
-        # These are guaranteed to be unique, even if two of the same request are
-        # fired at the same time.
-        req_id = id(request)
-        # initialise the item on the buffer
-        handler_stats_buffer[req_id] = {'datetime': float(time.time()),
-                                        'profile': cProfile.Profile()}
-        # At this point the profile key of the object on the stats buffer has no
-        # profile stats in it. It needs to be put in the buffer now as multiple
-        # handler calls could be occuring simultaneously during the lifetime of
-        # the tool instance.
-        handler = cherrypy.serving.request.handler
-        def wrapper(*args, **kwargs):
-            # profile the handler
-            return handler_stats_buffer[req_id]['profile'].runcall(handler, *args, **kwargs)
-        cherrypy.serving.request.handler = wrapper
+        handler = request.handler
+        # Check if handler exists (might not for static requests)
+        if handler:
+            # Take the id of the request, this guarantees no cross-contamination
+            # of stats as each record is tied to the id of an instance of a request.
+            # These are guaranteed to be unique, even if two of the same request are
+            # fired at the same time.
+            req_id = id(request)
+            # initialise the item on the buffer
+            handler_stats_buffer[req_id] = {'datetime': float(time.time()),
+                                            'profile': cProfile.Profile()}
+            # At this point the profile key of the object on the stats buffer has no
+            # profile stats in it. It needs to be put in the buffer now as multiple
+            # handler calls could be occuring simultaneously during the lifetime of
+            # the tool instance.
+            def wrapper(*args, **kwargs):
+                # profile the handler
+                return handler_stats_buffer[req_id]['profile'].runcall(handler, *args, **kwargs)
+            cherrypy.serving.request.handler = wrapper
 
     def record_stop(self):
         """
@@ -112,6 +110,8 @@ def decorate_handlers():
         for root in cfg['handlers'].keys():
             if cfg['handlers'][root]:
                 for handler in cfg['handlers'][root].split(','):
+                    if str(root) == '/': # Can't have empty key in config file
+                        root = ''
                     cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':True}})
         for root in cfg['ignored_handlers'].keys():
             if cfg['ignored_handlers'][root]:
