@@ -12,11 +12,14 @@ It works by subscribing to the CherryPy engine at startup, wrapping listed funct
 
 Run the setup of the client by running the following in the shell/cmd terminal:
 ```setup.py install```
-Then configure the configuration JSON file to suit your application and insert the following lines into your application:
+
+Then insert the following lines into your application:
 ```
 import cherry_pyformance
 cherry_pyformance.initialise()
 ```
+
+Then copy and configure the default config JSON file into the same directory and rename to 'cherrypyformance_config.cfg'.
 
 ### Client Requirements
 * Python 2.6/7

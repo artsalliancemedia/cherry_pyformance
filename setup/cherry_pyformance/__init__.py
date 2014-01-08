@@ -65,10 +65,8 @@ def load_config(config_file_path=None):
     
     config.read(config_file_path)
     if config.sections() == []:
-        #stat_logger.info('Failed to load stats profiling configuration. Creating from default.')
-        default_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "default_config.cfg")
-        copyfile(default_config_file, config_file_path)
-        config.read(config_file_path)
+        stat_logger.info('Failed to load cherry pyformance config. Grab default config file from repo!')
+        sys.exit(1)
     
     config_dict = config._sections
     for section in config_dict.values():
