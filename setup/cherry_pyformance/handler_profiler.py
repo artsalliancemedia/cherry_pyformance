@@ -119,7 +119,5 @@ def decorate_handlers():
                     cherrypy.tree.apps[str(root)].merge({str(handler):{'tools.stats.on':False}})
     except KeyError:
         stat_logger.warning('Stats configuration incorrect. Could not obtain handlers to wrap.')
-        print traceback.print_exc()
     except Exception:
         stat_logger.warning('Failed to wrap cherrypy handler for stats profiling.')
-        print traceback.print_exc()

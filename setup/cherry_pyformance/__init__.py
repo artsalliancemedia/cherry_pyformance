@@ -56,7 +56,7 @@ def create_output_fn():
         try:
             urlopen(Request('{0}/{1}'.format(address, stats['type']), output, headers=headers))
         except URLError as e:
-            print e
+            stat_logger.error(e)
     return push_stats_fn
 
 
