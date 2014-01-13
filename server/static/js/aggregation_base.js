@@ -60,6 +60,7 @@ function draw_bar_graphs(kwargs) {
 
 $(document).ready(function() {
 	oTable = $('#main').dataTable({
+			"aaSorting": [[ 3, "desc" ]],
 			"bServerSide": true,
 			"sAjaxSource": '/api/' + url_name + '?datatables=true',
 			"bProcessing": true,
