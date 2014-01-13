@@ -18,10 +18,14 @@ def _flush_stats(stats_buffer, stat_type):
                     stats_to_push.append(stats_buffer[_id])
                     del stats_buffer[_id] 
             elif stat_type == 'database':
-                # convert all args to strings, allows for eaier filtering when single instancing
+                # convert all args to strings, allows for easier filtering when single instancing
                 # having a mix of numbers and strings is not ideal
                 # if you have a better solution please let me know!
-                stats_buffer[_id]['args'] = [str(arg) for arg in stats_buffer[_id]['args']]
+                if isinstance(stats_buffer[_id]['args'], dict): # for sql args (they have keys used for sql string insertion)
+                    for key in stats_buffer[_id]['args']:
+                        stats_buffer[_id]['args'][key] = str(stats_buffer[_id]['args'][key])
+                else:
+                    stats_buffer[_id]['args'] = [str(arg) for arg in stats_buffer[_id]['args']]
                 stats_to_push.append(stats_buffer[_id])
                 del stats_buffer[_id]
             else:

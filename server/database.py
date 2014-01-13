@@ -125,10 +125,10 @@ class CallStackName(Base):
     
     __table_args__ = (UniqueConstraint('module_name', 'class_name', 'fn_name', name='_call_stack_name_uc'),)
 
-    def __init__(self, name_dict):
-        self.module_name = name_dict['module_name']
-        self.class_name = name_dict['class_name']
-        self.fn_name = name_dict['fn_name']
+    def __init__(self, module_name, class_name, fn_name):
+        self.module_name = module_name
+        self.class_name = class_name
+        self.fn_name = fn_name
 
 #========================================#
 
@@ -179,7 +179,7 @@ class SQLStatement(Base):
 
     def _args(self):
         self.arguments.sort(key=attrgetter('index'))
-        return [arg.arg.value for arg in self.arguments]
+        return [(arg.arg.key, arg.arg.value) for arg in self.arguments]
 
     def __repr__(self):
         sql = self._metadata()['sql_string']
@@ -221,9 +221,9 @@ class SQLStackItem(Base):
     
     __table_args__ = (UniqueConstraint('module', 'function', name='_sql_stack_item_uc'),)
 
-    def __init__(self, stat):
-        self.function = stat['function']
-        self.module = stat['module']
+    def __init__(self, function, module):
+        self.function = function
+        self.module = module
 
     def to_dict(self):
         return {'module':self.module,
@@ -245,13 +245,12 @@ class SQLArgAssociation(Base):
 class SQLArg(Base):
     __tablename__ = 'sql_arguments'
     id = Column(Integer, primary_key=True)
-    value = Column(String, unique=True)
+    key = Column(String)
+    value = Column(String)
 
-    def __init__(self, value):
-        if type(value)==dict:
-            self.value = value['value']
-        else:
-            self.value = value
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
         
     def __repr__(self):
         return 'SQLArg({0})'.format(self.id)
@@ -329,12 +328,7 @@ class MetaData(Base):
     
     __table_args__ = (UniqueConstraint('key', 'value', name='_metadata_item_uc'),)
 
-    def __init__(self, meta_dict):
-        length = len(meta_dict.items())
-        if length==1:
-            key,value = meta_dict.items()[0]
-        elif length==2:
-            key,value = meta_dict['key'], meta_dict['value']
+    def __init__(self, key, value):
         self.key = key
         self.value = value
 

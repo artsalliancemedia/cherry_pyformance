@@ -160,7 +160,7 @@ def profile_sql(action, sql, *args, **kwargs):
                                  'duration':time_diff,
                                  'stack':stack,
                                  'sql_string':sql,
-                                 'args':args[0] if len(args)>0 else []
+                                 'args':args[0] if len(args)>0 else {}
                                 }
         del stack
     return output

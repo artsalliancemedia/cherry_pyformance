@@ -64,8 +64,6 @@ class StatHandler(object):
     def POST(self):
         # Add sender's details to the metadata
         cherrypy.serving.request.json['metadata']['ip_address'] = cherrypy.request.remote.ip
-        if cherrypy.request.remote.name:
-            cherrypy.serving.request.json['metadata']['hostname'] = cherrypy.request.remote.name
 
         stat_handler_queue.put([self.parse_fn, cherrypy.serving.request.json])
 
@@ -130,7 +128,6 @@ def parse_sql_packet(packet):
     global_metadata_list = get_metadata_list(packet['metadata'], db_session)
     
     for profile in packet['stats']:
-        
         # get-or-set all arguments (do not map relationship yet)
         sql_arg_list = get_arg_list(db_session, profile['args'])
 
@@ -221,11 +218,20 @@ def get_metadata_list(metadata_dictionary, db_session):
 
 def get_arg_list(db_session, args):
     arg_list = []
-    for arg in args:
-        sql_arg = get_or_create(db_session,
-                                db.SQLArg,
-                                value=arg)
-        arg_list.append(sql_arg)
+    if isinstance(args, list): # sqlite
+        for val in args:
+            sql_arg = get_or_create(db_session,
+                                    db.SQLArg,
+                                    key='?',
+                                    value=val)
+            arg_list.append(sql_arg)
+    elif isinstance(args, dict): # postgres
+        for key,val in args.iteritems():
+            sql_arg = get_or_create(db_session,
+                                    db.SQLArg,
+                                    key=key,
+                                    value=val)
+            arg_list.append(sql_arg)
     return arg_list
 
 def get_stack_list(db_session, stack):
@@ -241,7 +247,7 @@ def get_stack_list(db_session, stack):
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     if not instance:
-        instance = model(kwargs)
+        instance = model(**kwargs)
         session.add(instance)
     return instance
 
