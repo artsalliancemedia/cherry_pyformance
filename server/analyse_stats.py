@@ -6,7 +6,7 @@ import json
 def load(uuid):
     stats = pstats.Stats(os.path.join('pstats',uuid))
     stats.calc_callees()
-    stats.sort_stats('cum')
+    stats.sort_stats('cumulative')
     return stats
 
 def keys_to_str(dictionary):
