@@ -20,6 +20,23 @@ function filter_key() {
 	}
 }
 
+function reset_filters() {
+	$('#filter_value').val('0')
+	$('.no_filters').show();
+} 
+
+function clear_filter() {
+	$(this).remove();
+	
+	var filters_len = $('#filters li').length;
+	if(filters_len == 0) {
+		reset_filters()
+	}
+	
+	kwargs = {num_filters: filters_len};
+	$("#filters").trigger('change', [kwargs]);
+}
+
 var kwargs = {num_filters: 0};
 function add_filter(filter_key, filter_value) {
 	if (!filter_key || typeof filter_key === 'object')
@@ -30,7 +47,7 @@ function add_filter(filter_key, filter_value) {
 	// If we have a value then add another filter and redraw everything :)
 	if(filter_value != 0) {
 		$('.no_filters').hide();
-		$("#filters").append($("<li/>").text(filter_key + " = \"" + filter_value + "\""));
+		$("#filters").append($("<li/>").text(filter_key + " = \"" + filter_value + "\"").click(clear_filter));
 
 		kwargs['num_filters'] += 1;
 		kwargs['key_' + kwargs['num_filters']] = filter_key;
@@ -41,10 +58,10 @@ function add_filter(filter_key, filter_value) {
 }
 
 function clear_filters() {
-	kwargs = {num_filters: 0};
 	$('#filters > li').remove();
-	$('.no_filters').show();
+	reset_filters()
 
+	kwargs = {num_filters: 0};
 	$("#filters").trigger('change', [kwargs]);
 }
 
