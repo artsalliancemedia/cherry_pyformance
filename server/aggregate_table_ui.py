@@ -36,8 +36,14 @@ class AggregatePages(object):
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatecallstack.html'), lookup=self.template_lookup)
             return mytemplate.render(call_stack=call_stack, kwargs=filter_kwargs)
         else:
+            table_kwargs, filter_kwargs = parse_kwargs(kwargs)
+            if 'id' in filter_kwargs:
+                filter_kwargs.pop('id')
+            for k in filter_kwargs:
+                filter_kwargs[k] = str(filter_kwargs[k])
+                
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatecallstacks.html'), lookup=self.template_lookup)
-            return mytemplate.render()
+            return mytemplate.render(kwargs=filter_kwargs)
 
     @cherrypy.expose
     def sqlstatements(self, id=None, **kwargs):
@@ -60,8 +66,14 @@ class AggregatePages(object):
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatesql.html'), lookup=self.template_lookup)
             return mytemplate.render(statement=statement, kwargs=filter_kwargs)
         else:
+            table_kwargs, filter_kwargs = parse_kwargs(kwargs)
+            if 'id' in filter_kwargs:
+                filter_kwargs.pop('id')
+            for k in filter_kwargs:
+                filter_kwargs[k] = str(filter_kwargs[k])
+            
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatesqls.html'), lookup=self.template_lookup)
-            return mytemplate.render()
+            return mytemplate.render(kwargs=filter_kwargs)
 
     @cherrypy.expose
     def fileaccesses(self, id=None, **kwargs):
@@ -84,5 +96,11 @@ class AggregatePages(object):
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatefileaccess.html'), lookup=self.template_lookup)
             return mytemplate.render(file_access=file_access, kwargs=filter_kwargs)
         else:
+            table_kwargs, filter_kwargs = parse_kwargs(kwargs)
+            if 'id' in filter_kwargs:
+                filter_kwargs.pop('id')
+            for k in filter_kwargs:
+                filter_kwargs[k] = str(filter_kwargs[k])
+            
             mytemplate = Template(filename=os.path.join(self.templates_dir,'aggregatefileaccesses.html'), lookup=self.template_lookup)
-            return mytemplate.render()
+            return mytemplate.render(kwargs=filter_kwargs)

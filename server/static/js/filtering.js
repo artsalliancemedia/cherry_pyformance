@@ -23,9 +23,17 @@ function filter_key() {
 function reset_filters() {
 	$('#filter_value').val('0')
 	$('.no_filters').show();
-} 
+}
 
 var kwargs = {num_filters: 0};
+
+function update_header_links() {
+	// Modify header links and breadcrumb to send filter kwargs
+	$("#header1").attr("href", "/callstacks" + '?' + $.param(kwargs));
+	$("#header2").attr("href", "/sqlstatements" + '?' + $.param(kwargs));
+	$("#header3").attr("href", "/fileaccesses" + '?' + $.param(kwargs));
+	$("#breadcrumb_link").attr("href", "/fileaccesses" + '?' + $.param(kwargs));
+}
 
 function clear_filter() {
 	kwargs['num_filters'] -= 1;
@@ -52,6 +60,7 @@ function clear_filter() {
 	}
 
 	$("#filters").trigger('change', [kwargs]);
+	update_header_links();
 }
 
 function clear_filters() {
@@ -60,6 +69,7 @@ function clear_filters() {
 
 	kwargs = {num_filters: 0};
 	$("#filters").trigger('change', [kwargs]);
+	update_header_links();
 }
 
 function add_filter(filter_key, filter_value) {
@@ -79,6 +89,7 @@ function add_filter(filter_key, filter_value) {
 	}
 
 	$("#filters").trigger('change', [kwargs]);
+	update_header_links();
 }
 
 $(document).ready(function() {
@@ -94,6 +105,8 @@ $(document).ready(function() {
 	for(var key in init_kwargs) {
 		add_filter(key, init_kwargs[key]);
 	}
+
+	update_header_links();
 
 	$('#filters').trigger('load', [kwargs]);
 

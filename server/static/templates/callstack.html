@@ -118,13 +118,13 @@
 <%block name="mako_item_id">${call_stack.id}</%block>
 
 <%block name="header_list">
-  <a href="/callstacks" class="active">Call Stacks</a>
-  <a href="/sqlstatements">SQL Statements</a>
-  <a href="/fileaccesses">File Accesses</a>
+  <a href="/callstacks" id="header1" class="active">Call Stacks</a>
+  <a href="/sqlstatements" id="header2">SQL Statements</a>
+  <a href="/fileaccesses" id="header3">File Accesses</a>
 </%block>
 
 <%block name="breadcrumbs">
-  <a href="/callstacks">Aggregation</a> &gt; <a href="/callstacks/${metadata_id}">Aggregation Item</a> &gt; Call Stack
+  <a href="/callstacks" id="breadcrumb_link">Aggregation</a> &gt; <a href="/callstacks/${metadata_id}">Aggregation Item</a> &gt; Call Stack
 </%block>
 
 <%block name="extra_base">
