@@ -33,6 +33,9 @@ function update_header_links() {
 	$("#header2").attr("href", "/sqlstatements" + '?' + $.param(kwargs));
 	$("#header3").attr("href", "/fileaccesses" + '?' + $.param(kwargs));
 	$("#breadcrumb_link").attr("href", "/" + url_name + '?' + $.param(kwargs));
+	if($('#breadcrumb_link2').length != 0) {
+		$("#breadcrumb_link2").attr("href", "/" + url_name + "/" + metadata_id + '?' + $.param(kwargs));
+	}
 }
 
 function clear_filter() {

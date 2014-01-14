@@ -64,7 +64,7 @@ function draw(data){
 
 	//mouseover points
 	$('.datum').click(function(){
-		window.location.href = '/tables/' + url_name + '/' + $(this).attr('data-id');
+		window.location.href = '/tables/' + url_name + '/' + $(this).attr('data-id') + '?' + $.param(kwargs);
 	});
 }
 

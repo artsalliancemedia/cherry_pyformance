@@ -3,7 +3,9 @@
 <%block name="head">
   <script>
     var url_name = "<%block name="url_name"/>",
-      item_id = <%block name="mako_item_id"/>;
+      item_id = <%block name="mako_item_id"/>,
+      raw_kwargs = ${kwargs},
+      metadata_id = ${metadata_id};
 
     $(document).ready(function() {
       $.getJSON('/tables/api/' + url_name + '/' + item_id, function(data) {

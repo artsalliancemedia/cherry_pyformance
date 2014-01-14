@@ -20,8 +20,11 @@ class Tables(object):
 
         metadata_id = call_stack.name.id
         mytemplate = Template(filename=os.path.join(self.templates_dir,'callstack.html'), lookup=self.template_lookup)
-
-        return mytemplate.render(call_stack=call_stack, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
+        
+        for k in kwargs:
+            kwargs[k] = str(kwargs[k])
+        
+        return mytemplate.render(call_stack=call_stack, metadata_id=metadata_id, kwargs=kwargs)
 
     @cherrypy.expose
     def sqlstatements(self, id, **kwargs):
@@ -32,8 +35,11 @@ class Tables(object):
 
         metadata_id = sql_statement.sql_string.id
         mytemplate = Template(filename=os.path.join(self.templates_dir,'sqlstatement.html'), lookup=self.template_lookup)
+        
+        for k in kwargs:
+            kwargs[k] = str(kwargs[k])
 
-        return mytemplate.render(sql_statement=sql_statement, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
+        return mytemplate.render(sql_statement=sql_statement, metadata_id=metadata_id, kwargs=kwargs)
 
     @cherrypy.expose
     def fileaccesses(self, id, **kwargs):
@@ -44,5 +50,8 @@ class Tables(object):
 
         metadata_id = file_access.filename.id
         mytemplate = Template(filename=os.path.join(self.templates_dir,'fileaccess.html'), lookup=self.template_lookup)
+        
+        for k in kwargs:
+            kwargs[k] = str(kwargs[k])
 
-        return mytemplate.render(file_access=file_access, metadata_id=metadata_id, encoded_kwargs=urlencode(kwargs))
+        return mytemplate.render(file_access=file_access, metadata_id=metadata_id, kwargs=kwargs)
