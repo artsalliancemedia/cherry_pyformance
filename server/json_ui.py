@@ -70,7 +70,6 @@ class JSONAPI(object):
                     # If postgres arg, surround with %(arg)s to replace properly
                     if key != '?':
                         key = '\%\(' + key + '\)s'
-                    print key,val
                     sql_string = re.sub(key, val, sql_string, 1)
                 # Just send values to html template
                 response['args'] = [kv_pair[1] for kv_pair in response['args']]
