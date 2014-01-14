@@ -77,6 +77,8 @@ def setup_logging():
     '''
     Sets up the stats logger.
     '''
+    
+    global stat_logger
     stat_logger = logging.getLogger('stats')
     stats_log_handler = logging.Handler(level='INFO')
     log_format = '%(asctime)s::%(levelname)s::[%(module)s:%(lineno)d]::[%(threadName)s] %(message)s'
