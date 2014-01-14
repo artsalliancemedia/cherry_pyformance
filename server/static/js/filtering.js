@@ -32,7 +32,7 @@ function update_header_links() {
 	$("#header1").attr("href", "/callstacks" + '?' + $.param(kwargs));
 	$("#header2").attr("href", "/sqlstatements" + '?' + $.param(kwargs));
 	$("#header3").attr("href", "/fileaccesses" + '?' + $.param(kwargs));
-	$("#breadcrumb_link").attr("href", "/fileaccesses" + '?' + $.param(kwargs));
+	$("#breadcrumb_link").attr("href", "/" + url_name + '?' + $.param(kwargs));
 }
 
 function clear_filter() {
