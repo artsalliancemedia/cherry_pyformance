@@ -65,7 +65,7 @@ def load_config(config_file_path=None):
     
     config.read(config_file_path)
     if config.sections() == []:
-        stat_logger.info('Failed to load cherry pyformance config. Grab default config file from repo!')
+        print 'Failed to load cherry pyformance config. Grab default config file from repo!' 
         sys.exit(1)
     
     config_dict = config._sections
@@ -87,9 +87,18 @@ def setup_logging():
     return stat_logger
 
 
-def initialise(config_file_path=None):
+def initialise(config_file_path=None, config_overwrites = None):
     global cfg
     cfg = load_config(config_file_path)
+    
+    #the config file contains default application monitoring, which can be shared by all instances of the same application
+    #ie, endpoints to monitor / ignore
+    #config overwrites can be specified by the appication afterwards for things that may change between rutimes
+    #ie, cherrypyformance server to log to
+    #    frequency of logging
+    if config_overwrites and type(config_overwrites) is dict:
+        for k,v in config_overwrites.iteritems():
+            cfg[k] = v
 
     global stat_logger
     stat_logger = setup_logging()
