@@ -83,18 +83,16 @@ function add_filter(filter_key, filter_value) {
 
 $(document).ready(function() {
 	// Get initial filters from kwargs
-	var init_keys = [], init_vals = [];
+	var init_kwargs = {};
 	for(var key in raw_kwargs){
 		if(key.indexOf("key_") !== -1) {
-			init_keys.push(raw_kwargs[key]);
-		}
-		else if(key.indexOf("value_") !== -1) {
-			init_vals.push(raw_kwargs[key]);
+			var val = "value_" + key.substring(4);
+			init_kwargs[raw_kwargs[key]] = raw_kwargs[val];
 		}
 	}
 
-	for(var i = 0; i < init_keys.length; i++) {
-		add_filter(init_keys[i], init_vals[i]);
+	for(var key in init_kwargs) {
+		add_filter(key, init_kwargs[key]);
 	}
 
 	$('#filters').trigger('load', [kwargs]);
