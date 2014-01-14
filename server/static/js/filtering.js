@@ -25,33 +25,30 @@ function reset_filters() {
 	$('.no_filters').show();
 } 
 
+var kwargs = {num_filters: 0};
+
 function clear_filter() {
-	$(this).remove();
+	kwargs['num_filters'] -= 1;
+	delete kwargs['key_' + $(this).attr('id')];
+	delete kwargs['value_' + $(this).attr('id')];
 	
-	var filters_len = $('#filters li').length;
-	if(filters_len == 0) {
-		reset_filters()
+	for(var i = $(this).attr('id'); i < $("#filters li").length; i++) {
+		// update kwargs
+		var next_key = 'key_' + (parseInt(i)+1);
+		var next_value = 'value_' + (parseInt(i)+1);
+		kwargs['key_' + i] = kwargs[next_key];
+		kwargs['value_' + i] = kwargs[next_value];
+		delete kwargs[next_key];
+		delete kwargs[next_value];
+		
+		// update li id
+		$("#filters #" + (parseInt(i)+1)).attr('id', i)
 	}
 	
-	kwargs = {num_filters: filters_len};
-	$("#filters").trigger('change', [kwargs]);
-}
-
-var kwargs = {num_filters: 0};
-function add_filter(filter_key, filter_value) {
-	if (!filter_key || typeof filter_key === 'object')
-		filter_key = $('#filter_key').val();
-	if (!filter_value)
-		filter_value = $(this).val();
-
-	// If we have a value then add another filter and redraw everything :)
-	if(filter_value != 0) {
-		$('.no_filters').hide();
-		$("#filters").append($("<li/>").text(filter_key + " = \"" + filter_value + "\"").click(clear_filter));
-
-		kwargs['num_filters'] += 1;
-		kwargs['key_' + kwargs['num_filters']] = filter_key;
-		kwargs['value_' + kwargs['num_filters']] = filter_value;
+	$(this).remove();
+	
+	if(kwargs['num_filters'] == 0) {
+		reset_filters()
 	}
 
 	$("#filters").trigger('change', [kwargs]);
@@ -62,6 +59,25 @@ function clear_filters() {
 	reset_filters()
 
 	kwargs = {num_filters: 0};
+	$("#filters").trigger('change', [kwargs]);
+}
+
+function add_filter(filter_key, filter_value) {
+	if (!filter_key || typeof filter_key === 'object')
+		filter_key = $('#filter_key').val();
+	if (!filter_value)
+		filter_value = $(this).val();
+
+	// If we have a value then add another filter and redraw everything :)
+	if(filter_value != 0) {
+		$('.no_filters').hide();
+		$("#filters").append($("<li/>").text(filter_key + " = \"" + filter_value + "\"").attr('id', kwargs['num_filters'] + 1).click(clear_filter));
+
+		kwargs['num_filters'] += 1;
+		kwargs['key_' + kwargs['num_filters']] = filter_key;
+		kwargs['value_' + kwargs['num_filters']] = filter_value;
+	}
+
 	$("#filters").trigger('change', [kwargs]);
 }
 
