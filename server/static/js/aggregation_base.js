@@ -32,7 +32,7 @@ function draw_bar_graph(data, selector, index, kwargs) {
 	// Draw the overlay text
 	d3.selectAll(selector + ' g')
 		.append('a')
-		.attr('xlink:href', function(d) { return '/' + url_name + '/' + d[0] + '?' + $.param(kwargs); })
+		.attr('xlink:href', function(d) { return '/' + url_name + '/' + d[0]; })
 		.append('text')
 		.attr('x', 10)
 		.attr('y', function(d, i) { return 22 + i * (height / numBars); })
@@ -85,7 +85,7 @@ $(document).ready(function() {
 			// This is unneeded, can be replaced with a jquery set operation which is faster than this cursor based operation.
 			"fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
 				$(nRow).click(function() {
-					window.location.href = '/' + url_name + '/' + aData[0] + '?' + $.param(kwargs);
+					window.location.href = '/' + url_name + '/' + aData[0];
 				});
 				$('td:eq(0)', nRow).text(trunc(aData[1], 100));
 			}
@@ -93,7 +93,7 @@ $(document).ready(function() {
 	
 	$('#tabs').tabs();
 	$('#filters').on('load change', function(e, kwargs) {
-		oTable.fnSettings().sAjaxSource = '/api/' + url_name + '?datatables=true&' + $.param(kwargs);
+		oTable.fnSettings().sAjaxSource = '/api/' + url_name + '?datatables=true';
 		oTable.fnDraw();
 
 		draw_bar_graphs(kwargs);
