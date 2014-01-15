@@ -1,3 +1,22 @@
+import os
+import sys
+import logging
+
+# Put the external python libraries on the path
+# Note: Make sure that the first you import is the serv module (import serv)
+#       in the main startup script (like in CinemaServices.py, CircuitServices.py,
+#       CircuitServicesSync.py, CircuitServicesWsw.py) whenever you create another one.
+#       This guarantees that the libraries are on the path no matter
+#       in which order modules are imported later.
+lib_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib'))
+sys.path.insert(0, lib_dir)
+
+#deal with awesome eggs!
+for path in os.listdir(lib_dir):
+    if path.endswith('egg'):
+        sys.path.insert(0, os.path.join(lib_dir,path))
+        
+        
 import ConfigParser
 import cherrypy
 import sys
@@ -86,7 +105,7 @@ def load_config():
 
 if __name__ == '__main__':
     cfg = load_config()
-
+    print 'hi'
     try:
         # Set up the initialise database config
         db.setup(cfg['database_username'], cfg['database_password'])
