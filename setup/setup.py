@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='cherry_pyformance',
-    version='0.1.1',
+    version='0.1.2',
     author = 'Arts Alliance Media',
     author_email='development@artsalliancemedia.com',
     url='http://www.artsalliancemedia.com',
