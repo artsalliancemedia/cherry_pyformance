@@ -16,11 +16,9 @@ import sqlalchemy as sa
 
 def upgrade():
     op.add_column('sql_arguments', sa.Column('key', sa.String))
-    op.drop_column('sql_arguments', 'value')
-    op.add_column('sql_arguments', sa.Column('value', sa.String))
+    op.drop_constraint("sql_arguments_value_key", "sql_arguments")
 
 
 def downgrade():
     op.drop_column('sql_arguments', 'key')
-    op.drop_column('sql_arguments', 'value')
-    op.add_column('sql_arguments', sa.Column('value', sa.String, unique=True))
+    op.create_unique_constraint("sql_arguments_value_key", "sql_arguments", ["value"])
