@@ -12,6 +12,9 @@ from shutil import copyfile
 import cherrypy
 from cherrypy.process.plugins import Monitor
 
+global cfg
+cfg = {}
+
 def get_stat(item, stat):
     """
     Returns the value of an item's stat based on the stat name, not the tuple index
@@ -68,7 +71,7 @@ def load_config(config_file_path=None):
     
     config.read(config_file_path)
     if config.sections() == []:
-        stat_logger.info('Failed to load cherry pyformance config. Grab default config file from repo!')
+        print 'Failed to load cherry pyformance config. Grab default config file from repo!' 
         sys.exit(1)
     
     config_dict = config._sections
@@ -80,6 +83,8 @@ def setup_logging():
     '''
     Sets up the stats logger.
     '''
+    
+    global stat_logger
     stat_logger = logging.getLogger('stats')
     stats_log_handler = logging.Handler(level='INFO')
     log_format = '%(asctime)s::%(levelname)s::[%(module)s:%(lineno)d]::[%(threadName)s] %(message)s'
@@ -88,9 +93,18 @@ def setup_logging():
     return stat_logger
 
 
-def initialise(config_file_path=None):
+def initialise(config_file_path=None, config_overwrites = None, start_now = False):
     global cfg
     cfg = load_config(config_file_path)
+    cfg['active'] = True
+    #the config file contains default application monitoring, which can be shared by all instances of the same application
+    #ie, endpoints to monitor / ignore
+    #config overwrites can be specified by the appication afterwards for things that may change between rutimes
+    #ie, cherrypyformance server to log to
+    #    frequency of logging
+    if config_overwrites and type(config_overwrites) is dict:
+        for k,v in config_overwrites.iteritems():
+            cfg[k] = v
 
     global stat_logger
     stat_logger = setup_logging()
@@ -107,19 +121,28 @@ def initialise(config_file_path=None):
         from function_profiler import decorate_functions
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
-        cherrypy.engine.subscribe('start', decorate_functions, 0)
+        if start_now:
+            decorate_functions()
+        else:
+            cherrypy.engine.subscribe('start', decorate_functions, 0)
 
     if cfg['handlers']:
         from handler_profiler import decorate_handlers
         # no point wrapping these now as they won't be active before
         # engine start.
-        cherrypy.engine.subscribe('start', decorate_handlers, 0)
+        if start_now:
+            decorate_handlers()
+        else:
+            cherrypy.engine.subscribe('start', decorate_handlers, 0)
 
     if cfg['sql']['sql_enabled']:
         from sql_profiler import decorate_connections
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
-        cherrypy.engine.subscribe('start', decorate_connections, 0)
+        if start_now:
+            decorate_connections()
+        else:
+            cherrypy.engine.subscribe('start', decorate_connections, 0)
 
     if cfg['files']['files_enabled']:
         from file_profiler import decorate_open
@@ -129,9 +152,14 @@ def initialise(config_file_path=None):
     from stats_flushers import flush_stats
 
     # create a monitor to periodically flush the stats buffers at the flush_interval
-    Monitor(cherrypy.engine, flush_stats,
+    flush_mon = Monitor(cherrypy.engine, flush_stats,
         frequency=int(cfg['output']['flush_interval']),
-        name='Flush stats buffers').subscribe()
+        name='Flush stats buffers')
+    flush_mon.subscribe()
+    
+    if start_now:
+        flush_mon.start()
+    
 
     # when the engine stops, flush any stats.
     # cherrypy.engine.subscribe('stop', flush_stats)

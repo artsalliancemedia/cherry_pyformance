@@ -37,6 +37,9 @@ class ConnectionWrapper(object):
         self._cpf_connection.__enter__()
         return self
 
+    def __getattr__(self, name):
+        return getattr(self._cpf_connection, name)
+        
     def __exit__(self, *args, **kwargs):
         return self._cpf_connection.__exit__(*args, **kwargs)
 

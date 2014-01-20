@@ -3,6 +3,7 @@ from handler_profiler import handler_stats_buffer
 from function_profiler import function_stats_buffer
 from sql_profiler import sql_stats_buffer
 from file_profiler import file_stats_buffer
+from decorator import decorator_stats_buffer
 
 
 def _flush_stats(stats_buffer, stat_type):
@@ -54,3 +55,4 @@ def flush_stats():
         _flush_stats(sql_stats_buffer, 'database')
     if cfg['files']['files_enabled']:
         _flush_stats(file_stats_buffer, 'file')
+    _flush_stats(decorator_stats_buffer, 'function')
