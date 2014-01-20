@@ -28,10 +28,12 @@ function reset_filters() {
 var kwargs = {num_filters: 0};
 
 function update_header_links() {
-	// Modify header links and breadcrumb to send filter kwargs
-	$("#header1").attr("href", "/callstacks" + '?' + $.param(kwargs));
-	$("#header2").attr("href", "/sqlstatements" + '?' + $.param(kwargs));
-	$("#header3").attr("href", "/fileaccesses" + '?' + $.param(kwargs));
+	// Modify header links and breadcrumbs to send filter kwargs
+	$('nav a').each(function(){ 
+	    var $this = $(this); 
+	    $this.attr('href', $this.data('base_url') + '?' + $.param(kwargs));
+	});
+	
 	$("#breadcrumb_link").attr("href", "/" + url_name + '?' + $.param(kwargs));
 	if($('#breadcrumb_link2').length != 0) {
 		$("#breadcrumb_link2").attr("href", "/" + url_name + "/" + metadata_id + '?' + $.param(kwargs));

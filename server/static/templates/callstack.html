@@ -118,9 +118,9 @@
 <%block name="mako_item_id">${call_stack.id}</%block>
 
 <%block name="header_list">
-  <a href="/callstacks" id="header1" class="active">Call Stacks</a>
-  <a href="/sqlstatements" id="header2">SQL Statements</a>
-  <a href="/fileaccesses" id="header3">File Accesses</a>
+  <a href="/callstacks" data-base_url="/callstacks" class="active">Call Stacks</a>
+  <a href="/sqlstatements" data-base_url="/sqlstatements">SQL Statements</a>
+  <a href="/fileaccesses" data-base_url="/fileaccesses">File Accesses</a>
 </%block>
 
 <%block name="breadcrumbs">
