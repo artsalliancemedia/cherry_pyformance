@@ -65,7 +65,7 @@ class JSONAPI(object):
                 sql_string = str(response['sql'])
                 for key,val in response['args']:
                     # Protect old database args (before key was added to sql args)
-                    if key == None or val == None:
+                    if key == None or key == "" or val == None or val == "":
                         continue
                     # If postgres arg, surround with %(arg)s to replace properly
                     if key != '?':
