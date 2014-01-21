@@ -20,7 +20,63 @@ function filter_key() {
 	}
 }
 
+function reset_filters() {
+	$('#filter_value').val('0')
+	$('.no_filters').show();
+}
+
 var kwargs = {num_filters: 0};
+
+function update_header_links() {
+	// Modify header links and breadcrumbs to send filter kwargs
+	$('nav a').each(function(){ 
+	    var $this = $(this); 
+	    $this.attr('href', $this.data('base_url') + '?' + $.param(kwargs));
+	});
+	
+	$("#breadcrumb_link").attr("href", "/" + url_name + '?' + $.param(kwargs));
+	if($('#breadcrumb_link2').length != 0) {
+		$("#breadcrumb_link2").attr("href", "/" + url_name + "/" + metadata_id + '?' + $.param(kwargs));
+	}
+}
+
+function clear_filter() {
+	kwargs['num_filters'] -= 1;
+	delete kwargs['key_' + $(this).attr('id')];
+	delete kwargs['value_' + $(this).attr('id')];
+	
+	for(var i = $(this).attr('id'); i < $("#filters li").length; i++) {
+		// update kwargs
+		var next_key = 'key_' + (parseInt(i)+1);
+		var next_value = 'value_' + (parseInt(i)+1);
+		kwargs['key_' + i] = kwargs[next_key];
+		kwargs['value_' + i] = kwargs[next_value];
+		delete kwargs[next_key];
+		delete kwargs[next_value];
+		
+		// update li id
+		$("#filters #" + (parseInt(i)+1)).attr('id', i)
+	}
+	
+	$(this).remove();
+	
+	if(kwargs['num_filters'] == 0) {
+		reset_filters()
+	}
+
+	$("#filters").trigger('change', [kwargs]);
+	update_header_links();
+}
+
+function clear_filters() {
+	$('#filters > li').remove();
+	reset_filters()
+
+	kwargs = {num_filters: 0};
+	$("#filters").trigger('change', [kwargs]);
+	update_header_links();
+}
+
 function add_filter(filter_key, filter_value) {
 	if (!filter_key || typeof filter_key === 'object')
 		filter_key = $('#filter_key').val();
@@ -30,7 +86,7 @@ function add_filter(filter_key, filter_value) {
 	// If we have a value then add another filter and redraw everything :)
 	if(filter_value != 0) {
 		$('.no_filters').hide();
-		$("#filters").append($("<li/>").text(filter_key + " = \"" + filter_value + "\""));
+		$("#filters").append($("<li/>").text(filter_key + " = \"" + filter_value + "\"").attr('id', kwargs['num_filters'] + 1).click(clear_filter));
 
 		kwargs['num_filters'] += 1;
 		kwargs['key_' + kwargs['num_filters']] = filter_key;
@@ -38,31 +94,24 @@ function add_filter(filter_key, filter_value) {
 	}
 
 	$("#filters").trigger('change', [kwargs]);
-}
-
-function clear_filters() {
-	kwargs = {num_filters: 0};
-	$('#filters > li').remove();
-	$('.no_filters').show();
-
-	$("#filters").trigger('change', [kwargs]);
+	update_header_links();
 }
 
 $(document).ready(function() {
 	// Get initial filters from kwargs
-	var init_keys = [], init_vals = [];
+	var init_kwargs = {};
 	for(var key in raw_kwargs){
 		if(key.indexOf("key_") !== -1) {
-			init_keys.push(raw_kwargs[key]);
-		}
-		else if(key.indexOf("value_") !== -1) {
-			init_vals.push(raw_kwargs[key]);
+			var val = "value_" + key.substring(4);
+			init_kwargs[raw_kwargs[key]] = raw_kwargs[val];
 		}
 	}
 
-	for(var i = 0; i < init_keys.length; i++) {
-		add_filter(init_keys[i], init_vals[i]);
+	for(var key in init_kwargs) {
+		add_filter(key, init_kwargs[key]);
 	}
+
+	update_header_links();
 
 	$('#filters').trigger('load', [kwargs]);
 

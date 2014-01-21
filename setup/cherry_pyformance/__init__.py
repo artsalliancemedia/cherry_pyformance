@@ -3,6 +3,7 @@ import ConfigParser
 import os.path
 import sys
 import time
+import socket
 import logging
 import copy
 import inspect
@@ -41,10 +42,13 @@ def create_output_fn():
     if compress:
         import zlib
     stat_logger.info('Sending collected stats to {0}{1}'.format(address,' (compressed)'*compress))
-
+    
+    hostname = socket.gethostname()
 
     def push_stats_fn(stats, address=address):
         """A function to push json to server"""
+        # Add hostname to metadata
+        stats['metadata']['hostname'] = hostname
         output = json.dumps(stats)
         headers = {'Content-Type':'application/json'}
         if compress:
@@ -55,7 +59,7 @@ def create_output_fn():
         try:
             urlopen(Request('{0}/{1}'.format(address, stats['type']), output, headers=headers))
         except URLError as e:
-            print e
+            stat_logger.error(e)
     return push_stats_fn
 
 

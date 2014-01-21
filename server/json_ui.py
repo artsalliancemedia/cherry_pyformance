@@ -63,8 +63,16 @@ class JSONAPI(object):
                 response['stack'] = item._stack()
                 # substitute args
                 sql_string = str(response['sql'])
-                for arg in response['args']:
-                    sql_string = re.sub(r'\?', arg, sql_string, 1)
+                for key,val in response['args']:
+                    # Protect old database args (before key was added to sql args)
+                    if key == None or key == "" or val == None or val == "":
+                        continue
+                    # If postgres arg, surround with %(arg)s to replace properly
+                    if key != '?':
+                        key = '\%\(' + key + '\)s'
+                    sql_string = re.sub(key, val, sql_string, 1)
+                # Just send values to html template
+                response['args'] = [kv_pair[1] for kv_pair in response['args']]
                 response['sql'] = sql_string
                 return response
             else:

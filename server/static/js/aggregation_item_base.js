@@ -64,7 +64,7 @@ function draw(data){
 
 	//mouseover points
 	$('.datum').click(function(){
-		window.location.href = '/tables/' + url_name + '/' + $(this).attr('data-id');
+		window.location.href = '/tables/' + url_name + '/' + $(this).attr('data-id') + '?' + $.param(kwargs);
 	});
 }
 
@@ -91,7 +91,7 @@ function filter_graph(e) {
 	if (end_date)
 		date_limit += 'end_date=' + end_date + '&';
 
-	$.getJSON('/api/' + url_name + '/' + item_id + '?' + date_limit, load_stats, noDataError);
+	$.getJSON('/api/' + url_name + '/' + item_id + '?' + date_limit, load_stats);
 }
 
 function load_graph(e, kwargs) {

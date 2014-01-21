@@ -18,7 +18,7 @@
 <%block name="mako_item_string"><pre class="sh_sql">${statement[1].replace(', ',',\n      ').replace('AND','\n      AND')}</pre></%block>
 
 <%block name="header_list">
-  <a href="/callstacks">Call Stacks</a>
-  <a href="/sqlstatements" class="active">SQL Statements</a>
-  <a href="/fileaccesses">File Accesses</a>
+  <a href="/callstacks" data-base_url="/callstacks">Call Stacks</a>
+  <a href="/sqlstatements" data-base_url="/sqlstatements" class="active">SQL Statements</a>
+  <a href="/fileaccesses" data-base_url="/fileaccesses">File Accesses</a>
 </%block>

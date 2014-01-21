@@ -25,13 +25,13 @@
 </%block>
 
 <%block name="header_list">
-  <a href="/callstacks">Call Stacks</a>
-  <a href="/sqlstatements" class="active">SQL Statements</a>
-  <a href="/fileaccesses">File Accesses</a>
+  <a href="/callstacks" data-base_url="/callstacks">Call Stacks</a>
+  <a href="/sqlstatements" data-base_url="/sqlstatements" class="active">SQL Statements</a>
+  <a href="/fileaccesses" data-base_url="/fileaccesses">File Accesses</a>
 </%block>
 
 <%block name="breadcrumbs">
-  <a href="/sqlstatements">Aggregation</a> &gt; <a href="/sqlstatements/${metadata_id}">Aggregation Item</a> &gt; SQL Statement
+  <a href="/sqlstatements" id="breadcrumb_link">Aggregation</a> &gt; <a href="/sqlstatements/${metadata_id}" id="breadcrumb_link2">Aggregation Item</a> &gt; SQL Statement
 </%block>
 
 <%block name="extra_base">

@@ -141,7 +141,6 @@ def decorate_function(module_str,func_str):
         setattr(module, attribute, StatWrapper(outer_func, inner_func))
     except Exception:
         stat_logger.warning('Failed to wrap function {0} for stats profiling'.format('.'.join([module_str,func_str])))
-        print traceback.print_exc()
 
 #=====================================================#
 

@@ -9,11 +9,11 @@
 <%block name="mako_item_id">${file_access.id}</%block>
 
 <%block name="header_list">
-  <a href="/callstacks">Call Stacks</a>
-  <a href="/sqlstatements">SQL Statements</a>
-  <a href="/fileaccesses" class="active">File Accesses</a>
+  <a href="/callstacks" data-base_url="/callstacks">Call Stacks</a>
+  <a href="/sqlstatements" data-base_url="/sqlstatements">SQL Statements</a>
+  <a href="/fileaccesses" data-base_url="/fileaccesses" class="active">File Accesses</a>
 </%block>
 
 <%block name="breadcrumbs">
-  <a href="/fileaccesses">Aggregation</a> &gt; <a href="/fileaccesses/${metadata_id}">Aggregation Item</a> &gt; File Access
+  <a href="/fileaccesses" id="breadcrumb_link">Aggregation</a> &gt; <a href="/fileaccesses/${metadata_id}" id="breadcrumb_link2">Aggregation Item</a> &gt; File Access
 </%block>

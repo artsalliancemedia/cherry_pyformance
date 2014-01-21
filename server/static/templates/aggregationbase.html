@@ -20,7 +20,7 @@
 	<script>
 		// Send through templated variables to the javascript file :)
 		var url_name = '${self.url_name()}',
-			raw_kwargs = []; // Todo: Add in proper kwargs support.
+		  raw_kwargs = ${kwargs};
 	</script>
 	<script src="/static/js/aggregation_base.js"></script>
 </%block>
