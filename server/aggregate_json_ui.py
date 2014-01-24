@@ -170,6 +170,9 @@ def json_aggregate(table_class, filter_kwargs=None, search=None, sort=[('avg','D
 
     for sorter in sort:
         query = query.order_by('{0} {1}'.format(*sorter))
+        
+    # Get filtered count before limiting to datatables length 
+    filtered_num_items = query.count()
 
     if start:
         query = query.offset(start)
@@ -182,7 +185,7 @@ def json_aggregate(table_class, filter_kwargs=None, search=None, sort=[('avg','D
     for result in results:
         result[1] = str(result[1])
 
-    return results, total_num_items, len(results)
+    return results, total_num_items, filtered_num_items
 
 # Get JSON aggregate data for aggregate item pages
 def json_aggregate_item(table_class, filter_kwargs, id):
