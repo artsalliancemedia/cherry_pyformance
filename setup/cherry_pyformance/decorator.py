@@ -18,7 +18,6 @@ def _after(_id):
     Pushes the stats collected to the buffer.
     """
     if _id in decorator_stats_buffer:
-        print 'creating stats'
         stats = decorator_stats_buffer[_id]['profile']
         stats.create_stats()
         # pickle stats and put back on the buffer for flushing
