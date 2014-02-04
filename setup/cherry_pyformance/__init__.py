@@ -42,7 +42,7 @@ def create_output_fn():
     if compress:
         import zlib
     stat_logger.info('Sending collected stats to {0}{1}'.format(address,' (compressed)'*compress))
-    
+
     hostname = socket.gethostname()
 
     def push_stats_fn(stats, address=address):
@@ -68,22 +68,22 @@ def load_config(config_file_path=None):
         # Get the directory where the executing script lives in and copy the default config in there if nothing is supplied.
         config_file_path = os.path.join(os.path.dirname(inspect.stack()[-1][1]), "cherrypyformance_config.cfg")
     config = ConfigParser.ConfigParser()
-    
+
     config.read(config_file_path)
     if config.sections() == []:
-        print 'Failed to load cherry pyformance config. Grab default config file from repo!' 
+        print 'Failed to load cherry pyformance config. Grab default config file from repo!'
         sys.exit(1)
-    
+
     config_dict = config._sections
     for section in config_dict.values():
         section.pop('__name__')
-    return config_dict
+    return config, config_dict
 
 def setup_logging():
     '''
     Sets up the stats logger.
     '''
-    
+
     global stat_logger
     stat_logger = logging.getLogger('stats')
     stats_log_handler = logging.Handler(level='INFO')
@@ -95,7 +95,7 @@ def setup_logging():
 
 def initialise(config_file_path=None, config_overwrites = None, start_now = False):
     global cfg
-    cfg = load_config(config_file_path)
+    config, cfg = load_config(config_file_path)
     cfg['active'] = True
     #the config file contains default application monitoring, which can be shared by all instances of the same application
     #ie, endpoints to monitor / ignore
@@ -108,10 +108,10 @@ def initialise(config_file_path=None, config_overwrites = None, start_now = Fals
 
     global stat_logger
     stat_logger = setup_logging()
-    
+
     global push_stats
     push_stats = create_output_fn()
-    
+
     global stats_package_template
     stats_package_template = {'metadata': cfg['metadata'],
                               'type': 'default_type',
@@ -135,7 +135,7 @@ def initialise(config_file_path=None, config_overwrites = None, start_now = Fals
         else:
             cherrypy.engine.subscribe('start', decorate_handlers, 0)
 
-    if cfg['sql']['sql_enabled']:
+    if config.getboolean('sql', 'sql_enabled'):
         from sql_profiler import decorate_connections
         # call this now and later, that way if imports overwrite our wraps
         # then we re-wrap them again at engine start.
@@ -156,10 +156,10 @@ def initialise(config_file_path=None, config_overwrites = None, start_now = Fals
         frequency=int(cfg['output']['flush_interval']),
         name='Flush stats buffers')
     flush_mon.subscribe()
-    
+
     if start_now:
         flush_mon.start()
-    
+
 
     # when the engine stops, flush any stats.
     # cherrypy.engine.subscribe('stop', flush_stats)
