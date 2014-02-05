@@ -1,6 +1,8 @@
 import os
 import sys
 import logging
+import ConfigParser
+from optparse import OptionParser
 
 # Put the external python libraries on the path
 # Note: Make sure that the first you import is the serv module (import serv)
@@ -15,9 +17,8 @@ sys.path.insert(0, lib_dir)
 for path in os.listdir(lib_dir):
     if path.endswith('egg'):
         sys.path.insert(0, os.path.join(lib_dir,path))
-        
-        
-import ConfigParser
+
+
 import cherrypy
 import sys
 import database as db
@@ -79,7 +80,7 @@ def start_cherrypy(host, port):
         cherrypy.engine.signal_handler.subscribe()
     if hasattr(cherrypy.engine, 'console_control_handler'):
         cherrypy.engine.console_control_handler.subscribe()
-    
+
     cherrypy.log('Starting CherryPy')
     try:
         cherrypy.engine.start()
@@ -91,24 +92,38 @@ def start_cherrypy(host, port):
     cherrypy.log('CherryPy started')
     cherrypy.engine.block()
 
+def _parse_options():
+    parser = OptionParser()
+    parser.add_option(
+        '-r',
+        '--reset',
+        dest='reset_db',
+        action='store_true',
+        default=False,
+        help='Reset the profile_stats database prior to launching service'
+    )
+    options, args = parser.parse_args()
+    return options, args
+
 def load_config():
     config = ConfigParser.ConfigParser()
-    
+
     config.read('server_config.cfg')
     if config.sections() == []:
         print 'Failed to load config file (server_config.cfg)'
         sys.exit(1)
-    
+
     config_dict = config._sections['global']
     config_dict.pop('__name__')
     return config_dict
 
 if __name__ == '__main__':
     cfg = load_config()
+    options, args = _parse_options()
     print 'hi'
     try:
         # Set up the initialise database config
-        db.setup(cfg['database_username'], cfg['database_password'])
+        db.setup(cfg['database_username'], cfg['database_password'], reset_db=options.reset_db)
 
         # Ensure we have a pstats directory to write into.
         if not os.path.exists('pstats'):
