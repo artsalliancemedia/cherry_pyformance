@@ -14,16 +14,21 @@ from alembic import command as al_command
 
 session = None
 
-def setup(user, password, host='localhost'):
+def setup(user, password, host='localhost', reset_db=False):
     postgres_string = u'postgresql://{0}:{1}@{2}'.format(user, password, host)
     alembic_cfg = Config("alembic.ini")
 
     try:
         db = sqlalchemy.create_engine(postgres_string + '/profile_stats')
         db.connect()
-
+        if reset_db:
+            Base.metadata.reflect(db)
+            Base.metadata.drop_all(db)
+            Base.metadata.create_all(db)
+            al_command.stamp(alembic_cfg, "head")
+        else:
         # Upgrade db to latest revision
-        al_command.upgrade(alembic_cfg, "head")
+            al_command.upgrade(alembic_cfg, "head")
     except:
         # If we get here it must be because the profile_stats db doesn't exist.
         postgres = sqlalchemy.create_engine(postgres_string + '/postgres')
@@ -37,7 +42,7 @@ def setup(user, password, host='localhost'):
 
         # Because we have a blank database lets first add in all the table found within.
         Base.metadata.create_all(db)
-    
+
         # Stamp table with current version for Alembic upgrades
         al_command.stamp(alembic_cfg, "head")
 
@@ -52,7 +57,7 @@ Base = declarative_base()
 
 
 call_stack_metadata_association_table = Table('call_stack_metadata_association', Base.metadata,
-    Column('call_stack_id', Integer, ForeignKey('call_stacks.id'), primary_key=True), 
+    Column('call_stack_id', Integer, ForeignKey('call_stacks.id'), primary_key=True),
     Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
 )
 
@@ -81,7 +86,7 @@ class CallStack(Base):
                     'duration':self.duration,
                     'pstat_uuid':self.pstat_uuid}
         return dict(response.items() + self._metadata().items())
-    
+
     def _stats(self):
         return pstats.Stats(os.path.join(os.getcwd(),'pstats',self.pstat_uuid))
 
@@ -110,7 +115,7 @@ class CallStackFullName(object):
             return '{0}.{1}: {2}'.format(self.module_name, self.class_name, self.fn_name)
         else:
             return '{0}.{1}'.format(self.module_name, self.fn_name)
-        
+
     def __str__(self):
         return self.__composite_values__()
 
@@ -120,9 +125,9 @@ class CallStackName(Base):
     module_name = Column(String)
     class_name = Column(String)
     fn_name = Column(String)
-    
+
     full_name = composite(CallStackFullName, module_name, class_name, fn_name)
-    
+
     __table_args__ = (UniqueConstraint('module_name', 'class_name', 'fn_name', name='_call_stack_name_uc'),)
 
     def __init__(self, module_name, class_name, fn_name):
@@ -133,7 +138,7 @@ class CallStackName(Base):
 #========================================#
 
 sql_statement_metadata_association_table = Table('sql_statement_metadata_association', Base.metadata,
-    Column('sql_statement_id', Integer, ForeignKey('sql_statements.id'), primary_key=True), 
+    Column('sql_statement_id', Integer, ForeignKey('sql_statements.id'), primary_key=True),
     Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
 )
 
@@ -172,7 +177,7 @@ class SQLStatement(Base):
             if len(v)==1:
                 list_dict[k] = v[0]
         return list_dict
-    
+
     def _stack(self):
         self.sql_stack_items.sort(key=attrgetter('index'))
         return [stack_item.stack_item.to_dict() for stack_item in self.sql_stack_items]
@@ -218,7 +223,7 @@ class SQLStackItem(Base):
     id = Column(Integer, primary_key=True)
     module = Column(String)
     function = Column(String)
-    
+
     __table_args__ = (UniqueConstraint('module', 'function', name='_sql_stack_item_uc'),)
 
     def __init__(self, function, module):
@@ -251,14 +256,14 @@ class SQLArg(Base):
     def __init__(self, key, value):
         self.key = key
         self.value = value
-        
+
     def __repr__(self):
         return 'SQLArg({0})'.format(self.id)
 
 #========================================#
 
 file_access_metadata_association_table = Table('file_access_metadata_association', Base.metadata,
-    Column('file_access_id', Integer, ForeignKey('file_accesses.id'), primary_key=True), 
+    Column('file_access_id', Integer, ForeignKey('file_accesses.id'), primary_key=True),
     Column('metadata_id', Integer, ForeignKey('metadata_items.id'), primary_key=True)
 )
 
@@ -271,17 +276,17 @@ class FileAccess(Base):
     duration = Column(Float)
     data_written = Column(Integer)
     mode = Column(String)
-    
+
     filename = relationship('FileName', cascade='all', backref='file_accesses')
     metadata_items = relationship('MetaData', secondary=file_access_metadata_association_table, cascade='all', backref='file_accesses')
-  
+
     def __init__(self, profile):
         self.datetime = profile['datetime']
         self.time_to_open = profile['time_to_open']
         self.duration = profile['duration']
         self.data_written = profile['data_written']
         self.mode = profile['mode']
-      
+
     def to_dict(self):
         filename = self.filename.filename
         response = {'id':self.id,
@@ -291,7 +296,7 @@ class FileAccess(Base):
                     'duration':self.duration,
                     'data_written':self.data_written}
         return dict(response.items() + self._metadata().items())
-                
+
     def _metadata(self):
         list_dict = defaultdict(list)
         for key, value in [meta._to_tuple() for meta in self.metadata_items]:
@@ -302,7 +307,7 @@ class FileAccess(Base):
             if len(v)==1:
                 list_dict[k] = v[0]
         return list_dict
-    
+
     def __repr__(self):
         return 'FileAccess({0}, {1!s})'.format(self._metadata()['filename'],int(self.datetime))
 
@@ -325,7 +330,7 @@ class MetaData(Base):
     id = Column(Integer, primary_key=True)
     key = Column(String)
     value = Column(String)
-    
+
     __table_args__ = (UniqueConstraint('key', 'value', name='_metadata_item_uc'),)
 
     def __init__(self, key, value):
