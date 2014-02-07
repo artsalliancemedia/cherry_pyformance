@@ -72,7 +72,7 @@ class FileWrapper(object):
     def __exit__(self, *args, **kwargs):
         self.close_time = time.clock()
         self.file.close()
-        if cfg['files']['ignored_directories']:
+        if 'ignored_directories' in cfg['files'] and cfg['files']['ignored_directories']:
             for file_path in cfg['files']['ignored_directories'].split(','):
                 if file_path in self.fullname.replace('\\','/'):
                     return
