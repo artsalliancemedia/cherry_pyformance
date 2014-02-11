@@ -24,7 +24,10 @@ def _flush_stats(stats_buffer, stat_type):
                 # if you have a better solution please let me know!
                 if isinstance(stats_buffer[_id]['args'], dict): # for sql args (they have keys used for sql string insertion)
                     for key in stats_buffer[_id]['args']:
-                        stats_buffer[_id]['args'][key] = str(stats_buffer[_id]['args'][key])
+                        if type(stats_buffer[_id]['args'][key]) is unicode:
+                            stats_buffer[_id]['args'][key] = stats_buffer[_id]['args'][key].encode('utf-8')
+                        else:
+                            stats_buffer[_id]['args'][key] = str(stats_buffer[_id]['args'][key])
                 else:
                     stats_buffer[_id]['args'] = [str(arg) for arg in stats_buffer[_id]['args']]
                 stats_to_push.append(stats_buffer[_id])
