@@ -14,6 +14,7 @@ import inspect
 import time
 import cPickle
 import traceback
+from uuid import uuid4
 
 from cherry_pyformance import cfg, stat_logger
 
@@ -79,15 +80,20 @@ class StatsTool(cherrypy.Tool):
             _module = inspect.getmodule(request.app.root.__class__).__name__
             _class = request.app.root.__class__.__name__
             _method = request.path_info
-            handler_stats_buffer[req_id]['module'] = _module
-            handler_stats_buffer[req_id]['class'] = _class
-            handler_stats_buffer[req_id]['function'] = _method
             
-            stats = handler_stats_buffer[req_id]['profile']
+            buffer_dict = handler_stats_buffer.pop(req_id)
+            buffer_dict['module'] = _module
+            buffer_dict['class'] = _class
+            buffer_dict['function'] = _method
+
+            stats = buffer_dict['profile']
             stats.create_stats()
             # pickle stats and put back on the buffer for flushing
             pickled_stats = cPickle.dumps(stats.stats)
-            handler_stats_buffer[req_id]['profile'] = pickled_stats
+            buffer_dict['profile'] = pickled_stats
+
+            # Randomised key to prevent clash with future profiles
+            handler_stats_buffer[uuid4()] = buffer_dict
 
 #=====================================================#
 
